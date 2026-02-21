@@ -95,6 +95,8 @@ async function fetchWeather() {
 }
 
 // Hämta elpris för SE4
+let electricityChart = null;
+
 async function fetchElectricity() {
     try {
         const now = new Date();
@@ -147,6 +149,86 @@ async function fetchElectricity() {
                 <div class="electricity-detail">Högst: <span>${maxOre}</span></div>
             </div>
         `;
+
+        // Skapa graf
+        const ctx = document.getElementById('electricityChart').getContext('2d');
+
+        // Förbered data för grafen
+        const labels = data.map(p => {
+            const hour = new Date(p.time_start).getHours();
+            return `${hour}:00`;
+        });
+        const pricesOre = data.map(p => (p.SEK_per_kWh * 100).toFixed(1));
+
+        // Färger för varje stapel baserat på pris
+        const barColors = data.map(p => {
+            if (p.SEK_per_kWh > 1) return '#ef4444';
+            if (p.SEK_per_kWh > 0.5) return '#f59e0b';
+            return '#10b981';
+        });
+
+        // Markera aktuell timme
+        const borderColors = data.map((p, i) => {
+            const hour = new Date(p.time_start).getHours();
+            return hour === currentHour ? '#1a1a2e' : 'transparent';
+        });
+        const borderWidths = data.map((p, i) => {
+            const hour = new Date(p.time_start).getHours();
+            return hour === currentHour ? 2 : 0;
+        });
+
+        // Ta bort gammal graf om den finns
+        if (electricityChart) {
+            electricityChart.destroy();
+        }
+
+        electricityChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: pricesOre,
+                    backgroundColor: barColors,
+                    borderColor: borderColors,
+                    borderWidth: borderWidths,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.raw} öre/kWh`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 10 },
+                            maxRotation: 0,
+                            callback: function(val, index) {
+                                // Visa bara var 3:e timme
+                                return index % 3 === 0 ? this.getLabelForValue(val) : '';
+                            }
+                        }
+                    },
+                    y: {
+                        grid: { color: '#e5e7eb' },
+                        ticks: {
+                            font: { size: 10 },
+                            callback: (val) => val + ' öre'
+                        },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
     } catch (error) {
         console.error('Elprisfel:', error);
         document.getElementById('electricity').innerHTML = '<div class="loading">Kunde inte hämta elpris</div>';

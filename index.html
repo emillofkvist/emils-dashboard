@@ -306,6 +306,13 @@
         .price-medium { color: #f59e0b; }
         .price-high { color: #ef4444; }
 
+        .electricity-chart-container {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+            height: 150px;
+        }
+
         /* Loading state */
         .loading {
             color: #9ca3af;
@@ -377,6 +384,9 @@
             <div id="electricity">
                 <div class="loading">Hämtar elpris...</div>
             </div>
+            <div class="electricity-chart-container">
+                <canvas id="electricityChart"></canvas>
+            </div>
         </div>
 
         <!-- Börs -->
@@ -437,6 +447,7 @@
 
     <button class="refresh-btn" onclick="location.reload()">↻</button>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="config.js"></script>
     <script src="dashboard.js"></script>
 </body>
