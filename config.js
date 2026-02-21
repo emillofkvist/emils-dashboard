@@ -52,6 +52,10 @@ const CONFIG = {
     ],
     maxAiNews: 4,
 
+    // Porsche nyheter via Google News RSS
+    porscheFeed: "https://news.google.com/rss/search?q=Porsche&hl=en",
+    maxPorscheNews: 3,
+
     // Hur många nyheter att visa
     maxNews: 5,
     maxMacworldNews: 2

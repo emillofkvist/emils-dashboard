@@ -525,6 +525,58 @@ async function fetchAiNews() {
     document.getElementById('ai-news').innerHTML = html;
 }
 
+// Hämta Porsche nyheter
+async function fetchPorsche() {
+    try {
+        const url = `${CONFIG.corsProxy}${encodeURIComponent(CONFIG.porscheFeed)}`;
+        const response = await fetch(url);
+        const text = await response.text();
+
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const items = xml.querySelectorAll('item');
+
+        const news = [];
+        items.forEach((item, index) => {
+            if (index < CONFIG.maxPorscheNews) {
+                const title = item.querySelector('title')?.textContent || '';
+                const link = item.querySelector('link')?.textContent || '';
+                const pubDate = item.querySelector('pubDate')?.textContent || '';
+                const source = item.querySelector('source')?.textContent || 'Porsche News';
+
+                news.push({
+                    title: title,
+                    link: link,
+                    source: source,
+                    date: new Date(pubDate)
+                });
+            }
+        });
+
+        if (news.length === 0) {
+            document.getElementById('porsche').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
+            return;
+        }
+
+        const html = news.map(item => {
+            const timeAgo = getTimeAgo(item.date);
+            return `
+                <div class="news-item">
+                    <div class="news-source">${item.source}</div>
+                    <div class="news-title"><a href="${item.link}" target="_blank">${item.title}</a></div>
+                    <div class="news-time">${timeAgo}</div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('porsche').innerHTML = html;
+
+    } catch (error) {
+        console.error('Porsche-fel:', error);
+        document.getElementById('porsche').innerHTML = '<div class="loading">Kunde inte hämta Porsche-nyheter</div>';
+    }
+}
+
 // Hämta Macworld nyheter
 async function fetchMacworld() {
     try {
@@ -604,6 +656,7 @@ async function init() {
         fetchCalendar(),
         fetchNews(),
         fetchAiNews(),
+        fetchPorsche(),
         fetchMacworld()
     ]);
 }
