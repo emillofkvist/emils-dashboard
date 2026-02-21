@@ -311,6 +311,60 @@
         .price-medium { color: #f59e0b; }
         .price-high { color: #ef4444; }
 
+        /* Hue */
+        .hue-card {
+            border-left: 4px solid #f5a623;
+        }
+
+        .hue-setup p {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+
+        .hue-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .hue-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .hue-btn:active {
+            transform: scale(0.97);
+        }
+
+        .hue-btn.on {
+            background: linear-gradient(135deg, #f5a623 0%, #f7931e 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(245, 166, 35, 0.4);
+        }
+
+        .hue-btn.off {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .hue-btn.setup {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .hue-status {
+            text-align: center;
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+
         .electricity-chart-container {
             margin-top: 16px;
             padding-top: 16px;
@@ -413,6 +467,21 @@
                 <div class="stock-item">
                     <div class="stock-name">Dow Jones</div>
                     <div class="loading">Laddar...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hue -->
+        <div class="card hue-card">
+            <div class="card-header">Köksbelysning</div>
+            <div id="hue">
+                <div class="hue-setup" id="hue-setup">
+                    <p>Tryck på knappen på din Hue Bridge, sen klicka här:</p>
+                    <button class="hue-btn setup" onclick="setupHue()">Anslut Hue</button>
+                </div>
+                <div class="hue-controls" id="hue-controls" style="display:none;">
+                    <button class="hue-btn on" onclick="toggleKitchenLight(true)">💡 Tänd</button>
+                    <button class="hue-btn off" onclick="toggleKitchenLight(false)">Släck</button>
                 </div>
             </div>
         </div>

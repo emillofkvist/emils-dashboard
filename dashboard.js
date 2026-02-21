@@ -2,6 +2,97 @@
 // MORGON DASHBOARD
 // ============================================
 
+// ============================================
+// PHILIPS HUE INTEGRATION
+// ============================================
+
+// Hämta sparad Hue-data från localStorage
+function getHueConfig() {
+    const saved = localStorage.getItem('hueConfig');
+    if (saved) {
+        return JSON.parse(saved);
+    }
+    return { username: '', kitchenLightId: '' };
+}
+
+// Spara Hue-data till localStorage
+function saveHueConfig(username, kitchenLightId) {
+    localStorage.setItem('hueConfig', JSON.stringify({ username, kitchenLightId }));
+}
+
+// Setup Hue - registrera med bridge
+async function setupHue() {
+    const btn = document.querySelector('.hue-btn.setup');
+    btn.textContent = 'Ansluter...';
+
+    try {
+        const response = await fetch(`http://${CONFIG.hue.bridgeIp}/api`, {
+            method: 'POST',
+            body: JSON.stringify({ devicetype: 'emils_dashboard#browser' })
+        });
+        const data = await response.json();
+
+        if (data[0].error) {
+            alert('Tryck på knappen på Hue Bridge först, sen försök igen!');
+            btn.textContent = 'Anslut Hue';
+            return;
+        }
+
+        const username = data[0].success.username;
+
+        // Hitta lampor
+        const lightsResponse = await fetch(`http://${CONFIG.hue.bridgeIp}/api/${username}/lights`);
+        const lights = await lightsResponse.json();
+
+        // Visa lampor för användaren att välja
+        const lightList = Object.entries(lights).map(([id, light]) => `${id}: ${light.name}`).join('\n');
+        const chosenId = prompt(`Vilken lampa är köksbelysningen?\n\n${lightList}\n\nSkriv numret:`);
+
+        if (chosenId && lights[chosenId]) {
+            saveHueConfig(username, chosenId);
+            document.getElementById('hue-setup').style.display = 'none';
+            document.getElementById('hue-controls').style.display = 'flex';
+            alert(`Klar! "${lights[chosenId].name}" är nu kopplad.`);
+        } else {
+            alert('Ogiltigt val. Försök igen.');
+            btn.textContent = 'Anslut Hue';
+        }
+
+    } catch (error) {
+        console.error('Hue setup error:', error);
+        alert('Kunde inte ansluta till Hue Bridge. Är du på samma WiFi?');
+        btn.textContent = 'Anslut Hue';
+    }
+}
+
+// Tänd/släck köksbelysning
+async function toggleKitchenLight(on) {
+    const hueConfig = getHueConfig();
+    if (!hueConfig.username || !hueConfig.kitchenLightId) {
+        alert('Hue är inte konfigurerat. Klicka på "Anslut Hue" först.');
+        return;
+    }
+
+    try {
+        await fetch(`http://${CONFIG.hue.bridgeIp}/api/${hueConfig.username}/lights/${hueConfig.kitchenLightId}/state`, {
+            method: 'PUT',
+            body: JSON.stringify({ on: on })
+        });
+    } catch (error) {
+        console.error('Hue error:', error);
+        alert('Kunde inte styra lampan. Är du på samma WiFi som Hue Bridge?');
+    }
+}
+
+// Initiera Hue-kort
+function initHue() {
+    const hueConfig = getHueConfig();
+    if (hueConfig.username && hueConfig.kitchenLightId) {
+        document.getElementById('hue-setup').style.display = 'none';
+        document.getElementById('hue-controls').style.display = 'flex';
+    }
+}
+
 // Uppdatera tid och datum
 function updateDateTime() {
     const now = new Date();
@@ -647,6 +738,9 @@ function getTimeAgo(date) {
 async function init() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
+
+    // Initiera Hue
+    initHue();
 
     // Hämta all data parallellt
     await Promise.all([
