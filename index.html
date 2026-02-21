@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morgon Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            min-height: 100vh;
+            padding: 16px;
+            color: #1a1a2e;
+        }
+
+        .dashboard {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+
+        /* Header / Datum */
+        .header-card {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .header-card .card-header {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .time {
+            font-size: 48px;
+            font-weight: 300;
+            letter-spacing: -2px;
+        }
+
+        .date {
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .week {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        /* Väder */
+        .weather-main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .weather-icon {
+            font-size: 48px;
+        }
+
+        .weather-temp {
+            font-size: 36px;
+            font-weight: 600;
+        }
+
+        .weather-desc {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .weather-details {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .weather-detail {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .weather-detail span {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        /* Börs */
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stock-item {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        .stock-name {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .stock-value {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .stock-change {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .stock-change.positive {
+            color: #10b981;
+        }
+
+        .stock-change.negative {
+            color: #ef4444;
+        }
+
+        /* Kalender */
+        .calendar-event {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .calendar-event:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .calendar-event:first-child {
+            padding-top: 0;
+        }
+
+        .event-time {
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            min-width: 50px;
+        }
+
+        .event-date {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .event-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Nyheter */
+        .news-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .news-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .news-item:first-child {
+            padding-top: 0;
+        }
+
+        .news-source {
+            font-size: 11px;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+        }
+
+        .news-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .news-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .news-title a:hover {
+            color: #667eea;
+        }
+
+        .news-time {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        /* AI-nyheter */
+        .ai-card {
+            border-left: 4px solid #10a37f;
+        }
+
+        .ai-source {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .ai-source.openai {
+            background: #10a37f;
+            color: white;
+        }
+
+        .ai-source.theverge {
+            background: #ff4500;
+            color: white;
+        }
+
+        /* Macworld */
+        .macworld-card {
+            border-left: 4px solid #0071e3;
+        }
+
+        /* Elpris */
+        .electricity-main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .electricity-icon {
+            font-size: 36px;
+        }
+
+        .electricity-price {
+            font-size: 32px;
+            font-weight: 600;
+        }
+
+        .electricity-unit {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .electricity-details {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .electricity-detail {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .electricity-detail span {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .price-low { color: #10b981; }
+        .price-medium { color: #f59e0b; }
+        .price-high { color: #ef4444; }
+
+        /* Loading state */
+        .loading {
+            color: #9ca3af;
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        /* Refresh button */
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Setup notice */
+        .setup-notice {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            color: #92400e;
+        }
+
+        .setup-notice a {
+            color: #d97706;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Datum & Tid -->
+        <div class="card header-card">
+            <div class="time" id="time">--:--</div>
+            <div class="date" id="date">Laddar...</div>
+            <div class="week" id="week"></div>
+        </div>
+
+        <!-- Väder -->
+        <div class="card">
+            <div class="card-header">Väder i Hyllinge</div>
+            <div id="weather">
+                <div class="loading">Hämtar väderdata...</div>
+            </div>
+        </div>
+
+        <!-- Elpris -->
+        <div class="card">
+            <div class="card-header">Elpris SE4</div>
+            <div id="electricity">
+                <div class="loading">Hämtar elpris...</div>
+            </div>
+        </div>
+
+        <!-- Börs -->
+        <div class="card">
+            <div class="card-header">Börs</div>
+            <div class="stock-grid" id="stocks">
+                <div class="stock-item">
+                    <div class="stock-name">OMXS30</div>
+                    <div class="loading">Laddar...</div>
+                </div>
+                <div class="stock-item">
+                    <div class="stock-name">S&P 500</div>
+                    <div class="loading">Laddar...</div>
+                </div>
+                <div class="stock-item">
+                    <div class="stock-name">NASDAQ</div>
+                    <div class="loading">Laddar...</div>
+                </div>
+                <div class="stock-item">
+                    <div class="stock-name">Dow Jones</div>
+                    <div class="loading">Laddar...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kalender -->
+        <div class="card">
+            <div class="card-header">Kalender</div>
+            <div id="calendar">
+                <div class="loading">Hämtar kalender...</div>
+            </div>
+        </div>
+
+        <!-- Nyheter -->
+        <div class="card">
+            <div class="card-header">Nyheter</div>
+            <div id="news">
+                <div class="loading">Hämtar nyheter...</div>
+            </div>
+        </div>
+
+        <!-- AI-nyheter -->
+        <div class="card ai-card">
+            <div class="card-header">AI-nyheter</div>
+            <div id="ai-news">
+                <div class="loading">Hämtar AI-nyheter...</div>
+            </div>
+        </div>
+
+        <!-- Macworld -->
+        <div class="card macworld-card">
+            <div class="card-header">Macworld Sverige</div>
+            <div id="macworld">
+                <div class="loading">Hämtar från Macworld...</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="location.reload()">↻</button>
+
+    <script src="config.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
