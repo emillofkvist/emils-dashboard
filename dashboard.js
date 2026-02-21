@@ -12,12 +12,12 @@ function getHueConfig() {
     if (saved) {
         return JSON.parse(saved);
     }
-    return { username: '', kitchenLightId: '' };
+    return { username: '', id: '', type: 'light' };
 }
 
 // Spara Hue-data till localStorage
-function saveHueConfig(username, kitchenLightId) {
-    localStorage.setItem('hueConfig', JSON.stringify({ username, kitchenLightId }));
+function saveHueConfig(username, id, type = 'light') {
+    localStorage.setItem('hueConfig', JSON.stringify({ username, id, type }));
 }
 
 // Setup Hue - registrera med bridge
@@ -40,19 +40,22 @@ async function setupHue() {
 
         const username = data[0].success.username;
 
-        // Hitta lampor
-        const lightsResponse = await fetch(`http://${CONFIG.hue.bridgeIp}/api/${username}/lights`);
-        const lights = await lightsResponse.json();
+        // Hitta grupper (rum)
+        const groupsResponse = await fetch(`http://${CONFIG.hue.bridgeIp}/api/${username}/groups`);
+        const groups = await groupsResponse.json();
 
-        // Visa lampor för användaren att välja
-        const lightList = Object.entries(lights).map(([id, light]) => `${id}: ${light.name}`).join('\n');
-        const chosenId = prompt(`Vilken lampa är köksbelysningen?\n\n${lightList}\n\nSkriv numret:`);
+        // Visa grupper för användaren att välja
+        const groupList = Object.entries(groups).map(([id, group]) =>
+            `${id}: ${group.name} (${group.lights.length} lampor)`
+        ).join('\n');
 
-        if (chosenId && lights[chosenId]) {
-            saveHueConfig(username, chosenId);
+        const chosenId = prompt(`Välj rum/grupp för köksbelysningen:\n\n${groupList}\n\nSkriv numret:`);
+
+        if (chosenId && groups[chosenId]) {
+            saveHueConfig(username, chosenId, 'group');
             document.getElementById('hue-setup').style.display = 'none';
             document.getElementById('hue-controls').style.display = 'flex';
-            alert(`Klar! "${lights[chosenId].name}" är nu kopplad.`);
+            alert(`Klar! "${groups[chosenId].name}" (${groups[chosenId].lights.length} lampor) är nu kopplad.`);
         } else {
             alert('Ogiltigt val. Försök igen.');
             btn.textContent = 'Anslut Hue';
@@ -68,13 +71,18 @@ async function setupHue() {
 // Tänd/släck köksbelysning
 async function toggleKitchenLight(on) {
     const hueConfig = getHueConfig();
-    if (!hueConfig.username || !hueConfig.kitchenLightId) {
+    if (!hueConfig.username || !hueConfig.id) {
         alert('Hue är inte konfigurerat. Klicka på "Anslut Hue" först.');
         return;
     }
 
     try {
-        await fetch(`http://${CONFIG.hue.bridgeIp}/api/${hueConfig.username}/lights/${hueConfig.kitchenLightId}/state`, {
+        // Grupper använder /groups/{id}/action, lampor använder /lights/{id}/state
+        const endpoint = hueConfig.type === 'group'
+            ? `http://${CONFIG.hue.bridgeIp}/api/${hueConfig.username}/groups/${hueConfig.id}/action`
+            : `http://${CONFIG.hue.bridgeIp}/api/${hueConfig.username}/lights/${hueConfig.id}/state`;
+
+        await fetch(endpoint, {
             method: 'PUT',
             body: JSON.stringify({ on: on })
         });
@@ -87,7 +95,7 @@ async function toggleKitchenLight(on) {
 // Initiera Hue-kort
 function initHue() {
     const hueConfig = getHueConfig();
-    if (hueConfig.username && hueConfig.kitchenLightId) {
+    if (hueConfig.username && hueConfig.id) {
         document.getElementById('hue-setup').style.display = 'none';
         document.getElementById('hue-controls').style.display = 'flex';
     }
