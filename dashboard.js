@@ -811,13 +811,22 @@ async function fetchMacworld() {
             const timeAgo = getTimeAgo(item.date);
             return `
                 <div class="news-item">
-                    <div class="news-title"><a href="${item.link}" target="_blank">${item.title}</a></div>
+                    <div class="news-title">
+                        <a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a>
+                    </div>
                     <div class="news-time">${timeAgo}</div>
                 </div>
             `;
         }).join('');
 
         document.getElementById('macworld').innerHTML = html;
+
+        document.getElementById('macworld').querySelectorAll('.reader-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                openReader(link.dataset.url);
+            });
+        });
 
     } catch (error) {
         console.error('Macworld-fel:', error);
@@ -841,6 +850,57 @@ function getTimeAgo(date) {
         return `${days} dag${days > 1 ? 'ar' : ''} sedan`;
     }
 }
+
+// ============================================
+// READER-LÄGE
+// ============================================
+
+async function openReader(url) {
+    const overlay = document.getElementById('reader-overlay');
+    const content = document.getElementById('reader-content');
+    document.getElementById('reader-source-link').href = url;
+
+    content.innerHTML = '<div class="loading">Hämtar artikel...</div>';
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    try {
+        const proxyUrl = `${CONFIG.corsProxy}${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        const html = await response.text();
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Sätt bas-URL så relativa bildlänkar fungerar
+        const base = doc.createElement('base');
+        base.href = url;
+        doc.head.prepend(base);
+
+        const article = new Readability(doc).parse();
+
+        if (article && article.content) {
+            content.innerHTML = `
+                <h1 class="reader-title">${article.title || ''}</h1>
+                <div class="reader-body">${article.content}</div>
+            `;
+        } else {
+            content.innerHTML = '<div class="loading">Kunde inte extrahera artikeltext — prova att öppna originalet.</div>';
+        }
+    } catch (error) {
+        console.error('Reader error:', error);
+        content.innerHTML = '<div class="loading">Kunde inte hämta artikeln.</div>';
+    }
+}
+
+function closeReader() {
+    document.getElementById('reader-overlay').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeReader();
+});
 
 // Starta dashboard
 async function init() {
