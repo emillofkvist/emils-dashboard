@@ -570,58 +570,59 @@ async function fetchNews() {
 
 // Hämta AI-nyheter (OpenAI & Anthropic)
 async function fetchAiNews() {
-    const allNews = [];
+    try {
+        const url = `${CONFIG.corsProxy}${encodeURIComponent(CONFIG.aiNewsFeed)}`;
+        const response = await fetch(url);
+        const text = await response.text();
 
-    for (const feed of CONFIG.aiFeeds) {
-        try {
-            const url = `${CONFIG.corsProxy}${encodeURIComponent(feed.url)}`;
-            const response = await fetch(url);
-            const text = await response.text();
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const items = xml.querySelectorAll('item');
 
-            const parser = new DOMParser();
-            const xml = parser.parseFromString(text, 'text/xml');
-            const items = xml.querySelectorAll('item');
+        const news = [];
+        items.forEach((item, index) => {
+            if (index < CONFIG.maxAiNews) {
+                const title = item.querySelector('title')?.textContent || '';
+                const link = item.querySelector('link')?.textContent || '';
+                const pubDate = item.querySelector('pubDate')?.textContent || '';
+                const source = item.querySelector('source')?.textContent || 'AI News';
 
-            items.forEach((item, index) => {
-                if (index < 2) { // Max 2 per källa
-                    const title = item.querySelector('title')?.textContent || '';
-                    const link = item.querySelector('link')?.textContent || '';
-                    const pubDate = item.querySelector('pubDate')?.textContent || '';
+                news.push({
+                    title: title,
+                    link: link,
+                    source: source,
+                    date: new Date(pubDate)
+                });
+            }
+        });
 
-                    allNews.push({
-                        source: feed.name,
-                        className: feed.className,
-                        title: title,
-                        link: link,
-                        date: new Date(pubDate)
-                    });
-                }
-            });
-        } catch (error) {
-            console.error(`AI-nyhetsfel för ${feed.name}:`, error);
+        if (news.length === 0) {
+            document.getElementById('ai-news').innerHTML = '<div class="loading">Inga AI-nyheter hittades</div>';
+            return;
         }
-    }
 
-    // Sortera efter datum (nyast först)
-    allNews.sort((a, b) => b.date - a.date);
+        const html = news.map(item => {
+            const timeAgo = getTimeAgo(item.date);
+            // Färgkoda baserat på källa
+            let sourceClass = 'openai';
+            if (item.title.toLowerCase().includes('anthropic') || item.source.toLowerCase().includes('anthropic')) {
+                sourceClass = 'anthropic';
+            }
+            return `
+                <div class="news-item">
+                    <div class="ai-source ${sourceClass}">${item.source}</div>
+                    <div class="news-title"><a href="${item.link}" target="_blank">${item.title}</a></div>
+                    <div class="news-time">${timeAgo}</div>
+                </div>
+            `;
+        }).join('');
 
-    if (allNews.length === 0) {
+        document.getElementById('ai-news').innerHTML = html;
+
+    } catch (error) {
+        console.error('AI-nyhetsfel:', error);
         document.getElementById('ai-news').innerHTML = '<div class="loading">Kunde inte hämta AI-nyheter</div>';
-        return;
     }
-
-    const html = allNews.slice(0, CONFIG.maxAiNews).map(news => {
-        const timeAgo = getTimeAgo(news.date);
-        return `
-            <div class="news-item">
-                <div class="ai-source ${news.className}">${news.source}</div>
-                <div class="news-title"><a href="${news.link}" target="_blank">${news.title}</a></div>
-                <div class="news-time">${timeAgo}</div>
-            </div>
-        `;
-    }).join('');
-
-    document.getElementById('ai-news').innerHTML = html;
 }
 
 // Hämta Porsche nyheter

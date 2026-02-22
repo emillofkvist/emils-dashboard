@@ -44,19 +44,8 @@ const CONFIG = {
     // Macworld Sverige RSS
     macworldFeed: "https://www.macworld.se/feed",
 
-    // AI-nyheter
-    aiFeeds: [
-        {
-            name: "OpenAI",
-            url: "https://openai.com/news/rss.xml",
-            className: "openai"
-        },
-        {
-            name: "The Verge AI",
-            url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
-            className: "theverge"
-        }
-    ],
+    // AI-nyheter via Google News (OpenAI & Anthropic)
+    aiNewsFeed: "https://news.google.com/rss/search?q=OpenAI+OR+Anthropic&hl=en",
     maxAiNews: 4,
 
     // Porsche nyheter via Google News RSS
