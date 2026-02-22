@@ -2,105 +2,6 @@
 // EMILS DASHBOARD
 // ============================================
 
-// ============================================
-// PHILIPS HUE INTEGRATION
-// ============================================
-
-// Hämta sparad Hue-data från localStorage
-function getHueConfig() {
-    const saved = localStorage.getItem('hueConfig');
-    if (saved) {
-        return JSON.parse(saved);
-    }
-    return { username: '', id: '', type: 'light' };
-}
-
-// Spara Hue-data till localStorage
-function saveHueConfig(username, id, type = 'light') {
-    localStorage.setItem('hueConfig', JSON.stringify({ username, id, type }));
-}
-
-// Setup Hue - registrera med bridge
-async function setupHue() {
-    const btn = document.querySelector('.hue-btn.setup');
-    btn.textContent = 'Ansluter...';
-
-    try {
-        const response = await fetch(`http://${CONFIG.hue.bridgeIp}/api`, {
-            method: 'POST',
-            body: JSON.stringify({ devicetype: 'emils_dashboard#browser' })
-        });
-        const data = await response.json();
-
-        if (data[0].error) {
-            alert('Tryck på knappen på Hue Bridge först, sen försök igen!');
-            btn.textContent = 'Anslut Hue';
-            return;
-        }
-
-        const username = data[0].success.username;
-
-        // Hitta grupper (rum)
-        const groupsResponse = await fetch(`http://${CONFIG.hue.bridgeIp}/api/${username}/groups`);
-        const groups = await groupsResponse.json();
-
-        // Visa grupper för användaren att välja
-        const groupList = Object.entries(groups).map(([id, group]) =>
-            `${id}: ${group.name} (${group.lights.length} lampor)`
-        ).join('\n');
-
-        const chosenId = prompt(`Välj rum/grupp för köksbelysningen:\n\n${groupList}\n\nSkriv numret:`);
-
-        if (chosenId && groups[chosenId]) {
-            saveHueConfig(username, chosenId, 'group');
-            document.getElementById('hue-setup').style.display = 'none';
-            document.getElementById('hue-controls').style.display = 'flex';
-            alert(`Klar! "${groups[chosenId].name}" (${groups[chosenId].lights.length} lampor) är nu kopplad.`);
-        } else {
-            alert('Ogiltigt val. Försök igen.');
-            btn.textContent = 'Anslut Hue';
-        }
-
-    } catch (error) {
-        console.error('Hue setup error:', error);
-        alert('Kunde inte ansluta till Hue Bridge. Är du på samma WiFi?');
-        btn.textContent = 'Anslut Hue';
-    }
-}
-
-// Tänd/släck köksbelysning
-async function toggleKitchenLight(on) {
-    const hueConfig = getHueConfig();
-    if (!hueConfig.username || !hueConfig.id) {
-        alert('Hue är inte konfigurerat. Klicka på "Anslut Hue" först.');
-        return;
-    }
-
-    try {
-        // Grupper använder /groups/{id}/action, lampor använder /lights/{id}/state
-        const endpoint = hueConfig.type === 'group'
-            ? `http://${CONFIG.hue.bridgeIp}/api/${hueConfig.username}/groups/${hueConfig.id}/action`
-            : `http://${CONFIG.hue.bridgeIp}/api/${hueConfig.username}/lights/${hueConfig.id}/state`;
-
-        await fetch(endpoint, {
-            method: 'PUT',
-            body: JSON.stringify({ on: on })
-        });
-    } catch (error) {
-        console.error('Hue error:', error);
-        alert('Kunde inte styra lampan. Är du på samma WiFi som Hue Bridge?');
-    }
-}
-
-// Initiera Hue-kort
-function initHue() {
-    const hueConfig = getHueConfig();
-    if (hueConfig.username && hueConfig.id) {
-        document.getElementById('hue-setup').style.display = 'none';
-        document.getElementById('hue-controls').style.display = 'flex';
-    }
-}
-
 // Uppdatera tid och datum
 function updateDateTime() {
     const now = new Date();
@@ -612,6 +513,31 @@ async function fetchCalendar() {
     }
 }
 
+// Hämta en artikelsida (HTML) med proxy-fallback
+async function fetchArticlePage(articleUrl) {
+    const proxies = [
+        `https://api.allorigins.win/raw?url=`,
+        `https://api.allorigins.win/get?url=`, // returnerar JSON-omslag
+        `https://corsproxy.io/?`
+    ];
+
+    for (const proxy of proxies) {
+        try {
+            const r = await fetch(`${proxy}${encodeURIComponent(articleUrl)}`);
+            let text = await r.text();
+            // allorigins /get returnerar JSON { contents: "..." }
+            if (proxy.includes('/get?')) {
+                const json = JSON.parse(text);
+                text = json.contents || '';
+            }
+            if (text.includes('<html') || text.includes('<article') || text.includes('<body')) {
+                return text;
+            }
+        } catch (e) {}
+    }
+    throw new Error('Kunde inte hämta artikelsidan');
+}
+
 // Hämta RSS med automatisk proxy-fallback och XML-validering
 async function fetchRSS(feedUrl) {
     const isXml = t => t.includes('<rss') || t.includes('<feed') || t.includes('<?xml');
@@ -884,6 +810,36 @@ function getTimeAgo(date) {
 // READER-LÄGE
 // ============================================
 
+// Avkoda Google News redirect-URL till faktisk artikel-URL
+// Google kodar artikelns URL som base64 i CBMi...-strängen
+function decodeGoogleNewsUrl(url) {
+    if (!url.includes('news.google.com')) return null;
+
+    const match = url.match(/articles\/([A-Za-z0-9_-]+)/);
+    if (!match) return null;
+
+    try {
+        const encoded = match[1];
+        const padding = '=='.substring(0, (4 - encoded.length % 4) % 4);
+        const base64 = (encoded + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const decoded = atob(base64);
+
+        // Artikelns URL finns som läsbar sträng i de avkodade bytes
+        const idx = decoded.indexOf('http');
+        if (idx === -1) return null;
+
+        let articleUrl = '';
+        for (let i = idx; i < decoded.length; i++) {
+            const c = decoded.charCodeAt(i);
+            if (c < 32 || c > 126) break;
+            articleUrl += decoded[i];
+        }
+        return articleUrl.length > 15 ? articleUrl : null;
+    } catch {
+        return null;
+    }
+}
+
 // Hjälpfunktion: översätt en textsträng till svenska
 async function translateText(text) {
     if (!text || !text.trim()) return text;
@@ -948,17 +904,18 @@ async function openReader(url) {
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
 
+    // Om det är en Google News-URL, avkoda den till källartikeln
+    const fetchUrl = decodeGoogleNewsUrl(url) || url;
+
     try {
-        const proxyUrl = `${CONFIG.corsProxy}${encodeURIComponent(url)}`;
-        const response = await fetch(proxyUrl);
-        const html = await response.text();
+        const text = await fetchArticlePage(fetchUrl);
 
         const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
+        const doc = parser.parseFromString(text, 'text/html');
 
         // Sätt bas-URL så relativa bildlänkar fungerar
         const base = doc.createElement('base');
-        base.href = url;
+        base.href = fetchUrl;
         doc.head.prepend(base);
 
         const article = new Readability(doc).parse();
@@ -969,12 +926,33 @@ async function openReader(url) {
                 <div class="reader-body">${article.content}</div>
             `;
         } else {
-            content.innerHTML = '<div class="loading">Kunde inte extrahera artikeltext — prova att öppna originalet.</div>';
+            content.innerHTML = readerFallback(url);
         }
     } catch (error) {
         console.error('Reader error:', error);
-        content.innerHTML = '<div class="loading">Kunde inte hämta artikeln.</div>';
+        content.innerHTML = readerFallback(url);
     }
+}
+
+function readerFallback(url) {
+    return `
+        <div style="text-align:center; padding: 32px 16px;">
+            <div style="font-size: 32px; margin-bottom: 16px;">📰</div>
+            <p style="color:#6b7280; margin-bottom: 24px; line-height:1.6;">
+                Den här artikeln blockerar läsarläge.<br>Öppna den direkt i webbläsaren istället.
+            </p>
+            <a href="${url}" target="_blank" style="
+                display: inline-block;
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 24px;
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 15px;
+            ">Öppna artikel ↗</a>
+        </div>
+    `;
 }
 
 function closeReader() {
@@ -990,9 +968,6 @@ document.addEventListener('keydown', (e) => {
 async function init() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
-
-    // Initiera Hue
-    initHue();
 
     // Hämta all data parallellt
     await Promise.all([

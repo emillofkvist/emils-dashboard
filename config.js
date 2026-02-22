@@ -3,13 +3,6 @@
 // ============================================
 
 const CONFIG = {
-    // Philips Hue
-    hue: {
-        bridgeIp: "192.168.1.3",
-        username: "", // Fylls i efter setup
-        kitchenLightId: "" // Fylls i efter att vi hittat rätt lampa
-    },
-
     // Plats för väder (Hyllinge koordinater)
     weather: {
         lat: 56.1167,
