@@ -190,6 +190,36 @@
             color: #ef4444;
         }
 
+        .market-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-top: 4px;
+            color: #9ca3af;
+        }
+
+        .market-status.open {
+            color: #10b981;
+        }
+
+        .market-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #d1d5db;
+            flex-shrink: 0;
+        }
+
+        .market-dot.open {
+            background: #10b981;
+        }
+
+        .market-dot.closed {
+            background: #d1d5db;
+        }
+
         /* Kalender */
         .calendar-event {
             display: flex;

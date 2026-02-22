@@ -406,13 +406,35 @@ async function fetchElectricity() {
     }
 }
 
+// Kolla om en börs är öppen just nu
+function isMarketOpen(market) {
+    const now = new Date();
+
+    if (market === 'SE') {
+        // Nasdaq Stockholm: mån-fre 09:00–17:30 CET/CEST
+        const t = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Stockholm' }));
+        const day = t.getDay();
+        if (day === 0 || day === 6) return false;
+        const mins = t.getHours() * 60 + t.getMinutes();
+        return mins >= 9 * 60 && mins < 17 * 60 + 30;
+    } else if (market === 'US') {
+        // NYSE/Nasdaq: mån-fre 09:30–16:00 ET
+        const t = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const day = t.getDay();
+        if (day === 0 || day === 6) return false;
+        const mins = t.getHours() * 60 + t.getMinutes();
+        return mins >= 9 * 60 + 30 && mins < 16 * 60;
+    }
+    return false;
+}
+
 // Hämta börsdata
 async function fetchStocks() {
     const stocks = [
-        { symbol: '^OMX', name: 'OMXS30', id: 0 },
-        { symbol: '^GSPC', name: 'S&P 500', id: 1 },
-        { symbol: '^IXIC', name: 'NASDAQ', id: 2 },
-        { symbol: '^DJI', name: 'Dow Jones', id: 3 }
+        { symbol: '^OMX', name: 'OMXS30', id: 0, market: 'SE' },
+        { symbol: '^GSPC', name: 'S&P 500', id: 1, market: 'US' },
+        { symbol: '^IXIC', name: 'NASDAQ', id: 2, market: 'US' },
+        { symbol: '^DJI', name: 'Dow Jones', id: 3, market: 'US' }
     ];
 
     // Använder Yahoo Finance via en CORS-proxy
@@ -430,12 +452,17 @@ async function fetchStocks() {
             const previous = closes[closes.length - 2];
             const change = ((current - previous) / previous * 100).toFixed(2);
             const isPositive = change >= 0;
+            const open = isMarketOpen(stock.market);
 
             const stockItems = document.querySelectorAll('.stock-item');
             stockItems[stock.id].innerHTML = `
                 <div class="stock-name">${stock.name}</div>
                 <div class="stock-change ${isPositive ? 'positive' : 'negative'}">
                     ${isPositive ? '▲' : '▼'} ${Math.abs(change)}%
+                </div>
+                <div class="market-status ${open ? 'open' : ''}">
+                    <div class="market-dot ${open ? 'open' : 'closed'}"></div>
+                    ${open ? 'Öppen' : 'Stängd'}
                 </div>
             `;
         } catch (error) {
