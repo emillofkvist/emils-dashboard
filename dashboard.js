@@ -622,62 +622,57 @@ async function fetchNews() {
     });
 }
 
-// Hämta AI-nyheter (OpenAI & Anthropic)
+// Hämta AI-nyheter (TechCrunch AI + The Verge AI)
 async function fetchAiNews() {
-    try {
-        const text = await fetchRSS(CONFIG.aiNewsFeed);
+    const allNews = [];
 
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const items = xml.querySelectorAll('item');
+    for (const feed of CONFIG.aiNewsFeeds) {
+        try {
+            const text = await fetchRSS(feed.url);
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(text, 'text/xml');
+            const items = xml.querySelectorAll('item');
 
-        const news = [];
-        items.forEach((item, index) => {
-            if (index < CONFIG.maxAiNews) {
-                const title = item.querySelector('title')?.textContent || '';
-                const link = item.querySelector('link')?.textContent || '';
-                const pubDate = item.querySelector('pubDate')?.textContent || '';
-                const source = item.querySelector('source')?.textContent || 'AI News';
+            items.forEach((item, index) => {
+                if (index < 4) {
+                    const title = item.querySelector('title')?.textContent || '';
+                    const link = item.querySelector('link')?.textContent || '';
+                    const pubDate = item.querySelector('pubDate')?.textContent || '';
 
-                news.push({
-                    title: title,
-                    link: link,
-                    source: source,
-                    date: new Date(pubDate)
-                });
-            }
-        });
-
-        if (news.length === 0) {
-            document.getElementById('ai-news').innerHTML = '<div class="loading">Inga AI-nyheter hittades</div>';
-            return;
+                    allNews.push({ title, link, source: feed.name, date: new Date(pubDate) });
+                }
+            });
+        } catch (error) {
+            console.error(`AI-nyhetsfel för ${feed.name}:`, error);
         }
-
-        const html = news.map(item => {
-            const timeAgo = getTimeAgo(item.date);
-            // Färgkoda baserat på källa
-            let sourceClass = 'openai';
-            if (item.title.toLowerCase().includes('anthropic') || item.source.toLowerCase().includes('anthropic')) {
-                sourceClass = 'anthropic';
-            }
-            return `
-                <div class="news-item">
-                    <div class="ai-source ${sourceClass}">${item.source}</div>
-                    <div class="news-title"><a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a></div>
-                    <div class="news-time">${timeAgo}</div>
-                </div>
-            `;
-        }).join('');
-
-        document.getElementById('ai-news').innerHTML = html;
-        document.getElementById('ai-news').querySelectorAll('.reader-link').forEach(link => {
-            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
-        });
-
-    } catch (error) {
-        console.error('AI-nyhetsfel:', error);
-        document.getElementById('ai-news').innerHTML = '<div class="loading">Kunde inte hämta AI-nyheter</div>';
     }
+
+    allNews.sort((a, b) => b.date - a.date);
+
+    if (allNews.length === 0) {
+        document.getElementById('ai-news').innerHTML = '<div class="loading">Inga AI-nyheter hittades</div>';
+        return;
+    }
+
+    const html = allNews.slice(0, CONFIG.maxAiNews).map(item => {
+        const timeAgo = getTimeAgo(item.date);
+        let sourceClass = 'openai';
+        if (item.title.toLowerCase().includes('anthropic') || item.source.toLowerCase().includes('anthropic')) {
+            sourceClass = 'anthropic';
+        }
+        return `
+            <div class="news-item">
+                <div class="ai-source ${sourceClass}">${item.source}</div>
+                <div class="news-title"><a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a></div>
+                <div class="news-time">${timeAgo}</div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('ai-news').innerHTML = html;
+    document.getElementById('ai-news').querySelectorAll('.reader-link').forEach(link => {
+        link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+    });
 }
 
 // Hämta Porsche nyheter
@@ -690,42 +685,36 @@ async function fetchPorsche() {
         const items = xml.querySelectorAll('item');
 
         const news = [];
-        items.forEach((item, index) => {
-            if (index < CONFIG.maxPorscheNews) {
-                const title = item.querySelector('title')?.textContent || '';
-                const link = item.querySelector('link')?.textContent || '';
-                const pubDate = item.querySelector('pubDate')?.textContent || '';
-                const source = item.querySelector('source')?.textContent || 'Porsche News';
-
-                news.push({
-                    title: title,
-                    link: link,
-                    source: source,
-                    date: new Date(pubDate)
-                });
-            }
+        items.forEach(item => {
+            const title = item.querySelector('title')?.textContent || '';
+            const link = item.querySelector('link')?.textContent || '';
+            const pubDate = item.querySelector('pubDate')?.textContent || '';
+            const source = item.querySelector('source')?.textContent || 'Porsche News';
+            news.push({ title, link, source, date: new Date(pubDate) });
         });
 
-        if (news.length === 0) {
+        // Sortera nyast först, visa 5
+        news.sort((a, b) => b.date - a.date);
+        const latest = news.slice(0, CONFIG.maxPorscheNews);
+
+        if (latest.length === 0) {
             document.getElementById('porsche').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
             return;
         }
 
-        const html = news.map(item => {
+        // Google News-länkar kan inte öppnas i reader-läge – öppna i ny flik
+        const html = latest.map(item => {
             const timeAgo = getTimeAgo(item.date);
             return `
                 <div class="news-item">
                     <div class="news-source">${item.source}</div>
-                    <div class="news-title"><a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a></div>
+                    <div class="news-title"><a href="${item.link}" target="_blank">${item.title}</a></div>
                     <div class="news-time">${timeAgo}</div>
                 </div>
             `;
         }).join('');
 
         document.getElementById('porsche').innerHTML = html;
-        document.getElementById('porsche').querySelectorAll('.reader-link').forEach(link => {
-            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
-        });
 
     } catch (error) {
         console.error('Porsche-fel:', error);
@@ -733,7 +722,7 @@ async function fetchPorsche() {
     }
 }
 
-// Hämta Macworld nyheter
+// Hämta Macworld nyheter (senaste 24h)
 async function fetchMacworld() {
     try {
         const text = await fetchRSS(CONFIG.macworldFeed);
@@ -742,23 +731,22 @@ async function fetchMacworld() {
         const xml = parser.parseFromString(text, 'text/xml');
         const items = xml.querySelectorAll('item');
 
+        const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const news = [];
-        items.forEach((item, index) => {
-            if (index < CONFIG.maxMacworldNews) {
-                const title = item.querySelector('title')?.textContent || '';
-                const link = item.querySelector('link')?.textContent || '';
-                const pubDate = item.querySelector('pubDate')?.textContent || '';
 
-                news.push({
-                    title: title,
-                    link: link,
-                    date: new Date(pubDate)
-                });
+        items.forEach(item => {
+            const title = item.querySelector('title')?.textContent || '';
+            const link = item.querySelector('link')?.textContent || '';
+            const pubDate = item.querySelector('pubDate')?.textContent || '';
+            const date = new Date(pubDate);
+
+            if (date >= cutoff) {
+                news.push({ title, link, date });
             }
         });
 
         if (news.length === 0) {
-            document.getElementById('macworld').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
+            document.getElementById('macworld').innerHTML = '<div class="loading">Inga nyheter från de senaste 24 timmarna</div>';
             return;
         }
 
@@ -810,35 +798,6 @@ function getTimeAgo(date) {
 // READER-LÄGE
 // ============================================
 
-// Avkoda Google News redirect-URL till faktisk artikel-URL
-// Google kodar artikelns URL som base64 i CBMi...-strängen
-function decodeGoogleNewsUrl(url) {
-    if (!url.includes('news.google.com')) return null;
-
-    const match = url.match(/articles\/([A-Za-z0-9_-]+)/);
-    if (!match) return null;
-
-    try {
-        const encoded = match[1];
-        const padding = '=='.substring(0, (4 - encoded.length % 4) % 4);
-        const base64 = (encoded + padding).replace(/-/g, '+').replace(/_/g, '/');
-        const decoded = atob(base64);
-
-        // Artikelns URL finns som läsbar sträng i de avkodade bytes
-        const idx = decoded.indexOf('http');
-        if (idx === -1) return null;
-
-        let articleUrl = '';
-        for (let i = idx; i < decoded.length; i++) {
-            const c = decoded.charCodeAt(i);
-            if (c < 32 || c > 126) break;
-            articleUrl += decoded[i];
-        }
-        return articleUrl.length > 15 ? articleUrl : null;
-    } catch {
-        return null;
-    }
-}
 
 // Hjälpfunktion: översätt en textsträng till svenska
 async function translateText(text) {
@@ -904,11 +863,8 @@ async function openReader(url) {
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
 
-    // Om det är en Google News-URL, avkoda den till källartikeln
-    const fetchUrl = decodeGoogleNewsUrl(url) || url;
-
     try {
-        const text = await fetchArticlePage(fetchUrl);
+        const text = await fetchArticlePage(url);
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(text, 'text/html');

@@ -19,33 +19,29 @@ const CONFIG = {
     // RSS-proxy för att undvika CORS-problem
     corsProxy: "https://api.allorigins.win/raw?url=",
 
-    // Alternativ proxy för kalender (vissa proxies fungerar bättre för olika tjänster)
+    // Alternativ proxy för kalender
     calendarProxy: "https://corsproxy.io/?",
 
-    // Svenska nyheter - använder SVT och DN
+    // Svenska nyheter - SVT och DN
     newsFeeds: [
-        {
-            name: "SVT Nyheter",
-            url: "https://www.svt.se/nyheter/rss.xml"
-        },
-        {
-            name: "DN",
-            url: "https://www.dn.se/rss/"
-        }
+        { name: "SVT Nyheter", url: "https://www.svt.se/nyheter/rss.xml" },
+        { name: "DN",          url: "https://www.dn.se/rss/" }
     ],
 
-    // Macworld Sverige RSS
+    // Macworld Sverige RSS (visar artiklar från senaste 24h)
     macworldFeed: "https://www.macworld.se/feed",
 
-    // AI-nyheter via Google News (OpenAI & Anthropic)
-    aiNewsFeed: "https://news.google.com/rss/search?q=OpenAI+OR+Anthropic&hl=en",
-    maxAiNews: 4,
+    // AI-nyheter via TechCrunch (direktlänkar = reader fungerar)
+    aiNewsFeeds: [
+        { name: "TechCrunch", url: "https://techcrunch.com/category/artificial-intelligence/feed/" },
+        { name: "The Verge",  url: "https://www.theverge.com/ai-artificial-intelligence/rss/index.xml" }
+    ],
+    maxAiNews: 5,
 
     // Porsche nyheter via Google News RSS
     porscheFeed: "https://news.google.com/rss/search?q=Porsche&hl=en",
-    maxPorscheNews: 3,
+    maxPorscheNews: 5,
 
-    // Hur många nyheter att visa
-    maxNews: 5,
-    maxMacworldNews: 2
+    // Hur många nyheter att visa (SVT + DN)
+    maxNews: 5
 };
