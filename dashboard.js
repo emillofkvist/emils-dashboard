@@ -612,15 +612,41 @@ async function fetchCalendar() {
     }
 }
 
+// Hämta RSS med automatisk proxy-fallback och XML-validering
+async function fetchRSS(feedUrl) {
+    const isXml = t => t.includes('<rss') || t.includes('<feed') || t.includes('<?xml');
+
+    // Försök 1: allorigins /raw
+    try {
+        const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`);
+        const text = await r.text();
+        if (isXml(text)) return text;
+    } catch (e) {}
+
+    // Försök 2: allorigins /get (returnerar JSON-omslag med statuskod)
+    try {
+        const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`);
+        const json = await r.json();
+        if (json.contents && isXml(json.contents)) return json.contents;
+    } catch (e) {}
+
+    // Försök 3: corsproxy.io
+    try {
+        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(feedUrl)}`);
+        const text = await r.text();
+        if (isXml(text)) return text;
+    } catch (e) {}
+
+    throw new Error(`Kunde inte hämta feed: ${feedUrl}`);
+}
+
 // Hämta nyheter via RSS
 async function fetchNews() {
     const allNews = [];
 
     for (const feed of CONFIG.newsFeeds) {
         try {
-            const url = `${CONFIG.corsProxy}${encodeURIComponent(feed.url)}`;
-            const response = await fetch(url);
-            const text = await response.text();
+            const text = await fetchRSS(feed.url);
 
             const parser = new DOMParser();
             const xml = parser.parseFromString(text, 'text/xml');
@@ -670,9 +696,7 @@ async function fetchNews() {
 // Hämta AI-nyheter (OpenAI & Anthropic)
 async function fetchAiNews() {
     try {
-        const url = `${CONFIG.corsProxy}${encodeURIComponent(CONFIG.aiNewsFeed)}`;
-        const response = await fetch(url);
-        const text = await response.text();
+        const text = await fetchRSS(CONFIG.aiNewsFeed);
 
         const parser = new DOMParser();
         const xml = parser.parseFromString(text, 'text/xml');
@@ -727,9 +751,7 @@ async function fetchAiNews() {
 // Hämta Porsche nyheter
 async function fetchPorsche() {
     try {
-        const url = `${CONFIG.corsProxy}${encodeURIComponent(CONFIG.porscheFeed)}`;
-        const response = await fetch(url);
-        const text = await response.text();
+        const text = await fetchRSS(CONFIG.porscheFeed);
 
         const parser = new DOMParser();
         const xml = parser.parseFromString(text, 'text/xml');
@@ -779,9 +801,7 @@ async function fetchPorsche() {
 // Hämta Macworld nyheter
 async function fetchMacworld() {
     try {
-        const url = `${CONFIG.corsProxy}${encodeURIComponent(CONFIG.macworldFeed)}`;
-        const response = await fetch(url);
-        const text = await response.text();
+        const text = await fetchRSS(CONFIG.macworldFeed);
 
         const parser = new DOMParser();
         const xml = parser.parseFromString(text, 'text/xml');
