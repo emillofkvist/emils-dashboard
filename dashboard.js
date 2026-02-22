@@ -684,13 +684,16 @@ async function fetchNews() {
         return `
             <div class="news-item">
                 <div class="news-source">${news.source}</div>
-                <div class="news-title"><a href="${news.link}" target="_blank">${news.title}</a></div>
+                <div class="news-title"><a href="${news.link}" class="reader-link" data-url="${news.link}">${news.title}</a></div>
                 <div class="news-time">${timeAgo}</div>
             </div>
         `;
     }).join('');
 
     document.getElementById('news').innerHTML = html;
+    document.getElementById('news').querySelectorAll('.reader-link').forEach(link => {
+        link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+    });
 }
 
 // Hämta AI-nyheter (OpenAI & Anthropic)
@@ -734,13 +737,16 @@ async function fetchAiNews() {
             return `
                 <div class="news-item">
                     <div class="ai-source ${sourceClass}">${item.source}</div>
-                    <div class="news-title"><a href="${item.link}" target="_blank">${item.title}</a></div>
+                    <div class="news-title"><a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a></div>
                     <div class="news-time">${timeAgo}</div>
                 </div>
             `;
         }).join('');
 
         document.getElementById('ai-news').innerHTML = html;
+        document.getElementById('ai-news').querySelectorAll('.reader-link').forEach(link => {
+            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+        });
 
     } catch (error) {
         console.error('AI-nyhetsfel:', error);
@@ -784,13 +790,16 @@ async function fetchPorsche() {
             return `
                 <div class="news-item">
                     <div class="news-source">${item.source}</div>
-                    <div class="news-title"><a href="${item.link}" target="_blank">${item.title}</a></div>
+                    <div class="news-title"><a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a></div>
                     <div class="news-time">${timeAgo}</div>
                 </div>
             `;
         }).join('');
 
         document.getElementById('porsche').innerHTML = html;
+        document.getElementById('porsche').querySelectorAll('.reader-link').forEach(link => {
+            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+        });
 
     } catch (error) {
         console.error('Porsche-fel:', error);
@@ -875,10 +884,65 @@ function getTimeAgo(date) {
 // READER-LÄGE
 // ============================================
 
+// Hjälpfunktion: översätt en textsträng till svenska
+async function translateText(text) {
+    if (!text || !text.trim()) return text;
+    try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=sv&dt=t&q=${encodeURIComponent(text)}`;
+        const r = await fetch(url);
+        const data = await r.json();
+        return data[0].map(chunk => chunk[0]).join('');
+    } catch {
+        return text;
+    }
+}
+
+let readerOriginalHTML = '';
+let readerIsTranslated = false;
+
+async function toggleTranslation() {
+    const btn = document.getElementById('translate-btn');
+    const body = document.querySelector('.reader-body');
+    if (!body) return;
+
+    if (readerIsTranslated) {
+        body.innerHTML = readerOriginalHTML;
+        btn.textContent = 'Översätt till svenska';
+        btn.classList.remove('active');
+        readerIsTranslated = false;
+        return;
+    }
+
+    readerOriginalHTML = body.innerHTML;
+    btn.textContent = 'Översätter...';
+    btn.disabled = true;
+
+    // Hämta alla textelement och översätt parallellt
+    const elements = [...body.querySelectorAll('p, h2, h3, h4, li, figcaption')];
+    const texts = elements.map(el => el.textContent.trim());
+    const translated = await Promise.all(texts.map(t => translateText(t)));
+    elements.forEach((el, i) => {
+        if (translated[i]) el.textContent = translated[i];
+    });
+
+    btn.textContent = 'Visa originalspråk';
+    btn.classList.add('active');
+    btn.disabled = false;
+    readerIsTranslated = true;
+}
+
 async function openReader(url) {
     const overlay = document.getElementById('reader-overlay');
     const content = document.getElementById('reader-content');
     document.getElementById('reader-source-link').href = url;
+
+    // Nollställ translate-state
+    readerOriginalHTML = '';
+    readerIsTranslated = false;
+    const btn = document.getElementById('translate-btn');
+    btn.textContent = 'Översätt till svenska';
+    btn.classList.remove('active');
+    btn.disabled = false;
 
     content.innerHTML = '<div class="loading">Hämtar artikel...</div>';
     overlay.classList.add('active');

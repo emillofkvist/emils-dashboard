@@ -505,6 +505,7 @@
             top: 0;
             background: white;
             z-index: 1;
+            gap: 12px;
         }
 
         .reader-close {
@@ -516,10 +517,44 @@
             font-size: 14px;
             cursor: pointer;
             color: #6b7280;
+            flex-shrink: 0;
         }
 
         .reader-close:hover {
             background: #e5e7eb;
+        }
+
+        .reader-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .reader-translate-btn {
+            background: #f3f4f6;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #374151;
+            white-space: nowrap;
+            transition: background 0.15s;
+        }
+
+        .reader-translate-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .reader-translate-btn:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .reader-translate-btn.active {
+            background: #667eea;
+            color: white;
         }
 
         .reader-source-link {
@@ -527,6 +562,7 @@
             color: #667eea;
             text-decoration: none;
             font-weight: 500;
+            white-space: nowrap;
         }
 
         .reader-source-link:hover {
@@ -714,7 +750,10 @@
         <div class="reader-modal" onclick="event.stopPropagation()">
             <div class="reader-header">
                 <button class="reader-close" onclick="closeReader()">✕</button>
-                <a class="reader-source-link" id="reader-source-link" target="_blank">Öppna original ↗</a>
+                <div class="reader-actions">
+                    <button class="reader-translate-btn" id="translate-btn" onclick="toggleTranslation()">Översätt till svenska</button>
+                    <a class="reader-source-link" id="reader-source-link" target="_blank">Öppna original ↗</a>
+                </div>
             </div>
             <div class="reader-content" id="reader-content"></div>
         </div>
