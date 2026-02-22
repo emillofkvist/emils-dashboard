@@ -129,6 +129,27 @@ function updateDateTime() {
     document.getElementById('week').textContent = `Vecka ${weekNumber}`;
 }
 
+// Hämta dagens namnsdag
+async function fetchNameday() {
+    try {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const day = now.getDate();
+
+        const url = `https://sholiday.faboul.se/dagar/v2.1/${year}/${month}/${day}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.dagar && data.dagar[0] && data.dagar[0].namnsdag) {
+            const names = data.dagar[0].namnsdag.join(', ');
+            document.getElementById('nameday').textContent = `🎂 ${names}`;
+        }
+    } catch (error) {
+        console.error('Namnsdagsfel:', error);
+    }
+}
+
 // Hämta väder från SMHI
 async function fetchWeather() {
     try {
@@ -186,10 +207,61 @@ async function fetchWeather() {
                 <div class="weather-detail">Vind: <span>${wind} m/s</span></div>
                 <div class="weather-detail">Luftfuktighet: <span>${humidity}%</span></div>
             </div>
+            <div class="sun-info" id="sun-info">
+                <div class="loading">Hämtar soltider...</div>
+            </div>
         `;
+
+        // Hämta soluppgång/solnedgång
+        fetchSunTimes();
     } catch (error) {
         console.error('Väderfel:', error);
         document.getElementById('weather').innerHTML = '<div class="loading">Kunde inte hämta väder</div>';
+    }
+}
+
+// Hämta soluppgång och solnedgång
+async function fetchSunTimes() {
+    try {
+        const { lat, lon } = CONFIG.weather;
+        const url = `https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&formatted=0`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === 'OK') {
+            const sunrise = new Date(data.results.sunrise);
+            const sunset = new Date(data.results.sunset);
+
+            const sunriseTime = sunrise.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+            const sunsetTime = sunset.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+
+            // Beräkna dagsljus
+            const dayLengthMs = sunset - sunrise;
+            const dayLengthHours = Math.floor(dayLengthMs / 3600000);
+            const dayLengthMinutes = Math.floor((dayLengthMs % 3600000) / 60000);
+
+            document.getElementById('sun-info').innerHTML = `
+                <div class="sun-item">
+                    <div class="sun-icon">🌅</div>
+                    <div class="sun-time">${sunriseTime}</div>
+                    <div class="sun-label">Soluppgång</div>
+                </div>
+                <div class="sun-item">
+                    <div class="sun-icon">🌇</div>
+                    <div class="sun-time">${sunsetTime}</div>
+                    <div class="sun-label">Solnedgång</div>
+                </div>
+                <div class="sun-item">
+                    <div class="sun-icon">☀️</div>
+                    <div class="sun-time">${dayLengthHours}h ${dayLengthMinutes}m</div>
+                    <div class="sun-label">Dagsljus</div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Soltidsfel:', error);
+        document.getElementById('sun-info').innerHTML = '';
     }
 }
 
@@ -753,6 +825,7 @@ async function init() {
 
     // Hämta all data parallellt
     await Promise.all([
+        fetchNameday(),
         fetchWeather(),
         fetchElectricity(),
         fetchStocks(),

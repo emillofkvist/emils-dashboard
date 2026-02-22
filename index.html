@@ -75,6 +75,13 @@
             margin-top: 4px;
         }
 
+        .nameday {
+            font-size: 13px;
+            opacity: 0.7;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
         /* Väder */
         .weather-main {
             display: flex;
@@ -114,6 +121,34 @@
         .weather-detail span {
             font-weight: 600;
             color: #1a1a2e;
+        }
+
+        .sun-info {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .sun-item {
+            text-align: center;
+        }
+
+        .sun-icon {
+            font-size: 20px;
+        }
+
+        .sun-time {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .sun-label {
+            font-size: 11px;
+            color: #9ca3af;
         }
 
         /* Börs */
@@ -427,6 +462,7 @@
             <div class="time" id="time">--:--</div>
             <div class="date" id="date">Laddar...</div>
             <div class="week" id="week"></div>
+            <div class="nameday" id="nameday"></div>
         </div>
 
         <!-- Väder -->
