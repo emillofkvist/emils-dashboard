@@ -513,29 +513,61 @@ async function fetchCalendar() {
     }
 }
 
-// Hämta en artikelsida (HTML) med proxy-fallback
-async function fetchArticlePage(articleUrl) {
-    const proxies = [
-        `https://api.allorigins.win/raw?url=`,
-        `https://api.allorigins.win/get?url=`, // returnerar JSON-omslag
-        `https://corsproxy.io/?`
+// Cache för förhämtade artiklar: url → article-objekt (eller null om misslyckades)
+const articleCache = new Map();
+
+// Hämta HTML via en av proxarna
+async function fetchHtmlViaProxy(articleUrl) {
+    const attempts = [
+        async () => {
+            const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(articleUrl)}`);
+            return await r.text();
+        },
+        async () => {
+            const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(articleUrl)}`);
+            const j = await r.json();
+            return j.contents || '';
+        },
+        async () => {
+            const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(articleUrl)}`);
+            return await r.text();
+        }
     ];
 
-    for (const proxy of proxies) {
+    for (const attempt of attempts) {
         try {
-            const r = await fetch(`${proxy}${encodeURIComponent(articleUrl)}`);
-            let text = await r.text();
-            // allorigins /get returnerar JSON { contents: "..." }
-            if (proxy.includes('/get?')) {
-                const json = JSON.parse(text);
-                text = json.contents || '';
-            }
-            if (text.includes('<html') || text.includes('<article') || text.includes('<body')) {
-                return text;
+            const html = await attempt();
+            if (!html || html.length < 500) continue;
+
+            // Prova Readability direkt — acceptera bara om den faktiskt lyckas
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const base = doc.createElement('base');
+            base.href = articleUrl;
+            doc.head.prepend(base);
+
+            const article = new Readability(doc).parse();
+            if (article && article.content && article.content.length > 200) {
+                return article;
             }
         } catch (e) {}
     }
-    throw new Error('Kunde inte hämta artikelsidan');
+    return null;
+}
+
+// Hämta och extrahera artikel — returnerar article-objekt eller null
+async function fetchAndExtract(url) {
+    if (articleCache.has(url)) return articleCache.get(url);
+    const article = await fetchHtmlViaProxy(url);
+    articleCache.set(url, article);
+    return article;
+}
+
+// Förhämta artikel i bakgrunden (tyst, inga felmeddelanden)
+function prefetchArticle(url) {
+    if (!articleCache.has(url)) {
+        fetchAndExtract(url).catch(() => {});
+    }
 }
 
 // Hämta RSS med automatisk proxy-fallback och XML-validering
@@ -673,6 +705,9 @@ async function fetchAiNews() {
     document.getElementById('ai-news').querySelectorAll('.reader-link').forEach(link => {
         link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
     });
+
+    // Förhämta artiklar i bakgrunden
+    setTimeout(() => allNews.slice(0, CONFIG.maxAiNews).forEach(item => prefetchArticle(item.link)), 1000);
 }
 
 // Hämta Porsche nyheter
@@ -771,9 +806,61 @@ async function fetchMacworld() {
             });
         });
 
+        // Förhämta artiklar i bakgrunden för snabbare reader
+        setTimeout(() => news.forEach(item => prefetchArticle(item.link)), 1000);
+
     } catch (error) {
         console.error('Macworld-fel:', error);
         document.getElementById('macworld').innerHTML = '<div class="loading">Kunde inte hämta från Macworld</div>';
+    }
+}
+
+// Hämta Feber nyheter (5 senaste)
+async function fetchFeber() {
+    try {
+        const text = await fetchRSS(CONFIG.feberFeed);
+
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const items = xml.querySelectorAll('item');
+
+        const news = [];
+        items.forEach((item, index) => {
+            if (index < 5) {
+                const title = item.querySelector('title')?.textContent || '';
+                const link = item.querySelector('link')?.textContent || '';
+                const pubDate = item.querySelector('pubDate')?.textContent || '';
+                news.push({ title, link, date: new Date(pubDate) });
+            }
+        });
+
+        if (news.length === 0) {
+            document.getElementById('feber').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
+            return;
+        }
+
+        const html = news.map(item => {
+            const timeAgo = getTimeAgo(item.date);
+            return `
+                <div class="news-item">
+                    <div class="news-title">
+                        <a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a>
+                    </div>
+                    <div class="news-time">${timeAgo}</div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('feber').innerHTML = html;
+        document.getElementById('feber').querySelectorAll('.reader-link').forEach(link => {
+            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+        });
+
+        setTimeout(() => news.forEach(item => prefetchArticle(item.link)), 1000);
+
+    } catch (error) {
+        console.error('Feber-fel:', error);
+        document.getElementById('feber').innerHTML = '<div class="loading">Kunde inte hämta från Feber</div>';
     }
 }
 
@@ -859,33 +946,22 @@ async function openReader(url) {
     btn.classList.remove('active');
     btn.disabled = false;
 
-    content.innerHTML = '<div class="loading">Hämtar artikel...</div>';
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
 
-    try {
-        const text = await fetchArticlePage(url);
+    // Visa laddningsindikator bara om artikeln inte är cachad
+    if (!articleCache.has(url)) {
+        content.innerHTML = '<div class="loading">Hämtar artikel...</div>';
+    }
 
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, 'text/html');
+    const article = await fetchAndExtract(url);
 
-        // Sätt bas-URL så relativa bildlänkar fungerar
-        const base = doc.createElement('base');
-        base.href = fetchUrl;
-        doc.head.prepend(base);
-
-        const article = new Readability(doc).parse();
-
-        if (article && article.content) {
-            content.innerHTML = `
-                <h1 class="reader-title">${article.title || ''}</h1>
-                <div class="reader-body">${article.content}</div>
-            `;
-        } else {
-            content.innerHTML = readerFallback(url);
-        }
-    } catch (error) {
-        console.error('Reader error:', error);
+    if (article) {
+        content.innerHTML = `
+            <h1 class="reader-title">${article.title || ''}</h1>
+            <div class="reader-body">${article.content}</div>
+        `;
+    } else {
         content.innerHTML = readerFallback(url);
     }
 }
@@ -935,7 +1011,8 @@ async function init() {
         fetchNews(),
         fetchAiNews(),
         fetchPorsche(),
-        fetchMacworld()
+        fetchMacworld(),
+        fetchFeber()
     ]);
 }
 

@@ -31,6 +31,9 @@ const CONFIG = {
     // Macworld Sverige RSS (visar artiklar från senaste 24h)
     macworldFeed: "https://www.macworld.se/feed",
 
+    // Feber RSS (5 senaste)
+    feberFeed: "https://feber.se/rss/",
+
     // AI-nyheter via TechCrunch (direktlänkar = reader fungerar)
     aiNewsFeeds: [
         { name: "TechCrunch", url: "https://techcrunch.com/category/artificial-intelligence/feed/" },
