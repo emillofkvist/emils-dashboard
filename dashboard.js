@@ -970,6 +970,19 @@ async function openReader(url) {
         content.innerHTML = `
             <h1 class="reader-title">${article.title || ''}</h1>
             <div class="reader-body">${article.content}</div>
+            <div style="text-align:center; padding: 32px 0 8px;">
+                <button onclick="closeReader()" style="
+                    background: none;
+                    border: 2px solid #d1d5db;
+                    border-radius: 50%;
+                    width: 44px;
+                    height: 44px;
+                    font-size: 18px;
+                    cursor: pointer;
+                    color: #6b7280;
+                    line-height: 1;
+                ">✕</button>
+            </div>
         `;
     } else {
         content.innerHTML = readerFallback(url);
