@@ -731,7 +731,7 @@ async function fetchPorsche() {
             const title = item.querySelector('title')?.textContent || '';
             const link = item.querySelector('link')?.textContent || '';
             const pubDate = item.querySelector('pubDate')?.textContent || '';
-            const source = item.querySelector('source')?.textContent || 'Porsche News';
+            const source = item.querySelector('source')?.textContent || 'Carscoops';
             news.push({ title, link, source, date: new Date(pubDate) });
         });
 
