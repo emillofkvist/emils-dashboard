@@ -546,24 +546,29 @@ async function fetchHtmlViaProxy(articleUrl) {
             base.href = articleUrl;
             doc.head.prepend(base);
 
+            // Feber: extrahera direkt från custom web components — kringgå Readability
+            // (Readability snappar annars hela sidan; 84% är whitespace)
+            if (articleUrl.includes('feber.se')) {
+                const headline = doc.querySelector('f-article-headline b, f-article-headline');
+                const paras = [...doc.querySelectorAll('f-article-body f-para')]
+                    .map(el => el.textContent.trim())
+                    .filter(t => t.length > 0)
+                    .map(t => `<p>${t}</p>`)
+                    .join('');
+                if (paras) {
+                    return {
+                        title: headline ? headline.textContent.trim() : doc.title,
+                        content: paras
+                    };
+                }
+            }
+
             // Ta bort annonser, kommentarer och annat brus innan Readability körs
             ['.maxetise', '.comment-container', '.comments', '#comments',
              'aside', 'footer', 'nav', '.related', '.advertisement',
              '.ad', '.ads', '.sidebar', '.social-share'].forEach(sel => {
                 doc.querySelectorAll(sel).forEach(el => el.remove());
             });
-
-            // Feber: ersätt custom web components med standard-HTML
-            if (articleUrl.includes('feber.se')) {
-                // <f-para> → <p>
-                doc.querySelectorAll('f-para').forEach(el => {
-                    const p = doc.createElement('p');
-                    p.innerHTML = el.innerHTML;
-                    el.replaceWith(p);
-                });
-                // <f-article-image> skapar stora tomma ytor (padding-bottom: 66%) — ta bort
-                doc.querySelectorAll('f-article-image').forEach(el => el.remove());
-            }
 
             // Ta bort alla element med stor procentuell padding-bottom (bildskeletons)
             doc.querySelectorAll('[style*="padding-bottom"]').forEach(el => {
