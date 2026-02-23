@@ -41,8 +41,8 @@ const CONFIG = {
     ],
     maxAiNews: 5,
 
-    // Porsche nyheter via Google News RSS
-    porscheFeed: "https://news.google.com/rss/search?q=Porsche&hl=en",
+    // Porsche nyheter via Car and Driver (direktlänkar = reader fungerar)
+    porscheFeed: "https://www.caranddriver.com/rss/porsche.xml",
     maxPorscheNews: 5,
 
     // Hur många nyheter att visa (SVT + DN)

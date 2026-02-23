@@ -546,6 +546,13 @@ async function fetchHtmlViaProxy(articleUrl) {
             base.href = articleUrl;
             doc.head.prepend(base);
 
+            // Ta bort annonser, kommentarer och annat brus innan Readability körs
+            ['.maxetise', '.comment-container', '.comments', '#comments',
+             'aside', 'footer', 'nav', '.related', '.advertisement',
+             '.ad', '.ads', '.sidebar', '.social-share'].forEach(sel => {
+                doc.querySelectorAll(sel).forEach(el => el.remove());
+            });
+
             const article = new Readability(doc).parse();
             if (article && article.content && article.content.length > 200) {
                 return article;
@@ -737,19 +744,22 @@ async function fetchPorsche() {
             return;
         }
 
-        // Google News-länkar kan inte öppnas i reader-läge – öppna i ny flik
         const html = latest.map(item => {
             const timeAgo = getTimeAgo(item.date);
             return `
                 <div class="news-item">
                     <div class="news-source">${item.source}</div>
-                    <div class="news-title"><a href="${item.link}" target="_blank">${item.title}</a></div>
+                    <div class="news-title"><a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a></div>
                     <div class="news-time">${timeAgo}</div>
                 </div>
             `;
         }).join('');
 
         document.getElementById('porsche').innerHTML = html;
+        document.getElementById('porsche').querySelectorAll('.reader-link').forEach(link => {
+            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+        });
+        setTimeout(() => latest.forEach(item => prefetchArticle(item.link)), 1000);
 
     } catch (error) {
         console.error('Porsche-fel:', error);
