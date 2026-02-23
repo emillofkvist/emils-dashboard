@@ -553,6 +553,23 @@ async function fetchHtmlViaProxy(articleUrl) {
                 doc.querySelectorAll(sel).forEach(el => el.remove());
             });
 
+            // Feber: ersätt custom web components med standard-HTML
+            if (articleUrl.includes('feber.se')) {
+                // <f-para> → <p>
+                doc.querySelectorAll('f-para').forEach(el => {
+                    const p = doc.createElement('p');
+                    p.innerHTML = el.innerHTML;
+                    el.replaceWith(p);
+                });
+                // <f-article-image> skapar stora tomma ytor (padding-bottom: 66%) — ta bort
+                doc.querySelectorAll('f-article-image').forEach(el => el.remove());
+            }
+
+            // Ta bort alla element med stor procentuell padding-bottom (bildskeletons)
+            doc.querySelectorAll('[style*="padding-bottom"]').forEach(el => {
+                if (parseFloat(el.style.paddingBottom) > 30) el.remove();
+            });
+
             const article = new Readability(doc).parse();
             if (article && article.content && article.content.length > 200) {
                 return article;
