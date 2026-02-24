@@ -518,70 +518,56 @@ const articleCache = new Map();
 
 // Hämta HTML via en av proxarna
 async function fetchHtmlViaProxy(articleUrl) {
-    const attempts = [
-        async () => {
-            const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(articleUrl)}`);
-            return await r.text();
-        },
-        async () => {
-            const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(articleUrl)}`);
-            const j = await r.json();
-            return j.contents || '';
-        },
-        async () => {
-            const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(articleUrl)}`);
-            return await r.text();
+    const parseHtml = (html) => {
+        if (!html || html.length < 500) throw new Error('too short');
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const base = doc.createElement('base');
+        base.href = articleUrl;
+        doc.head.prepend(base);
+
+        // Feber: extrahera direkt från custom web components — kringgå Readability
+        if (articleUrl.includes('feber.se')) {
+            const headline = doc.querySelector('f-article-headline b, f-article-headline');
+            const paras = [...doc.querySelectorAll('f-article-body f-para')]
+                .map(el => el.textContent.trim())
+                .filter(t => t.length > 0)
+                .map(t => `<p>${t}</p>`)
+                .join('');
+            if (paras) return { title: headline ? headline.textContent.trim() : doc.title, content: paras };
+            throw new Error('no feber content');
         }
+
+        // Ta bort annonser, kommentarer och annat brus
+        ['.maxetise', '.comment-container', '.comments', '#comments',
+         'aside', 'footer', 'nav', '.related', '.advertisement',
+         '.ad', '.ads', '.sidebar', '.social-share'].forEach(sel => {
+            doc.querySelectorAll(sel).forEach(el => el.remove());
+        });
+
+        // Ta bort element med stor procentuell padding-bottom (bildskeletons)
+        doc.querySelectorAll('[style*="padding-bottom"]').forEach(el => {
+            if (parseFloat(el.style.paddingBottom) > 30) el.remove();
+        });
+
+        const article = new Readability(doc).parse();
+        if (article && article.content && article.content.length > 200) return article;
+        throw new Error('readability failed');
+    };
+
+    const enc = encodeURIComponent(articleUrl);
+    const proxies = [
+        fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => r.text()).then(parseHtml),
+        fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => r.json()).then(j => parseHtml(j.contents || '')),
+        fetch(`https://corsproxy.io/?${enc}`).then(r => r.text()).then(parseHtml)
     ];
 
-    for (const attempt of attempts) {
-        try {
-            const html = await attempt();
-            if (!html || html.length < 500) continue;
-
-            // Prova Readability direkt — acceptera bara om den faktiskt lyckas
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const base = doc.createElement('base');
-            base.href = articleUrl;
-            doc.head.prepend(base);
-
-            // Feber: extrahera direkt från custom web components — kringgå Readability
-            // (Readability snappar annars hela sidan; 84% är whitespace)
-            if (articleUrl.includes('feber.se')) {
-                const headline = doc.querySelector('f-article-headline b, f-article-headline');
-                const paras = [...doc.querySelectorAll('f-article-body f-para')]
-                    .map(el => el.textContent.trim())
-                    .filter(t => t.length > 0)
-                    .map(t => `<p>${t}</p>`)
-                    .join('');
-                if (paras) {
-                    return {
-                        title: headline ? headline.textContent.trim() : doc.title,
-                        content: paras
-                    };
-                }
-            }
-
-            // Ta bort annonser, kommentarer och annat brus innan Readability körs
-            ['.maxetise', '.comment-container', '.comments', '#comments',
-             'aside', 'footer', 'nav', '.related', '.advertisement',
-             '.ad', '.ads', '.sidebar', '.social-share'].forEach(sel => {
-                doc.querySelectorAll(sel).forEach(el => el.remove());
-            });
-
-            // Ta bort alla element med stor procentuell padding-bottom (bildskeletons)
-            doc.querySelectorAll('[style*="padding-bottom"]').forEach(el => {
-                if (parseFloat(el.style.paddingBottom) > 30) el.remove();
-            });
-
-            const article = new Readability(doc).parse();
-            if (article && article.content && article.content.length > 200) {
-                return article;
-            }
-        } catch (e) {}
+    try {
+        return await Promise.any(proxies);
+    } catch {
+        return null;
     }
-    return null;
 }
 
 // Hämta och extrahera artikel — returnerar article-objekt eller null
@@ -681,6 +667,9 @@ async function fetchNews() {
     document.getElementById('news').querySelectorAll('.reader-link').forEach(link => {
         link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
     });
+
+    // Förhämta artiklar i bakgrunden
+    setTimeout(() => allNews.slice(0, CONFIG.maxNews).forEach(n => prefetchArticle(n.link)), 1000);
 }
 
 // Hämta AI-nyheter (TechCrunch AI + The Verge AI)
