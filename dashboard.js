@@ -359,11 +359,10 @@ async function fetchStocks() {
 
         const stockItems = document.querySelectorAll('.stock-item');
         try {
-            const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query2.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`)}`;
+            const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://query2.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`)}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const json = await response.json();
-            const data = JSON.parse(json.contents);
+            const data = await response.json();
 
             const meta = data.chart.result[0].meta;
             const current = meta.regularMarketPrice;
