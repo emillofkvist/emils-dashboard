@@ -979,6 +979,7 @@ async function openReader(url) {
     btn.disabled = false;
 
     overlay.classList.add('active');
+    overlay.scrollTop = 0;
     document.body.style.overflow = 'hidden';
 
     // Visa laddningsindikator bara om artikeln inte är cachad
