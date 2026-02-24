@@ -354,18 +354,16 @@ async function fetchStocks() {
         { symbol: '^DJI',  name: 'Dow Jones', id: 3, market: 'US' }
     ];
 
-    // allorigins blockeras av Yahoo Finance — använd api.cors.lol
-    // Sekventiellt med 500ms fördröjning för att undvika rate limit
     for (let i = 0; i < stocks.length; i++) {
         const stock = stocks[i];
-        if (i > 0) await new Promise(r => setTimeout(r, 500));
 
         const stockItems = document.querySelectorAll('.stock-item');
         try {
-            const url = `https://api.cors.lol/?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`)}`;
+            const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query2.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`)}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
+            const json = await response.json();
+            const data = JSON.parse(json.contents);
 
             const meta = data.chart.result[0].meta;
             const current = meta.regularMarketPrice;
