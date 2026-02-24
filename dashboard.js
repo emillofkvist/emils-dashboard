@@ -354,8 +354,8 @@ async function fetchStocks() {
         { symbol: '^DJI', name: 'Dow Jones', id: 3, market: 'US' }
     ];
 
-    // Använder Yahoo Finance via en CORS-proxy
-    for (const stock of stocks) {
+    const fetchStock = async (stock) => {
+        const stockItems = document.querySelectorAll('.stock-item');
         try {
             const url = `${CONFIG.corsProxy}${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`)}`;
             const response = await fetch(url);
@@ -371,7 +371,6 @@ async function fetchStocks() {
             const isPositive = change >= 0;
             const open = isMarketOpen(stock.market);
 
-            const stockItems = document.querySelectorAll('.stock-item');
             stockItems[stock.id].innerHTML = `
                 <div class="stock-name">${stock.name}</div>
                 <div class="stock-change ${isPositive ? 'positive' : 'negative'}">
@@ -384,13 +383,14 @@ async function fetchStocks() {
             `;
         } catch (error) {
             console.error(`Börsfel för ${stock.name}:`, error);
-            const stockItems = document.querySelectorAll('.stock-item');
             stockItems[stock.id].innerHTML = `
                 <div class="stock-name">${stock.name}</div>
                 <div class="loading">Ej tillgänglig</div>
             `;
         }
-    }
+    };
+
+    await Promise.all(stocks.map(fetchStock));
 }
 
 // Parsa iCal-datum (YYYYMMDD eller YYYYMMDDTHHmmssZ)
