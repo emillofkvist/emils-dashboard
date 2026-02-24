@@ -368,7 +368,7 @@ async function fetchStocks() {
         return await Promise.any([
             tryProxy(() => fetch(`https://api.cors.lol/?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })),
             tryProxy(() => fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })),
-            tryProxy(() => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json().then(j => JSON.parse(j.contents)))),
+            tryProxy(() => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json().then(j => JSON.parse(j.contents)); })),
         ]);
     };
 
