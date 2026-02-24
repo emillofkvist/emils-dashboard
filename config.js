@@ -41,8 +41,12 @@ const CONFIG = {
     ],
     maxAiNews: 5,
 
-    // Porsche nyheter via Carscoops (skvaller, rykten, dagliga uppdateringar)
-    porscheFeed: "https://carscoops.com/tag/porsche/feed/",
+    // Porsche nyheter — blandning av källor
+    porscheFeeds: [
+        { url: "https://carscoops.com/tag/porsche/feed/",       filter: false }, // Porsche-specifik
+        { url: "https://www.roadandtrack.com/rss/all.xml",      filter: true  }, // filtrera på "porsche"
+        { url: "https://www.motor1.com/rss/news/all/",          filter: true  }  // filtrera på "porsche"
+    ],
     maxPorscheNews: 5,
 
     // Hur många nyheter att visa (SVT + DN)

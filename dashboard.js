@@ -744,54 +744,68 @@ async function fetchAiNews() {
     setTimeout(() => allNews.slice(0, CONFIG.maxAiNews).forEach(item => prefetchArticle(item.link)), 1000);
 }
 
-// Hämta Porsche nyheter
+// Hämta Porsche nyheter från flera källor
 async function fetchPorsche() {
-    try {
-        const text = await fetchRSS(CONFIG.porscheFeed);
+    const sourceNames = {
+        'carscoops.com':    'Carscoops',
+        'roadandtrack.com': 'Road & Track',
+        'motor1.com':       'Motor1'
+    };
 
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const items = xml.querySelectorAll('item');
-
-        const news = [];
-        items.forEach(item => {
-            const title = item.querySelector('title')?.textContent || '';
-            const link = item.querySelector('link')?.textContent || '';
-            const pubDate = item.querySelector('pubDate')?.textContent || '';
-            const source = item.querySelector('source')?.textContent || 'Carscoops';
-            news.push({ title, link, source, date: new Date(pubDate) });
-        });
-
-        // Sortera nyast först, visa 5
-        news.sort((a, b) => b.date - a.date);
-        const latest = news.slice(0, CONFIG.maxPorscheNews);
-
-        if (latest.length === 0) {
-            document.getElementById('porsche').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
-            return;
+    const fetchFeed = async (feed) => {
+        try {
+            const text = await fetchRSS(feed.url);
+            const xml = new DOMParser().parseFromString(text, 'text/xml');
+            const items = [...xml.querySelectorAll('item')];
+            const sourceName = Object.entries(sourceNames).find(([k]) => feed.url.includes(k))?.[1] || 'Porsche News';
+            return items
+                .map(item => ({
+                    title:  item.querySelector('title')?.textContent || '',
+                    link:   item.querySelector('link')?.textContent || '',
+                    date:   new Date(item.querySelector('pubDate')?.textContent || ''),
+                    source: sourceName
+                }))
+                .filter(item => !feed.filter || item.title.toLowerCase().includes('porsche'));
+        } catch {
+            return [];
         }
+    };
 
-        const html = latest.map(item => {
-            const timeAgo = getTimeAgo(item.date);
-            return `
-                <div class="news-item">
-                    <div class="news-source">${item.source}</div>
-                    <div class="news-title"><a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a></div>
-                    <div class="news-time">${timeAgo}</div>
-                </div>
-            `;
-        }).join('');
+    const results = await Promise.all(CONFIG.porscheFeeds.map(fetchFeed));
+    const news = results.flat().sort((a, b) => b.date - a.date);
 
-        document.getElementById('porsche').innerHTML = html;
-        document.getElementById('porsche').querySelectorAll('.reader-link').forEach(link => {
-            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
-        });
-        setTimeout(() => latest.forEach(item => prefetchArticle(item.link)), 1000);
+    // Deduplicera på titel (olika sajter kan rapportera samma nyhet)
+    const seen = new Set();
+    const unique = news.filter(item => {
+        const key = item.title.toLowerCase().slice(0, 50);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 
-    } catch (error) {
-        console.error('Porsche-fel:', error);
-        document.getElementById('porsche').innerHTML = '<div class="loading">Kunde inte hämta Porsche-nyheter</div>';
+    const latest = unique.slice(0, CONFIG.maxPorscheNews);
+
+    if (latest.length === 0) {
+        document.getElementById('porsche').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
+        return;
     }
+
+    const html = latest.map(item => {
+        const timeAgo = getTimeAgo(item.date);
+        return `
+            <div class="news-item">
+                <div class="news-source">${item.source}</div>
+                <div class="news-title"><a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a></div>
+                <div class="news-time">${timeAgo}</div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('porsche').innerHTML = html;
+    document.getElementById('porsche').querySelectorAll('.reader-link').forEach(link => {
+        link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+    });
+    setTimeout(() => latest.forEach(item => prefetchArticle(item.link)), 1000);
 }
 
 // Hämta Macworld nyheter (senaste 24h)
