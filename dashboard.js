@@ -372,7 +372,10 @@ async function fetchStocks() {
         ]);
     };
 
-    await Promise.all(stocks.map(async (stock) => {
+    // Sekventiellt med 400ms fördröjning för att undvika rate limit på cors.lol
+    for (let i = 0; i < stocks.length; i++) {
+        if (i > 0) await new Promise(r => setTimeout(r, 400));
+        const stock = stocks[i];
         const stockItems = document.querySelectorAll('.stock-item');
         try {
             const meta = await fetchStockData(stock.symbol);
@@ -399,7 +402,7 @@ async function fetchStocks() {
                 <div class="loading">Ej tillgänglig</div>
             `;
         }
-    }));
+    }
 }
 
 // Parsa iCal-datum (YYYYMMDD eller YYYYMMDDTHHmmssZ)
@@ -585,8 +588,7 @@ async function fetchHtmlViaProxy(articleUrl) {
     const proxies = [
         fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => r.text()).then(parseHtml),
         fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => r.json()).then(j => parseHtml(j.contents || '')),
-        fetch(`https://corsproxy.io/?${enc}`).then(r => r.text()).then(parseHtml),
-        fetch(`https://api.cors.lol/?url=${enc}`).then(r => r.text()).then(parseHtml)
+        fetch(`https://corsproxy.io/?${enc}`).then(r => r.text()).then(parseHtml)
     ];
 
     try {
