@@ -995,6 +995,7 @@ async function openReader(url) {
     const article = await fetchAndExtract(url);
 
     if (article) {
+        const swedishSource = /svt\.se|dn\.se|macworld\.se|feber\.se/i.test(url);
         content.innerHTML = `
             <h1 class="reader-title">${article.title || ''}</h1>
             <div class="reader-body">${article.content}</div>
@@ -1012,6 +1013,8 @@ async function openReader(url) {
                 ">✕</button>
             </div>
         `;
+        // Auto-översätt engelska källor direkt
+        if (!swedishSource) await toggleTranslation();
     } else {
         content.innerHTML = readerFallback(url);
     }
