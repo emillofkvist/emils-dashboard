@@ -348,25 +348,28 @@ function isMarketOpen(market) {
 // Hämta börsdata
 async function fetchStocks() {
     const stocks = [
-        { symbol: '^OMX', name: 'OMXS30', id: 0, market: 'SE' },
-        { symbol: '^GSPC', name: 'S&P 500', id: 1, market: 'US' },
-        { symbol: '^IXIC', name: 'NASDAQ', id: 2, market: 'US' },
-        { symbol: '^DJI', name: 'Dow Jones', id: 3, market: 'US' }
+        { symbol: '^OMX',  name: 'OMXS30',   id: 0, market: 'SE' },
+        { symbol: '^GSPC', name: 'S&P 500',  id: 1, market: 'US' },
+        { symbol: '^IXIC', name: 'NASDAQ',    id: 2, market: 'US' },
+        { symbol: '^DJI',  name: 'Dow Jones', id: 3, market: 'US' }
     ];
 
-    const fetchStock = async (stock) => {
+    // allorigins blockeras av Yahoo Finance — använd api.cors.lol
+    // Sekventiellt med 500ms fördröjning för att undvika rate limit
+    for (let i = 0; i < stocks.length; i++) {
+        const stock = stocks[i];
+        if (i > 0) await new Promise(r => setTimeout(r, 500));
+
         const stockItems = document.querySelectorAll('.stock-item');
         try {
-            const url = `${CONFIG.corsProxy}${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`)}`;
+            const url = `https://api.cors.lol/?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`)}`;
             const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
 
-            const result = data.chart.result[0];
-            const quote = result.indicators.quote[0];
-            const closes = quote.close.filter(c => c !== null);
-
-            const current = closes[closes.length - 1];
-            const previous = closes[closes.length - 2];
+            const meta = data.chart.result[0].meta;
+            const current = meta.regularMarketPrice;
+            const previous = meta.chartPreviousClose;
             const change = ((current - previous) / previous * 100).toFixed(2);
             const isPositive = change >= 0;
             const open = isMarketOpen(stock.market);
@@ -388,9 +391,7 @@ async function fetchStocks() {
                 <div class="loading">Ej tillgänglig</div>
             `;
         }
-    };
-
-    await Promise.all(stocks.map(fetchStock));
+    }
 }
 
 // Parsa iCal-datum (YYYYMMDD eller YYYYMMDDTHHmmssZ)
