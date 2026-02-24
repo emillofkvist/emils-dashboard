@@ -740,8 +740,9 @@ async function fetchAiNews() {
         link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
     });
 
-    // Förhämta artiklar i bakgrunden
+    // Förhämta artiklar i bakgrunden + översätt rubriker
     setTimeout(() => allNews.slice(0, CONFIG.maxAiNews).forEach(item => prefetchArticle(item.link)), 1000);
+    translateHeadlines('ai-news');
 }
 
 // Hämta Porsche nyheter från flera källor
@@ -806,6 +807,7 @@ async function fetchPorsche() {
         link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
     });
     setTimeout(() => latest.forEach(item => prefetchArticle(item.link)), 1000);
+    translateHeadlines('porsche');
 }
 
 // Hämta Macworld nyheter (senaste 24h)
@@ -913,6 +915,14 @@ async function fetchFeber() {
         console.error('Feber-fel:', error);
         document.getElementById('feber').innerHTML = '<div class="loading">Kunde inte hämta från Feber</div>';
     }
+}
+
+// Översätt alla nyhetsrubriker i ett kort till svenska
+async function translateHeadlines(containerId) {
+    const links = [...document.querySelectorAll(`#${containerId} .news-title a`)];
+    if (links.length === 0) return;
+    const translated = await Promise.all(links.map(a => translateText(a.textContent.trim())));
+    links.forEach((a, i) => { if (translated[i]) a.textContent = translated[i]; });
 }
 
 // Hjälpfunktion: Tid sedan
