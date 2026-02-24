@@ -354,17 +354,28 @@ async function fetchStocks() {
         { symbol: '^DJI',  name: 'Dow Jones', id: 3, market: 'US' }
     ];
 
-    for (let i = 0; i < stocks.length; i++) {
-        const stock = stocks[i];
+    const fetchStockData = async (symbol) => {
+        const yahooUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`;
+        const enc = encodeURIComponent(yahooUrl);
 
+        const tryProxy = async (fetchFn) => {
+            const data = await fetchFn();
+            const meta = data.chart.result[0].meta;
+            if (!meta.regularMarketPrice) throw new Error('no price');
+            return meta;
+        };
+
+        return await Promise.any([
+            tryProxy(() => fetch(`https://api.cors.lol/?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })),
+            tryProxy(() => fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })),
+            tryProxy(() => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json().then(j => JSON.parse(j.contents)))),
+        ]);
+    };
+
+    await Promise.all(stocks.map(async (stock) => {
         const stockItems = document.querySelectorAll('.stock-item');
         try {
-            const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://query2.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`)}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-
-            const meta = data.chart.result[0].meta;
+            const meta = await fetchStockData(stock.symbol);
             const current = meta.regularMarketPrice;
             const previous = meta.chartPreviousClose;
             const change = ((current - previous) / previous * 100).toFixed(2);
@@ -388,7 +399,7 @@ async function fetchStocks() {
                 <div class="loading">Ej tillgänglig</div>
             `;
         }
-    }
+    }));
 }
 
 // Parsa iCal-datum (YYYYMMDD eller YYYYMMDDTHHmmssZ)
@@ -574,7 +585,8 @@ async function fetchHtmlViaProxy(articleUrl) {
     const proxies = [
         fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => r.text()).then(parseHtml),
         fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => r.json()).then(j => parseHtml(j.contents || '')),
-        fetch(`https://corsproxy.io/?${enc}`).then(r => r.text()).then(parseHtml)
+        fetch(`https://corsproxy.io/?${enc}`).then(r => r.text()).then(parseHtml),
+        fetch(`https://api.cors.lol/?url=${enc}`).then(r => r.text()).then(parseHtml)
     ];
 
     try {
@@ -610,7 +622,7 @@ async function fetchRSS(feedUrl) {
         if (isXml(text)) return text;
     } catch (e) {}
 
-    // Försök 2: allorigins /get (returnerar JSON-omslag med statuskod)
+    // Försök 2: allorigins /get
     try {
         const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`);
         const json = await r.json();
@@ -620,6 +632,13 @@ async function fetchRSS(feedUrl) {
     // Försök 3: corsproxy.io
     try {
         const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(feedUrl)}`);
+        const text = await r.text();
+        if (isXml(text)) return text;
+    } catch (e) {}
+
+    // Försök 4: api.cors.lol
+    try {
+        const r = await fetch(`https://api.cors.lol/?url=${encodeURIComponent(feedUrl)}`);
         const text = await r.text();
         if (isXml(text)) return text;
     } catch (e) {}
