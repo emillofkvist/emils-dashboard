@@ -1047,6 +1047,13 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeReader();
 });
 
+// Dark mode
+function toggleDarkMode() {
+    const dark = document.body.classList.toggle('dark');
+    localStorage.setItem('darkMode', dark);
+    document.getElementById('darkmode-btn').textContent = dark ? '☀️' : '🌙';
+}
+
 // Starta dashboard
 async function init() {
     updateDateTime();
@@ -1068,4 +1075,11 @@ async function init() {
 }
 
 // Kör när sidan laddas
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+    // Synka dark mode från html-elementet (applicerat i head) till body
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark');
+        document.getElementById('darkmode-btn').textContent = '☀️';
+    }
+    init();
+});

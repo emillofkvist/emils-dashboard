@@ -7,7 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>if (localStorage.getItem('darkMode') === 'true') document.documentElement.classList.add('dark');</script>
     <style>
+        html.dark body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
         * {
             margin: 0;
             padding: 0;
@@ -571,6 +573,69 @@
             margin-top: 8px;
         }
 
+        /* Dark mode */
+        body.dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+        }
+        body.dark .card {
+            background: #1e293b;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        }
+        body.dark .card-header { color: #94a3b8; }
+        body.dark .weather-desc,
+        body.dark .weather-detail,
+        body.dark .electricity-detail,
+        body.dark .electricity-unit { color: #94a3b8; }
+        body.dark .weather-detail span,
+        body.dark .electricity-detail span,
+        body.dark .sun-time { color: #e2e8f0; }
+        body.dark .sun-label,
+        body.dark .news-time,
+        body.dark .loading { color: #64748b; }
+        body.dark .weather-details,
+        body.dark .sun-info,
+        body.dark .electricity-details,
+        body.dark .electricity-chart-container { border-top-color: #334155; }
+        body.dark .stock-item { background: #0f172a; }
+        body.dark .stock-name { color: #94a3b8; }
+        body.dark .market-status { color: #64748b; }
+        body.dark .market-dot { background: #475569; }
+        body.dark .calendar-event { border-bottom-color: #334155; }
+        body.dark .event-date { color: #64748b; }
+        body.dark .news-item { border-bottom-color: #334155; }
+        body.dark .news-title a:hover { color: #818cf8; }
+        body.dark .reader-modal { background: #1e293b; }
+        body.dark .reader-header { background: #1e293b; border-bottom-color: #334155; }
+        body.dark .reader-close { background: #334155; color: #94a3b8; }
+        body.dark .reader-close:hover { background: #475569; }
+        body.dark .reader-translate-btn { background: #334155; color: #cbd5e1; }
+        body.dark .reader-translate-btn:hover { background: #475569; }
+        body.dark .reader-title { color: #f1f5f9; }
+        body.dark .reader-body { color: #cbd5e1; }
+        body.dark .reader-body h2,
+        body.dark .reader-body h3 { color: #f1f5f9; }
+        body.dark .reader-body figcaption { color: #64748b; }
+
+        /* Dark mode button */
+        .darkmode-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 80px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s;
+        }
+        .darkmode-btn:hover { transform: scale(1.1); }
+        .darkmode-btn:active { transform: scale(0.95); }
+
         /* Setup notice */
         .setup-notice {
             background: #fef3c7;
@@ -688,6 +753,7 @@
         </div>
     </div>
 
+    <button class="darkmode-btn" id="darkmode-btn" onclick="toggleDarkMode()">🌙</button>
     <button class="refresh-btn" onclick="location.reload()">↻</button>
 
     <!-- Reader Modal -->
