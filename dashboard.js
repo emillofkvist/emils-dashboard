@@ -808,48 +808,6 @@ async function fetchPorsche() {
     setTimeout(() => latest.forEach(item => prefetchArticle(item.link)), 1000);
 }
 
-// Hämta Porsche Technical Service Bulletins från tsbsearch.com
-async function fetchTSB() {
-    const el = document.getElementById('porsche-tsb');
-    try {
-        const url = 'https://www.tsbsearch.com/porsche';
-        // allorigins blockeras av sajten — använd corsproxy.io
-        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-        const html = await r.text();
-
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const rows = [...doc.querySelectorAll('table tr')].slice(1); // hoppa över header
-
-        if (rows.length === 0) throw new Error('Inga rader');
-
-        // Visa de 5 första raderna (sajten verkar lista nyast överst)
-        const items = rows.slice(0, 5).map(row => {
-            const cells = row.querySelectorAll('td');
-            const anchor = cells[1]?.querySelector('a');
-            return {
-                number: anchor?.textContent.trim() || '',
-                link:   anchor?.href || url,
-                title:  cells[2]?.textContent.trim() || ''
-            };
-        }).filter(i => i.number);
-
-        if (items.length === 0) throw new Error('Kunde inte tolka tabellen');
-
-        el.innerHTML = items.map(item => `
-            <div class="news-item">
-                <div class="tsb-number">TSB ${item.number}</div>
-                <div class="news-title">
-                    <a href="${item.link}" target="_blank">${item.title}</a>
-                </div>
-            </div>
-        `).join('');
-
-    } catch (error) {
-        console.error('TSB-fel:', error);
-        el.innerHTML = '<div class="loading">Kunde inte hämta bulletiner</div>';
-    }
-}
-
 // Hämta Macworld nyheter (senaste 24h)
 async function fetchMacworld() {
     try {
@@ -1129,8 +1087,7 @@ async function init() {
         fetchAiNews(),
         fetchPorsche(),
         fetchMacworld(),
-        fetchFeber(),
-        fetchTSB()
+        fetchFeber()
     ]);
 }
 
