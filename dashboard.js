@@ -2,6 +2,22 @@
 // EMILS DASHBOARD
 // ============================================
 
+// Polyfill för Promise.any (saknas i webbläsare äldre än 2020)
+if (typeof Promise.any !== 'function') {
+    Promise.any = promises =>
+        new Promise((resolve, reject) => {
+            let errors = [];
+            let pending = promises.length;
+            if (!pending) reject(new AggregateError([], 'All promises were rejected'));
+            promises.forEach(p =>
+                Promise.resolve(p).then(resolve).catch(err => {
+                    errors.push(err);
+                    if (--pending === 0) reject(new AggregateError(errors, 'All promises were rejected'));
+                })
+            );
+        });
+}
+
 // Uppdatera tid och datum
 function updateDateTime() {
     const now = new Date();
