@@ -584,15 +584,10 @@ async function fetchHtmlViaProxy(articleUrl) {
         throw new Error('readability failed');
     };
 
+    // Endast corsproxy.io för artiklar — allorigins är nere (522)
     const enc = encodeURIComponent(articleUrl);
-    const proxies = [
-        fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => r.text()).then(parseHtml),
-        fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => r.json()).then(j => parseHtml(j.contents || '')),
-        fetch(`https://corsproxy.io/?${enc}`).then(r => r.text()).then(parseHtml)
-    ];
-
     try {
-        return await Promise.any(proxies);
+        return await fetch(`https://corsproxy.io/?${enc}`).then(r => r.text()).then(parseHtml);
     } catch {
         return null;
     }
@@ -624,12 +619,11 @@ async function fetchRSS(feedUrl) {
         return text;
     };
 
-    return await Promise.any([
-        tryProxy(() => fetch(`https://corsproxy.io/?${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })),
-        tryProxy(() => fetch(`https://api.cors.lol/?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })),
-        tryProxy(() => fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })),
-        tryProxy(() => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json().then(j => j.contents || ''); })),
-    ]).catch(() => { throw new Error(`Kunde inte hämta feed: ${feedUrl}`); });
+    // Endast corsproxy.io för RSS — cors.lol rate-limiteras vid parallella feeds, allorigins är nere
+    const text = await fetch(`https://corsproxy.io/?${enc}`)
+        .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); });
+    if (!isXml(text)) throw new Error(`Kunde inte hämta feed: ${feedUrl}`);
+    return text;
 }
 
 // Hämta nyheter via RSS
