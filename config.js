@@ -37,7 +37,7 @@ const CONFIG = {
     // AI-nyheter via TechCrunch (direktlänkar = reader fungerar)
     aiNewsFeeds: [
         { name: "TechCrunch", url: "https://techcrunch.com/category/artificial-intelligence/feed/" },
-        { name: "The Verge",  url: "https://www.theverge.com/ai-artificial-intelligence/rss/index.xml" }
+        { name: "The Verge",  url: "https://www.theverge.com/rss/index.xml" }
     ],
     maxAiNews: 5,
 
