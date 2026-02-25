@@ -365,14 +365,12 @@ async function fetchStocks() {
             return meta;
         };
 
-        return await Promise.any([
-            tryProxy(() => fetch(`https://api.cors.lol/?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })),
-            tryProxy(() => fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })),
-            tryProxy(() => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json().then(j => JSON.parse(j.contents)); })),
-        ]);
+        // corsproxy.io primär — cors.lol rate-limiteras vid origin:null, allorigins är nere
+        return await tryProxy(() => fetch(`https://corsproxy.io/?${enc}`)
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
     };
 
-    // Sekventiellt med 400ms fördröjning för att undvika rate limit på cors.lol
+    // Sekventiellt med 400ms fördröjning för att undvika rate limit
     for (let i = 0; i < stocks.length; i++) {
         if (i > 0) await new Promise(r => setTimeout(r, 400));
         const stock = stocks[i];
