@@ -613,39 +613,23 @@ function prefetchArticle(url) {
     }
 }
 
-// Hämta RSS med automatisk proxy-fallback och XML-validering
+// Hämta RSS med parallell proxy-race (snabbaste fungerade proxyn vinner)
 async function fetchRSS(feedUrl) {
     const isXml = t => t.includes('<rss') || t.includes('<feed') || t.includes('<?xml');
+    const enc = encodeURIComponent(feedUrl);
 
-    // Försök 1: allorigins /raw
-    try {
-        const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`);
-        const text = await r.text();
-        if (isXml(text)) return text;
-    } catch (e) {}
+    const tryProxy = async (fetchFn) => {
+        const text = await fetchFn();
+        if (!isXml(text)) throw new Error('not xml');
+        return text;
+    };
 
-    // Försök 2: allorigins /get
-    try {
-        const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`);
-        const json = await r.json();
-        if (json.contents && isXml(json.contents)) return json.contents;
-    } catch (e) {}
-
-    // Försök 3: corsproxy.io
-    try {
-        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(feedUrl)}`);
-        const text = await r.text();
-        if (isXml(text)) return text;
-    } catch (e) {}
-
-    // Försök 4: api.cors.lol
-    try {
-        const r = await fetch(`https://api.cors.lol/?url=${encodeURIComponent(feedUrl)}`);
-        const text = await r.text();
-        if (isXml(text)) return text;
-    } catch (e) {}
-
-    throw new Error(`Kunde inte hämta feed: ${feedUrl}`);
+    return await Promise.any([
+        tryProxy(() => fetch(`https://corsproxy.io/?${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })),
+        tryProxy(() => fetch(`https://api.cors.lol/?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })),
+        tryProxy(() => fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })),
+        tryProxy(() => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json().then(j => j.contents || ''); })),
+    ]).catch(() => { throw new Error(`Kunde inte hämta feed: ${feedUrl}`); });
 }
 
 // Hämta nyheter via RSS
