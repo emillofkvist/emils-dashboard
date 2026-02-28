@@ -1,0 +1,116 @@
+============================================================
+EMILS DASHBOARD – PROJEKTÖVERSIKT
+============================================================
+
+GITHUB
+------
+Repo:        https://github.com/emillofkvist/emils-dashboard
+Live sajt:   https://emillofkvist.github.io/emils-dashboard/
+Branches:
+  main      → källkod (pusha hit vid ändringar)
+  gh-pages  → publicerad sajt (mergea från main efter push)
+
+VIKTIGT – HÅLL DENNA FIL UPPDATERAD
+-------------------------------------
+  När du gör ändringar i projektet, uppdatera alltid PROJEKT_INFO.txt:
+    - Lägg till nya moduler/datakällor under "MODULER & DATAKÄLLOR"
+    - Uppdatera "INSTÄLLNINGAR I config.js" om nya config-nycklar tillkommer
+    - Lägg till en rad under "SENASTE ÄNDRINGAR" med datum och beskrivning
+  Inkludera PROJEKT_INFO.txt i git-commiten så den alltid är synkad med koden.
+
+
+GIT-WORKFLOW (varje gång du gör ändringar)
+------------------------------------------
+  1. git add config.js dashboard.js index.html PROJEKT_INFO.txt
+  2. git commit -m "Beskrivning av ändringen"
+  3. git push origin main
+  4. git checkout gh-pages
+  5. git merge main
+  6. git push origin gh-pages
+  7. git checkout main
+
+Ändringen syns live på GitHub Pages inom ~1 minut efter steg 6.
+
+
+FILER
+-----
+  index.html    – All HTML och CSS. Lägg till nya kort/stilar här.
+  dashboard.js  – All JavaScript-logik. Lägg till nya fetch-funktioner här.
+  config.js     – API-URL:er, RSS-flöden, inställningar. Ändra källor här.
+
+
+MODULER & DATAKÄLLOR
+---------------------
+  Datum/tid/vecka     – JavaScript (inbyggt)
+  Namnsdag            – https://sholiday.faboul.se/dagar/v2.1/{år}/{mån}/{dag}
+  Väder (Hyllinge)    – https://opendata-download-metfcst.smhi.se  (SMHI opendata)
+  Soluppgång/-nedgång – https://api.sunrise-sunset.org/json?lat=56.1167&lng=12.8167
+  Elpris SE4 + graf   – https://www.elprisetjustnu.se/api/v1/prices/{år}/{mån-dag}_SE4.json
+                        Graf renderas med Chart.js (CDN)
+  Börs                – Yahoo Finance via https://corsproxy.io (CORS-proxy)
+                        Symboler: ^OMX, ^GSPC, ^IXIC, ^DJI
+  Kalender            – Google Kalender via iCal-länk, proxy: corsproxy.io
+  Nyheter (SVT + DN)  – RSS via corsproxy.io, max 5 totalt (3 per källa)
+  AI-nyheter          – TechCrunch AI + The Verge RSS, max 5
+  Porsche-nyheter     – Carscoops, Road & Track, Motor1 RSS, max 5
+  Macworld Sverige    – https://www.macworld.se/feed  (senaste 24h)
+  Macworld.com        – https://www.macworld.com/feed/  (senaste 24h, auto-översätts)
+  Feber               – https://feber.se/rss/  (5 senaste)
+  Aftonbladet         – https://rss.aftonbladet.se/rss2/small/pages/sections/senastenytt/
+                        (8 senaste nyheter)
+
+
+CORS-PROXYER
+------------
+  Nyheter/RSS/börs:   https://corsproxy.io/?{encoded_url}
+  Kalender (backup):  https://corsproxy.io/?{encoded_url}
+  OBS: allorigins.win är nere (522-fel) – använd inte den.
+
+
+TEKNISKT
+--------
+  - Ren HTML/CSS/JS, inga ramverk eller byggsteg
+  - Mobilanpassad, max bredd 600px
+  - All data laddas parallellt med Promise.all vid sidstart
+  - Artikelförhämtning (prefetch) i bakgrunden efter 1 sekund
+  - Reader-läge med Readability.js (CDN) – extraherar artikeltext
+  - Auto-översättning via translate.googleapis.com (gratis, ingen nyckel)
+    – Engelska artiklar översätts automatiskt när reader öppnas
+    – Engelska rubriker i listan översätts för: AI-nyheter, Porsche, Macworld.com
+  - Dark mode – sparas i localStorage
+  - Debug-panel (🐛-knapp) – visar console.error/warn med tidsstämpel
+
+
+INSTÄLLNINGAR I config.js
+--------------------------
+  CONFIG.weather.lat/lon/name   – Plats för väder och sol
+  CONFIG.calendar.icalUrl        – Google Kalender iCal-länk
+  CONFIG.newsFeeds               – Array med {name, url} för SVT/DN
+  CONFIG.macworldFeed            – Macworld SE RSS
+  CONFIG.macworldComFeed         – Macworld.com RSS
+  CONFIG.feberFeed               – Feber RSS
+  CONFIG.aftonbladetFeed         – Aftonbladet RSS
+  CONFIG.aiNewsFeeds             – Array med AI-nyhetskällor
+  CONFIG.porscheFeeds            – Array med {url, filter} för Porsche-källor
+  CONFIG.maxNews                 – Max antal SVT+DN-nyheter (default 5)
+  CONFIG.maxAiNews               – Max AI-nyheter (default 5)
+  CONFIG.maxPorscheNews          – Max Porsche-nyheter (default 5)
+  CONFIG.maxAftonbladetNews      – Max Aftonbladet-nyheter (default 8)
+
+
+LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
+---------------------------------------------
+  1. config.js  – Lägg till feed-URL och eventuell maxCount
+  2. dashboard.js – Skapa fetchXxx()-funktion (kopiera fetchFeber som mall)
+  3. dashboard.js – Lägg till fetchXxx() i init() Promise.all-arrayen
+  4. index.html – Lägg till <div class="card xxx-card"> med rätt id
+  5. index.html – Lägg till .xxx-card { border-left: 4px solid #färg; } i CSS
+  6. Pusha enligt git-workflow ovan
+
+
+SENASTE ÄNDRINGAR (2026-02-28)
+-------------------------------
+  - Macworld: hämtar nu från både macworld.se och macworld.com
+    Engelska rubriker (macworld.com) auto-översätts till svenska
+  - Aftonbladet: nytt kort längst ner med 8 senaste nyheter
+============================================================
