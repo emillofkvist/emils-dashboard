@@ -805,28 +805,33 @@ async function fetchPorsche() {
     translateHeadlines('porsche');
 }
 
-// Hämta Macworld nyheter (senaste 24h)
+// Hämta Macworld nyheter (senaste 24h, både .se och .com)
 async function fetchMacworld() {
+    const fetchFeed = async (url, sourceName) => {
+        try {
+            const text = await fetchRSS(url);
+            const xml = new DOMParser().parseFromString(text, 'text/xml');
+            return [...xml.querySelectorAll('item')].map(item => ({
+                title:  item.querySelector('title')?.textContent || '',
+                link:   item.querySelector('link')?.textContent || '',
+                date:   new Date(item.querySelector('pubDate')?.textContent || ''),
+                source: sourceName
+            }));
+        } catch {
+            return [];
+        }
+    };
+
     try {
-        const text = await fetchRSS(CONFIG.macworldFeed);
-
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const items = xml.querySelectorAll('item');
-
         const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const news = [];
+        const [seItems, comItems] = await Promise.all([
+            fetchFeed(CONFIG.macworldFeed,    'Macworld SE'),
+            fetchFeed(CONFIG.macworldComFeed, 'Macworld')
+        ]);
 
-        items.forEach(item => {
-            const title = item.querySelector('title')?.textContent || '';
-            const link = item.querySelector('link')?.textContent || '';
-            const pubDate = item.querySelector('pubDate')?.textContent || '';
-            const date = new Date(pubDate);
-
-            if (date >= cutoff) {
-                news.push({ title, link, date });
-            }
-        });
+        const news = [...seItems, ...comItems]
+            .filter(item => item.date >= cutoff)
+            .sort((a, b) => b.date - a.date);
 
         if (news.length === 0) {
             document.getElementById('macworld').innerHTML = '<div class="loading">Inga nyheter från de senaste 24 timmarna</div>';
@@ -837,6 +842,7 @@ async function fetchMacworld() {
             const timeAgo = getTimeAgo(item.date);
             return `
                 <div class="news-item">
+                    <div class="news-source">${item.source}</div>
                     <div class="news-title">
                         <a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a>
                     </div>
@@ -846,16 +852,18 @@ async function fetchMacworld() {
         }).join('');
 
         document.getElementById('macworld').innerHTML = html;
-
         document.getElementById('macworld').querySelectorAll('.reader-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                openReader(link.dataset.url);
-            });
+            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
         });
 
-        // Förhämta artiklar i bakgrunden för snabbare reader
+        // Förhämta artiklar i bakgrunden
         setTimeout(() => news.forEach(item => prefetchArticle(item.link)), 1000);
+
+        // Översätt engelska rubriker (macworld.com) till svenska
+        const englishLinks = [...document.querySelectorAll('#macworld .news-title a')]
+            .filter(a => a.dataset.url.includes('macworld.com'));
+        const translated = await Promise.all(englishLinks.map(a => translateText(a.textContent.trim())));
+        englishLinks.forEach((a, i) => { if (translated[i]) a.textContent = translated[i]; });
 
     } catch (error) {
         console.error('Macworld-fel:', error);
@@ -909,6 +917,55 @@ async function fetchFeber() {
     } catch (error) {
         console.error('Feber-fel:', error);
         document.getElementById('feber').innerHTML = '<div class="loading">Kunde inte hämta från Feber</div>';
+    }
+}
+
+// Hämta Aftonbladet nyheter (8 senaste)
+async function fetchAftonbladet() {
+    try {
+        const text = await fetchRSS(CONFIG.aftonbladetFeed);
+
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const items = xml.querySelectorAll('item');
+
+        const news = [];
+        items.forEach((item, index) => {
+            if (index < CONFIG.maxAftonbladetNews) {
+                const title = item.querySelector('title')?.textContent || '';
+                const link = item.querySelector('link')?.textContent || '';
+                const pubDate = item.querySelector('pubDate')?.textContent || '';
+                news.push({ title, link, date: new Date(pubDate) });
+            }
+        });
+
+        if (news.length === 0) {
+            document.getElementById('aftonbladet').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
+            return;
+        }
+
+        const html = news.map(item => {
+            const timeAgo = getTimeAgo(item.date);
+            return `
+                <div class="news-item">
+                    <div class="news-title">
+                        <a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a>
+                    </div>
+                    <div class="news-time">${timeAgo}</div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('aftonbladet').innerHTML = html;
+        document.getElementById('aftonbladet').querySelectorAll('.reader-link').forEach(link => {
+            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+        });
+
+        setTimeout(() => news.forEach(item => prefetchArticle(item.link)), 1000);
+
+    } catch (error) {
+        console.error('Aftonbladet-fel:', error);
+        document.getElementById('aftonbladet').innerHTML = '<div class="loading">Kunde inte hämta från Aftonbladet</div>';
     }
 }
 
@@ -1092,7 +1149,8 @@ async function init() {
         fetchAiNews(),
         fetchPorsche(),
         fetchMacworld(),
-        fetchFeber()
+        fetchFeber(),
+        fetchAftonbladet()
     ]);
 }
 

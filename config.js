@@ -28,11 +28,16 @@ const CONFIG = {
         { name: "DN",          url: "https://www.dn.se/rss/" }
     ],
 
-    // Macworld Sverige RSS (visar artiklar från senaste 24h)
+    // Macworld RSS (visar artiklar från senaste 24h)
     macworldFeed: "https://www.macworld.se/feed",
+    macworldComFeed: "https://www.macworld.com/feed/",
 
     // Feber RSS (5 senaste)
     feberFeed: "https://feber.se/rss/",
+
+    // Aftonbladet RSS (senaste nytt)
+    aftonbladetFeed: "https://rss.aftonbladet.se/rss2/small/pages/sections/senastenytt/",
+    maxAftonbladetNews: 8,
 
     // AI-nyheter via TechCrunch (direktlänkar = reader fungerar)
     aiNewsFeeds: [
