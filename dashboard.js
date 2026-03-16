@@ -608,7 +608,7 @@ function prefetchArticle(url) {
 
 // Hämta RSS via rss2json.com — returnerar array [{title, link, date}]
 async function fetchRSS(feedUrl) {
-    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=20`;
+    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`rss2json ${response.status}`);
     const data = await response.json();
