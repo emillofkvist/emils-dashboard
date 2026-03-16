@@ -17,10 +17,10 @@ const CONFIG = {
     },
 
     // RSS-proxy för att undvika CORS-problem
-    corsProxy: "https://api.allorigins.win/raw?url=",
+    corsProxy: "https://api.cors.lol/?url=",
 
     // Alternativ proxy för kalender
-    calendarProxy: "https://corsproxy.io/?",
+    calendarProxy: "https://api.cors.lol/?url=",
 
     // Svenska nyheter - SVT och DN
     newsFeeds: [

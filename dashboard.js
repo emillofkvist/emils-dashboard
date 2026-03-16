@@ -365,8 +365,8 @@ async function fetchStocks() {
             return meta;
         };
 
-        // corsproxy.io primär — cors.lol rate-limiteras vid origin:null, allorigins är nere
-        return await tryProxy(() => fetch(`https://corsproxy.io/?${enc}`)
+        // cors.lol primär — corsproxy.io blockerat (403), allorigins nere
+        return await tryProxy(() => fetch(`https://api.cors.lol/?url=${enc}`)
             .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
     };
 
@@ -582,10 +582,10 @@ async function fetchHtmlViaProxy(articleUrl) {
         throw new Error('readability failed');
     };
 
-    // Endast corsproxy.io för artiklar — allorigins är nere (522)
+    // cors.lol för artiklar — corsproxy.io blockerat (403)
     const enc = encodeURIComponent(articleUrl);
     try {
-        return await fetch(`https://corsproxy.io/?${enc}`).then(r => r.text()).then(parseHtml);
+        return await fetch(`https://api.cors.lol/?url=${enc}`).then(r => r.text()).then(parseHtml);
     } catch {
         return null;
     }
@@ -606,22 +606,18 @@ function prefetchArticle(url) {
     }
 }
 
-// Hämta RSS med parallell proxy-race (snabbaste fungerade proxyn vinner)
+// Hämta RSS via rss2json.com — returnerar array [{title, link, date}]
 async function fetchRSS(feedUrl) {
-    const isXml = t => t.includes('<rss') || t.includes('<feed') || t.includes('<?xml');
-    const enc = encodeURIComponent(feedUrl);
-
-    const tryProxy = async (fetchFn) => {
-        const text = await fetchFn();
-        if (!isXml(text)) throw new Error('not xml');
-        return text;
-    };
-
-    // Endast corsproxy.io för RSS — cors.lol rate-limiteras vid parallella feeds, allorigins är nere
-    const text = await fetch(`https://corsproxy.io/?${enc}`)
-        .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); });
-    if (!isXml(text)) throw new Error(`Kunde inte hämta feed: ${feedUrl}`);
-    return text;
+    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=20`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`rss2json ${response.status}`);
+    const data = await response.json();
+    if (data.status !== 'ok') throw new Error(`rss2json: ${data.message || data.status}`);
+    return data.items.map(item => ({
+        title: item.title || '',
+        link: item.link || '',
+        date: new Date(item.pubDate ? item.pubDate.replace(' ', 'T') : '')
+    }));
 }
 
 // Hämta nyheter via RSS
@@ -630,25 +626,9 @@ async function fetchNews() {
 
     for (const feed of CONFIG.newsFeeds) {
         try {
-            const text = await fetchRSS(feed.url);
-
-            const parser = new DOMParser();
-            const xml = parser.parseFromString(text, 'text/xml');
-            const items = xml.querySelectorAll('item');
-
-            items.forEach((item, index) => {
-                if (index < 3) { // Max 3 per källa
-                    const title = item.querySelector('title')?.textContent || '';
-                    const link = item.querySelector('link')?.textContent || '';
-                    const pubDate = item.querySelector('pubDate')?.textContent || '';
-
-                    allNews.push({
-                        source: feed.name,
-                        title: title,
-                        link: link,
-                        date: new Date(pubDate)
-                    });
-                }
+            const items = await fetchRSS(feed.url);
+            items.slice(0, 3).forEach(item => {
+                allNews.push({ source: feed.name, title: item.title, link: item.link, date: item.date });
             });
         } catch (error) {
             console.error(`Nyhetsfel för ${feed.name}:`, error);
@@ -689,19 +669,9 @@ async function fetchAiNews() {
 
     for (const feed of CONFIG.aiNewsFeeds) {
         try {
-            const text = await fetchRSS(feed.url);
-            const parser = new DOMParser();
-            const xml = parser.parseFromString(text, 'text/xml');
-            const items = xml.querySelectorAll('item');
-
-            items.forEach((item, index) => {
-                if (index < 4) {
-                    const title = item.querySelector('title')?.textContent || '';
-                    const link = item.querySelector('link')?.textContent || '';
-                    const pubDate = item.querySelector('pubDate')?.textContent || '';
-
-                    allNews.push({ title, link, source: feed.name, date: new Date(pubDate) });
-                }
+            const items = await fetchRSS(feed.url);
+            items.slice(0, 4).forEach(item => {
+                allNews.push({ title: item.title, link: item.link, source: feed.name, date: item.date });
             });
         } catch (error) {
             console.error(`AI-nyhetsfel för ${feed.name}:`, error);
@@ -750,17 +720,10 @@ async function fetchPorsche() {
 
     const fetchFeed = async (feed) => {
         try {
-            const text = await fetchRSS(feed.url);
-            const xml = new DOMParser().parseFromString(text, 'text/xml');
-            const items = [...xml.querySelectorAll('item')];
+            const items = await fetchRSS(feed.url);
             const sourceName = Object.entries(sourceNames).find(([k]) => feed.url.includes(k))?.[1] || 'Porsche News';
             return items
-                .map(item => ({
-                    title:  item.querySelector('title')?.textContent || '',
-                    link:   item.querySelector('link')?.textContent || '',
-                    date:   new Date(item.querySelector('pubDate')?.textContent || ''),
-                    source: sourceName
-                }))
+                .map(item => ({ title: item.title, link: item.link, date: item.date, source: sourceName }))
                 .filter(item => !feed.filter || item.title.toLowerCase().includes('porsche'));
         } catch {
             return [];
@@ -809,14 +772,8 @@ async function fetchPorsche() {
 async function fetchMacworld() {
     const fetchFeed = async (url, sourceName) => {
         try {
-            const text = await fetchRSS(url);
-            const xml = new DOMParser().parseFromString(text, 'text/xml');
-            return [...xml.querySelectorAll('item')].map(item => ({
-                title:  item.querySelector('title')?.textContent || '',
-                link:   item.querySelector('link')?.textContent || '',
-                date:   new Date(item.querySelector('pubDate')?.textContent || ''),
-                source: sourceName
-            }));
+            const items = await fetchRSS(url);
+            return items.map(item => ({ title: item.title, link: item.link, date: item.date, source: sourceName }));
         } catch {
             return [];
         }
@@ -874,21 +831,8 @@ async function fetchMacworld() {
 // Hämta Feber nyheter (5 senaste)
 async function fetchFeber() {
     try {
-        const text = await fetchRSS(CONFIG.feberFeed);
-
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const items = xml.querySelectorAll('item');
-
-        const news = [];
-        items.forEach((item, index) => {
-            if (index < 5) {
-                const title = item.querySelector('title')?.textContent || '';
-                const link = item.querySelector('link')?.textContent || '';
-                const pubDate = item.querySelector('pubDate')?.textContent || '';
-                news.push({ title, link, date: new Date(pubDate) });
-            }
-        });
+        const items = await fetchRSS(CONFIG.feberFeed);
+        const news = items.slice(0, 5).map(item => ({ title: item.title, link: item.link, date: item.date }));
 
         if (news.length === 0) {
             document.getElementById('feber').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
@@ -923,21 +867,8 @@ async function fetchFeber() {
 // Hämta Aftonbladet nyheter (8 senaste)
 async function fetchAftonbladet() {
     try {
-        const text = await fetchRSS(CONFIG.aftonbladetFeed);
-
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const items = xml.querySelectorAll('item');
-
-        const news = [];
-        items.forEach((item, index) => {
-            if (index < CONFIG.maxAftonbladetNews) {
-                const title = item.querySelector('title')?.textContent || '';
-                const link = item.querySelector('link')?.textContent || '';
-                const pubDate = item.querySelector('pubDate')?.textContent || '';
-                news.push({ title, link, date: new Date(pubDate) });
-            }
-        });
+        const items = await fetchRSS(CONFIG.aftonbladetFeed);
+        const news = items.slice(0, CONFIG.maxAftonbladetNews).map(item => ({ title: item.title, link: item.link, date: item.date }));
 
         if (news.length === 0) {
             document.getElementById('aftonbladet').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
