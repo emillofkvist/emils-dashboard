@@ -1069,13 +1069,12 @@ async function init() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
 
-    // Hämta all data parallellt
+    // Hämta all data parallellt (kalender separat efter aktier pga cors.lol rate-limit)
     await Promise.all([
         fetchNameday(),
         fetchWeather(),
         fetchElectricity(),
         fetchStocks(),
-        fetchCalendar(),
         fetchNews(),
         fetchAiNews(),
         fetchPorsche(),
@@ -1083,6 +1082,7 @@ async function init() {
         fetchFeber(),
         fetchAftonbladet()
     ]);
+    fetchCalendar();
 }
 
 // Kör när sidan laddas
