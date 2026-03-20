@@ -341,30 +341,20 @@ async function fetchPollen() {
         ];
 
         function pollenLevel(val) {
-            if (!val || val <= 0) return null;
+            if (!val || val <= 0) return { label: 'Ingen', color: '#d1d5db' };
             if (val <= 10)  return { label: 'Låg',       color: '#10b981' };
             if (val <= 30)  return { label: 'Måttlig',   color: '#f59e0b' };
             if (val <= 100) return { label: 'Hög',       color: '#f97316' };
             return              { label: 'Mycket hög', color: '#ef4444' };
         }
 
-        const active = pollenTypes
-            .map(t => ({ ...t, level: pollenLevel(current[t.key]) }))
-            .filter(t => t.level);
+        const all = pollenTypes.map(t => ({ ...t, level: pollenLevel(current[t.key]) }));
 
         const el = document.getElementById('pollen');
-        if (active.length === 0) {
-            el.innerHTML = `
-                <div class="pollen-header-label">Pollen</div>
-                <div style="font-size:13px;color:#6b7280;">Inga pollenhalter just nu</div>
-            `;
-            return;
-        }
-
         el.innerHTML = `
             <div class="pollen-header-label">Pollen</div>
             <div class="pollen-grid">
-                ${active.map(t => `
+                ${all.map(t => `
                     <div class="pollen-item">
                         <div class="pollen-dot" style="background:${t.level.color}"></div>
                         <span class="pollen-name">${t.name}</span>
