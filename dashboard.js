@@ -349,10 +349,16 @@ async function fetchPollen() {
         }
 
         const all = pollenTypes.map(t => ({ ...t, level: pollenLevel(current[t.key]) }));
+        const card = document.getElementById('pollen');
 
-        const el = document.getElementById('pollen');
-        el.innerHTML = `
-            <div class="pollen-header-label">Pollen</div>
+        // Dölj kortet om alla pollenhalter är noll
+        if (all.every(t => t.level.label === 'Ingen')) {
+            card.style.display = 'none';
+            return;
+        }
+
+        card.style.display = '';
+        document.getElementById('pollen-content').innerHTML = `
             <div class="pollen-grid">
                 ${all.map(t => `
                     <div class="pollen-item">
@@ -365,7 +371,7 @@ async function fetchPollen() {
         `;
     } catch (error) {
         console.error('Pollenfel:', error);
-        document.getElementById('pollen').innerHTML = '';
+        document.getElementById('pollen').style.display = 'none';
     }
 }
 

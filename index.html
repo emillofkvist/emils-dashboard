@@ -398,12 +398,6 @@
         }
 
         /* Pollen */
-        .pollen-section {
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #e5e7eb;
-        }
-
         .pollen-header-label {
             font-size: 11px;
             font-weight: 600;
@@ -641,8 +635,7 @@
         body.dark .weather-details,
         body.dark .sun-info,
         body.dark .electricity-details,
-        body.dark .electricity-chart-container,
-        body.dark .pollen-section { border-top-color: #334155; }
+        body.dark .electricity-chart-container { border-top-color: #334155; }
         body.dark .pollen-header-label { color: #94a3b8; }
         body.dark .pollen-name { color: #cbd5e1; }
         body.dark .pollen-level { color: #94a3b8; }
@@ -787,6 +780,14 @@
             </div>
         </div>
 
+        <!-- Pollen -->
+        <div class="card" id="pollen" style="display:none">
+            <div class="card-header">Pollen</div>
+            <div id="pollen-content">
+                <div class="loading">Hämtar pollendata...</div>
+            </div>
+        </div>
+
         <!-- Elpris -->
         <div class="card">
             <div class="card-header">Elpris SE4</div>
@@ -795,9 +796,6 @@
             </div>
             <div class="electricity-chart-container">
                 <canvas id="electricityChart"></canvas>
-            </div>
-            <div class="pollen-section" id="pollen">
-                <div class="loading">Hämtar pollendata...</div>
             </div>
         </div>
 
