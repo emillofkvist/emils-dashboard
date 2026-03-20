@@ -827,7 +827,7 @@ async function fetchMacworld() {
     const fetchFeed = async (url, sourceName) => {
         try {
             const items = await fetchRSS(url);
-            return items.map(item => ({ title: item.title, link: item.link, date: item.date, source: sourceName }));
+            return items.map(item => ({ title: item.title, link: item.link, date: item.date, source: sourceName, description: item.description, content: item.content }));
         } catch {
             return [];
         }
