@@ -323,6 +323,62 @@ async function fetchElectricity() {
     }
 }
 
+// Hämta pollenprognos via Open-Meteo Air Quality API
+async function fetchPollen() {
+    try {
+        const { lat, lon } = CONFIG.weather;
+        const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=birch_pollen,grass_pollen,alder_pollen,mugwort_pollen,ragweed_pollen`;
+        const response = await fetch(url);
+        const data = await response.json();
+        const current = data.current || {};
+
+        const pollenTypes = [
+            { key: 'alder_pollen',   name: 'Alpollen' },
+            { key: 'birch_pollen',   name: 'Björkpollen' },
+            { key: 'grass_pollen',   name: 'Gräspollen' },
+            { key: 'mugwort_pollen', name: 'Malörtpollen' },
+            { key: 'ragweed_pollen', name: 'Ambrosiapollen' }
+        ];
+
+        function pollenLevel(val) {
+            if (!val || val <= 0) return null;
+            if (val <= 10)  return { label: 'Låg',       color: '#10b981' };
+            if (val <= 30)  return { label: 'Måttlig',   color: '#f59e0b' };
+            if (val <= 100) return { label: 'Hög',       color: '#f97316' };
+            return              { label: 'Mycket hög', color: '#ef4444' };
+        }
+
+        const active = pollenTypes
+            .map(t => ({ ...t, level: pollenLevel(current[t.key]) }))
+            .filter(t => t.level);
+
+        const el = document.getElementById('pollen');
+        if (active.length === 0) {
+            el.innerHTML = `
+                <div class="pollen-header-label">Pollen</div>
+                <div style="font-size:13px;color:#6b7280;">Inga pollenhalter just nu</div>
+            `;
+            return;
+        }
+
+        el.innerHTML = `
+            <div class="pollen-header-label">Pollen</div>
+            <div class="pollen-grid">
+                ${active.map(t => `
+                    <div class="pollen-item">
+                        <div class="pollen-dot" style="background:${t.level.color}"></div>
+                        <span class="pollen-name">${t.name}</span>
+                        <span class="pollen-level">${t.level.label}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (error) {
+        console.error('Pollenfel:', error);
+        document.getElementById('pollen').innerHTML = '';
+    }
+}
+
 // Kolla om en börs är öppen just nu
 function isMarketOpen(market) {
     const now = new Date();
@@ -599,14 +655,14 @@ async function fetchAndExtract(url) {
     return article;
 }
 
-// Förhämta artikel i bakgrunden (tyst, inga felmeddelanden)
+// Förhämta artikel i bakgrunden — uppdaterar alltid cachen med fulltext om möjligt
 function prefetchArticle(url) {
-    if (!articleCache.has(url)) {
-        fetchAndExtract(url).catch(() => {});
-    }
+    fetchHtmlViaProxy(url).then(article => {
+        if (article) articleCache.set(url, article);
+    }).catch(() => {});
 }
 
-// Hämta RSS via rss2json.com — returnerar array [{title, link, date}]
+// Hämta RSS via rss2json.com — returnerar array [{title, link, date, description, content}]
 async function fetchRSS(feedUrl) {
     const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
     const response = await fetch(url);
@@ -616,7 +672,9 @@ async function fetchRSS(feedUrl) {
     return data.items.map(item => ({
         title: item.title || '',
         link: item.link || '',
-        date: new Date(item.pubDate ? item.pubDate.replace(' ', 'T') : '')
+        date: new Date(item.pubDate ? item.pubDate.replace(' ', 'T') : ''),
+        description: item.description || '',
+        content: item.content || ''
     }));
 }
 
@@ -785,6 +843,16 @@ async function fetchMacworld() {
             fetchFeed(CONFIG.macworldFeed,    'Macworld SE'),
             fetchFeed(CONFIG.macworldComFeed, 'Macworld')
         ]);
+
+        // Förfyll artikelcachen med RSS-innehåll som fallback om Readability misslyckas
+        [...seItems, ...comItems].forEach(item => {
+            if (!articleCache.has(item.link)) {
+                const body = item.content || item.description;
+                if (body && body.length > 100) {
+                    articleCache.set(item.link, { title: item.title, content: body });
+                }
+            }
+        });
 
         const news = [...seItems, ...comItems]
             .filter(item => item.date >= cutoff)
@@ -1074,6 +1142,7 @@ async function init() {
         fetchNameday(),
         fetchWeather(),
         fetchElectricity(),
+        fetchPollen(),
         fetchStocks(),
         fetchNews(),
         fetchAiNews(),
