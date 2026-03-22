@@ -363,7 +363,8 @@ async function fetchBriefing() {
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { maxOutputTokens: 300 }
+                generationConfig: { maxOutputTokens: 300 },
+                thinkingConfig: { thinkingBudget: 0 }
             })
         });
 
