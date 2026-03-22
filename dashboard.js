@@ -556,8 +556,18 @@ async function fetchCalendar() {
     try {
         const proxy = CONFIG.calendarProxy || CONFIG.corsProxy;
         const url = `${proxy}${encodeURIComponent(CONFIG.calendar.icalUrl)}`;
-        const response = await fetch(url);
-        const icalText = await response.text();
+        let icalText = '';
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                if (attempt > 0) await new Promise(r => setTimeout(r, 1500));
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(response.status);
+                icalText = await response.text();
+                if (icalText.includes('BEGIN:VCALENDAR')) break;
+            } catch (e) {
+                if (attempt === 2) throw e;
+            }
+        }
 
         // Parsa iCal-data
         const events = [];
