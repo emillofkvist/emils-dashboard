@@ -480,9 +480,10 @@ async function fetchStocks() {
             return meta;
         };
 
-        // cors.lol primär — corsproxy.io blockerat (403), allorigins nere
-        return await tryProxy(() => fetch(`https://api.cors.lol/?url=${enc}`)
-            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
+        // cors.lol med x-cors-headers för att kringgå Yahoo Finance blockad
+        return await tryProxy(() => fetch(`https://api.cors.lol/?url=${enc}`, {
+            headers: { 'x-cors-headers': JSON.stringify({ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' }) }
+        }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
     };
 
     // Sekventiellt med 400ms fördröjning för att undvika rate limit
