@@ -661,6 +661,7 @@
 
         /* Debug panel */
         .debug-btn {
+            display: none;
             position: fixed;
             bottom: 20px;
             left: 20px;
@@ -677,7 +678,7 @@
             z-index: 9000;
         }
         .debug-btn:hover { transform: scale(1.1); }
-        .debug-btn.has-errors { background: #ef4444; box-shadow: 0 4px 12px rgba(239,68,68,0.4); }
+        .debug-btn.has-errors { display: flex; align-items: center; justify-content: center; background: #ef4444; box-shadow: 0 4px 12px rgba(239,68,68,0.4); }
         .debug-badge {
             position: absolute;
             top: -4px;
