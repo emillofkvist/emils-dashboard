@@ -55,5 +55,8 @@ const CONFIG = {
     maxPorscheNews: 5,
 
     // Hur många nyheter att visa (SVT + DN)
-    maxNews: 5
+    maxNews: 5,
+
+    // Anthropic API-nyckel för AI-dagsbriefing (sparas i localStorage, inte här)
+    anthropicApiKey: ""
 };

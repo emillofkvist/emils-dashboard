@@ -323,6 +323,90 @@ async function fetchElectricity() {
     }
 }
 
+// Hämta och visa AI-dagsbriefing baserad på SVT + DN-rubriker
+async function fetchBriefing() {
+    const card = document.getElementById('briefing');
+    const content = document.getElementById('briefing-content');
+
+    // Hämta nyckel från localStorage (säkrare än att ha den i koden)
+    const apiKey = localStorage.getItem('anthropic_api_key') || CONFIG.anthropicApiKey;
+    if (!apiKey) {
+        card.style.display = '';
+        content.innerHTML = `
+            <div style="font-size:13px;color:#6b7280;">
+                Ange din Anthropic API-nyckel för att aktivera dagsbriefing:
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                    <input id="briefing-key-input" type="password" placeholder="sk-ant-api03-..."
+                        style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;outline:none;">
+                    <button onclick="
+                        const k = document.getElementById('briefing-key-input').value.trim();
+                        if (k) { localStorage.setItem('anthropic_api_key', k); location.reload(); }
+                    " style="padding:6px 14px;background:#10a37f;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;">Spara</button>
+                </div>
+            </div>`;
+        return;
+    }
+
+    // Kolla om dagens briefing redan är cachad
+    const today = new Date().toISOString().slice(0, 10);
+    const cacheKey = `briefing_${today}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+        card.style.display = '';
+        content.innerHTML = `<div class="briefing-body"><ul>${cached}</ul></div>`;
+        return;
+    }
+
+    card.style.display = '';
+
+    try {
+        // Hämta SVT + DN-rubriker
+        const allItems = [];
+        for (const feed of CONFIG.newsFeeds) {
+            try {
+                const items = await fetchRSS(feed.url);
+                items.slice(0, 5).forEach(item => allItems.push(item.title));
+            } catch {}
+        }
+
+        if (allItems.length === 0) { card.style.display = 'none'; return; }
+
+        const prompt = `Här är dagens nyhetsrubriker från SVT och DN:\n${allItems.map((t, i) => `${i + 1}. ${t}`).join('\n')}\n\nSammanfatta de 3 viktigaste händelserna i korta punkter på svenska. Varje punkt ska vara en kort mening. Svara ENDAST med punkterna, inga inledningar eller avslutningar.`;
+
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json',
+                'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+                model: 'claude-haiku-4-5-20251001',
+                max_tokens: 300,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+
+        const data = await response.json();
+        const text = data.content?.[0]?.text || '';
+        if (!text) { card.style.display = 'none'; return; }
+
+        // Konvertera text till <li>-element (stöder både bullet-punkter och numrering)
+        const items = text.split('\n')
+            .map(l => l.replace(/^[\-\*\d\.\•▸]+\s*/, '').trim())
+            .filter(l => l.length > 0);
+
+        const liHtml = items.map(i => `<li>${i}</li>`).join('');
+        content.innerHTML = `<div class="briefing-body"><ul>${liHtml}</ul></div>`;
+        localStorage.setItem(cacheKey, liHtml);
+
+    } catch (error) {
+        console.error('Briefingfel:', error);
+        card.style.display = 'none';
+    }
+}
+
 // Hämta pollenprognos via Open-Meteo Air Quality API
 async function fetchPollen() {
     try {
@@ -1137,6 +1221,7 @@ async function init() {
     await Promise.all([
         fetchNameday(),
         fetchWeather(),
+        fetchBriefing(),
         fetchElectricity(),
         fetchPollen(),
         fetchStocks(),

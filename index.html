@@ -397,6 +397,42 @@
             height: 150px;
         }
 
+        /* Dagsbriefing */
+        .briefing-card {
+            border-left: 4px solid #10a37f;
+        }
+
+        .briefing-body {
+            font-size: 14px;
+            line-height: 1.7;
+            color: #374151;
+        }
+
+        .briefing-body ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .briefing-body li {
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .briefing-body li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #10a37f;
+            font-size: 12px;
+            top: 2px;
+        }
+
+        body.dark .briefing-body { color: #cbd5e1; }
+
         /* Pollen */
         .pollen-header-label {
             font-size: 11px;
@@ -779,6 +815,12 @@
             <div id="weather">
                 <div class="loading">Hämtar väderdata...</div>
             </div>
+        </div>
+
+        <!-- Dagsbriefing -->
+        <div class="card briefing-card" id="briefing" style="display:none">
+            <div class="card-header">Dagens briefing</div>
+            <div id="briefing-content"><div class="loading">Genererar sammanfattning...</div></div>
         </div>
 
         <!-- Pollen -->
