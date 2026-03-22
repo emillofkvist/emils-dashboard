@@ -358,7 +358,7 @@ async function fetchBriefing() {
 
         const prompt = `Här är dagens nyhetsrubriker från SVT och DN:\n${allItems.map((t, i) => `${i + 1}. ${t}`).join('\n')}\n\nSammanfatta de 3 viktigaste händelserna i korta punkter på svenska. Varje punkt ska vara en kort mening. Svara ENDAST med punkterna, inga inledningar eller avslutningar.`;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
