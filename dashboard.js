@@ -399,13 +399,6 @@ async function fetchPollen() {
         return '#a855f7'; // 6 = mycket höga
     }
 
-    async function fetchHtml(proxyUrl) {
-        const res = await fetch(proxyUrl);
-        const json = await res.json();
-        if (!json.contents) throw new Error('Tom respons från proxy');
-        return json.contents;
-    }
-
     function parsePollenHtml(html) {
         const doc = new DOMParser().parseFromString(html, 'text/html');
         // Försök hitta aktiv dag, annars ta första dagen med data
@@ -425,15 +418,19 @@ async function fetchPollen() {
     }
 
     const pollenUrl = 'https://www.pollenkoll.se/pollenprognos/malmo/';
+    // corsproxy.io returnerar rå HTML direkt (ingen JSON-wrapper)
+    // allorigins.win som backup (returnerar JSON med contents-fält)
     const proxies = [
-        `https://api.allorigins.win/get?url=${encodeURIComponent(pollenUrl)}`,
-        `https://api.allorigins.win/get?url=${encodeURIComponent(pollenUrl)}&timestamp=${Date.now()}`,
+        { url: `https://corsproxy.io/?${encodeURIComponent(pollenUrl)}`, json: false },
+        { url: `https://api.allorigins.win/get?url=${encodeURIComponent(pollenUrl)}`, json: true },
     ];
 
     let all = [];
     for (const proxy of proxies) {
         try {
-            const html = await fetchHtml(proxy);
+            const res = await fetch(proxy.url);
+            const html = proxy.json ? (await res.json()).contents : await res.text();
+            if (!html) throw new Error('Tom respons');
             all = parsePollenHtml(html);
             if (all.length > 0) break;
         } catch (e) {
@@ -487,8 +484,8 @@ function isMarketOpen(market) {
 async function fetchStocks() {
     const stocks = [
         { symbol: '^OMX',  name: 'OMXS30',   id: 0, market: 'SE' },
-        { symbol: '^GSPC', name: 'S&P 500',  id: 1, market: 'US' },
         { symbol: '^IXIC', name: 'NASDAQ',    id: 2, market: 'US' },
+        { symbol: '^GSPC', name: 'S&P 500',  id: 1, market: 'US' },
         { symbol: '^DJI',  name: 'Dow Jones', id: 3, market: 'US' }
     ];
 
@@ -520,9 +517,9 @@ async function fetchStocks() {
         return extractMeta(data);
     };
 
-    // Sekventiellt med 400ms fördröjning för att undvika rate limit
+    // Sekventiellt med 1200ms fördröjning för att undvika Yahoo rate limit
     for (let i = 0; i < stocks.length; i++) {
-        if (i > 0) await new Promise(r => setTimeout(r, 400));
+        if (i > 0) await new Promise(r => setTimeout(r, 1200));
         const stock = stocks[i];
         const stockItems = document.querySelectorAll('.stock-item');
         try {
