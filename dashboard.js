@@ -386,36 +386,47 @@ async function fetchBriefing() {
     }
 }
 
-// Hämta pollenprognos via Open-Meteo Air Quality API
+// Hämta pollenprognos från pollenkoll.se (Malmö) – skrapar HTML via CORS-proxy
 async function fetchPollen() {
     try {
-        const { lat, lon } = CONFIG.weather;
-        const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=birch_pollen,grass_pollen,alder_pollen,mugwort_pollen,ragweed_pollen`;
-        const response = await fetch(url);
-        const data = await response.json();
-        const current = data.current || {};
+        const pollenUrl = 'https://www.pollenkoll.se/pollenprognos/malmo/';
+        const proxyUrl = CONFIG.corsProxy + encodeURIComponent(pollenUrl);
+        const response = await fetch(proxyUrl);
+        const text = await response.text();
 
-        const pollenTypes = [
-            { key: 'alder_pollen',   name: 'Alpollen' },
-            { key: 'birch_pollen',   name: 'Björkpollen' },
-            { key: 'grass_pollen',   name: 'Gräspollen' },
-            { key: 'mugwort_pollen', name: 'Malörtpollen' },
-            { key: 'ragweed_pollen', name: 'Ambrosiapollen' }
-        ];
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
 
-        function pollenLevel(val) {
-            if (!val || val <= 0) return { label: 'Ingen', color: '#d1d5db' };
-            if (val <= 10)  return { label: 'Låg',       color: '#10b981' };
-            if (val <= 30)  return { label: 'Måttlig',   color: '#f59e0b' };
-            if (val <= 100) return { label: 'Hög',       color: '#f97316' };
-            return              { label: 'Mycket hög', color: '#ef4444' };
+        // Hitta aktiv dag (today)
+        const activeDay = doc.querySelector('.pollen-city__day.active');
+        if (!activeDay) throw new Error('Ingen aktiv dag hittades');
+
+        const items = activeDay.querySelectorAll('.pollen-city__item[data-level]');
+
+        function levelColor(level) {
+            const l = parseInt(level, 10);
+            if (l <= 0) return '#d1d5db';
+            if (l === 1) return '#10b981';
+            if (l === 2) return '#84cc16';
+            if (l === 3) return '#f59e0b';
+            if (l === 4) return '#f97316';
+            if (l === 5) return '#ef4444';
+            return '#a855f7'; // 6 = mycket höga
         }
 
-        const all = pollenTypes.map(t => ({ ...t, level: pollenLevel(current[t.key]) }));
-        const card = document.getElementById('pollen');
+        const all = [];
+        items.forEach(item => {
+            const level = parseInt(item.getAttribute('data-level'), 10);
+            if (level <= 0) return;
+            const nameEl = item.querySelector('.pollen-city__item-name');
+            const descEl = item.querySelector('.pollen-city__item-desc');
+            const name = nameEl ? nameEl.textContent.trim() : '?';
+            const desc = descEl ? descEl.textContent.trim() : '';
+            all.push({ name, desc, level, color: levelColor(level) });
+        });
 
-        // Dölj kortet om alla pollenhalter är noll
-        if (all.every(t => t.level.label === 'Ingen')) {
+        const card = document.getElementById('pollen');
+        if (all.length === 0) {
             card.style.display = 'none';
             return;
         }
@@ -425,9 +436,9 @@ async function fetchPollen() {
             <div class="pollen-grid">
                 ${all.map(t => `
                     <div class="pollen-item">
-                        <div class="pollen-dot" style="background:${t.level.color}"></div>
+                        <div class="pollen-dot" style="background:${t.color}"></div>
                         <span class="pollen-name">${t.name}</span>
-                        <span class="pollen-level">${t.level.label}</span>
+                        <span class="pollen-level">${t.desc}</span>
                     </div>
                 `).join('')}
             </div>
