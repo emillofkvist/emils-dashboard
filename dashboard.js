@@ -386,13 +386,14 @@ async function fetchBriefing() {
     }
 }
 
-// Hämta pollenprognos från pollenkoll.se (Malmö) – skrapar HTML via CORS-proxy
+// Hämta pollenprognos från pollenkoll.se (Malmö) – skrapar HTML via allorigins
 async function fetchPollen() {
     try {
         const pollenUrl = 'https://www.pollenkoll.se/pollenprognos/malmo/';
-        const proxyUrl = CONFIG.corsProxy + encodeURIComponent(pollenUrl);
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(pollenUrl)}`;
         const response = await fetch(proxyUrl);
-        const text = await response.text();
+        const json = await response.json();
+        const text = json.contents;
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(text, 'text/html');
