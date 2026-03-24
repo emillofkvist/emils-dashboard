@@ -386,68 +386,79 @@ async function fetchBriefing() {
     }
 }
 
-// Hämta pollenprognos från pollenkoll.se (Malmö) – skrapar HTML via allorigins
+// Hämta pollenprognos från pollenkoll.se (Malmö) – skrapar HTML via proxy
 async function fetchPollen() {
-    try {
-        const pollenUrl = 'https://www.pollenkoll.se/pollenprognos/malmo/';
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(pollenUrl)}`;
-        const response = await fetch(proxyUrl);
-        const json = await response.json();
-        const text = json.contents;
+    function levelColor(l) {
+        l = parseInt(l, 10);
+        if (l <= 0) return '#d1d5db';
+        if (l === 1) return '#10b981';
+        if (l === 2) return '#84cc16';
+        if (l === 3) return '#f59e0b';
+        if (l === 4) return '#f97316';
+        if (l === 5) return '#ef4444';
+        return '#a855f7'; // 6 = mycket höga
+    }
 
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, 'text/html');
+    async function fetchHtml(proxyUrl) {
+        const res = await fetch(proxyUrl);
+        const json = await res.json();
+        if (!json.contents) throw new Error('Tom respons från proxy');
+        return json.contents;
+    }
 
-        // Hitta aktiv dag (today)
-        const activeDay = doc.querySelector('.pollen-city__day.active');
-        if (!activeDay) throw new Error('Ingen aktiv dag hittades');
-
-        const items = activeDay.querySelectorAll('.pollen-city__item[data-level]');
-
-        function levelColor(level) {
-            const l = parseInt(level, 10);
-            if (l <= 0) return '#d1d5db';
-            if (l === 1) return '#10b981';
-            if (l === 2) return '#84cc16';
-            if (l === 3) return '#f59e0b';
-            if (l === 4) return '#f97316';
-            if (l === 5) return '#ef4444';
-            return '#a855f7'; // 6 = mycket höga
-        }
-
+    function parsePollenHtml(html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        // Försök hitta aktiv dag, annars ta första dagen med data
+        let container = doc.querySelector('.pollen-city__day.active') ||
+                        doc.querySelector('.pollen-city__day');
+        if (!container) throw new Error('Ingen pollendata hittades i HTML');
+        const items = container.querySelectorAll('.pollen-city__item[data-level]');
         const all = [];
         items.forEach(item => {
             const level = parseInt(item.getAttribute('data-level'), 10);
             if (level <= 0) return;
-            const nameEl = item.querySelector('.pollen-city__item-name');
-            const descEl = item.querySelector('.pollen-city__item-desc');
-            const name = nameEl ? nameEl.textContent.trim() : '?';
-            const desc = descEl ? descEl.textContent.trim() : '';
+            const name = item.querySelector('.pollen-city__item-name')?.textContent.trim() || '?';
+            const desc = item.querySelector('.pollen-city__item-desc')?.textContent.trim() || '';
             all.push({ name, desc, level, color: levelColor(level) });
         });
-
-        const card = document.getElementById('pollen');
-        if (all.length === 0) {
-            card.style.display = 'none';
-            return;
-        }
-
-        card.style.display = '';
-        document.getElementById('pollen-content').innerHTML = `
-            <div class="pollen-grid">
-                ${all.map(t => `
-                    <div class="pollen-item">
-                        <div class="pollen-dot" style="background:${t.color}"></div>
-                        <span class="pollen-name">${t.name}</span>
-                        <span class="pollen-level">${t.desc}</span>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    } catch (error) {
-        console.error('Pollenfel:', error);
-        document.getElementById('pollen').style.display = 'none';
+        return all;
     }
+
+    const pollenUrl = 'https://www.pollenkoll.se/pollenprognos/malmo/';
+    const proxies = [
+        `https://api.allorigins.win/get?url=${encodeURIComponent(pollenUrl)}`,
+        `https://api.allorigins.win/get?url=${encodeURIComponent(pollenUrl)}&timestamp=${Date.now()}`,
+    ];
+
+    let all = [];
+    for (const proxy of proxies) {
+        try {
+            const html = await fetchHtml(proxy);
+            all = parsePollenHtml(html);
+            if (all.length > 0) break;
+        } catch (e) {
+            console.warn('Pollenproxy misslyckades, försöker nästa:', e.message);
+        }
+    }
+
+    const card = document.getElementById('pollen');
+    if (all.length === 0) {
+        card.style.display = 'none';
+        return;
+    }
+
+    card.style.display = '';
+    document.getElementById('pollen-content').innerHTML = `
+        <div class="pollen-grid">
+            ${all.map(t => `
+                <div class="pollen-item">
+                    <div class="pollen-dot" style="background:${t.color}"></div>
+                    <span class="pollen-name">${t.name}</span>
+                    <span class="pollen-level">${t.desc}</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
 // Kolla om en börs är öppen just nu
@@ -485,17 +496,28 @@ async function fetchStocks() {
         const yahooUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`;
         const enc = encodeURIComponent(yahooUrl);
 
-        const tryProxy = async (fetchFn) => {
-            const data = await fetchFn();
-            const meta = data.chart.result[0].meta;
-            if (!meta.regularMarketPrice) throw new Error('no price');
+        const extractMeta = (data) => {
+            const meta = data.chart?.result?.[0]?.meta;
+            if (!meta?.regularMarketPrice) throw new Error('no price');
             return meta;
         };
 
-        // cors.lol med x-cors-headers för att kringgå Yahoo Finance blockad
-        return await tryProxy(() => fetch(`https://api.cors.lol/?url=${enc}`, {
-            headers: { 'x-cors-headers': JSON.stringify({ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' }) }
-        }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
+        // Försök 1: cors.lol med User-Agent header
+        try {
+            const data = await fetch(`https://api.cors.lol/?url=${enc}`, {
+                headers: { 'x-cors-headers': JSON.stringify({ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' }) }
+            }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+            return extractMeta(data);
+        } catch (e) {
+            console.warn(`cors.lol misslyckades för ${symbol}, försöker allorigins:`, e.message);
+        }
+
+        // Försök 2: allorigins.win
+        const aoRes = await fetch(`https://api.allorigins.win/get?url=${enc}`);
+        const aoJson = await aoRes.json();
+        if (!aoJson.contents) throw new Error('Tom respons från allorigins');
+        const data = JSON.parse(aoJson.contents);
+        return extractMeta(data);
     };
 
     // Sekventiellt med 400ms fördröjning för att undvika rate limit
