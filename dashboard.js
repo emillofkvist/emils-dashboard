@@ -499,22 +499,27 @@ async function fetchStocks() {
             return meta;
         };
 
-        // Försök 1: cors.lol med User-Agent header
-        try {
-            const data = await fetch(`https://api.cors.lol/?url=${enc}`, {
-                headers: { 'x-cors-headers': JSON.stringify({ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' }) }
-            }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
-            return extractMeta(data);
-        } catch (e) {
-            console.warn(`cors.lol misslyckades för ${symbol}, försöker allorigins:`, e.message);
-        }
+        const yahooUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`;
+        const enc1 = encodeURIComponent(yahooUrl1);
 
-        // Försök 2: allorigins.win
-        const aoRes = await fetch(`https://api.allorigins.win/get?url=${enc}`);
-        const aoJson = await aoRes.json();
-        if (!aoJson.contents) throw new Error('Tom respons från allorigins');
-        const data = JSON.parse(aoJson.contents);
-        return extractMeta(data);
+        const stockProxies = [
+            () => fetch(`https://corsproxy.io/?${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+            () => fetch(`https://corsproxy.io/?${enc1}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+            () => fetch(`https://api.cors.lol/?url=${enc}`, {
+                headers: { 'x-cors-headers': JSON.stringify({ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' }) }
+            }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+            () => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => r.json()).then(j => { if (!j.contents) throw new Error('tom'); return JSON.parse(j.contents); }),
+        ];
+
+        for (const proxy of stockProxies) {
+            try {
+                const data = await proxy();
+                return extractMeta(data);
+            } catch (e) {
+                console.warn(`Börs-proxy misslyckades för ${symbol}:`, e.message);
+            }
+        }
+        throw new Error('Alla proxies misslyckades');
     };
 
     // Sekventiellt med 1200ms fördröjning för att undvika Yahoo rate limit
