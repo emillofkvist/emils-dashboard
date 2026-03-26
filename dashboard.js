@@ -386,76 +386,94 @@ async function fetchBriefing() {
     }
 }
 
-// Hämta pollenprognos från pollenkoll.se (Malmö) – skrapar HTML via proxy
+// Hämta pollenprognos från pollenrapporten.se (Naturhistoriska riksmuseet) – Malmö
 async function fetchPollen() {
+    const MALMO_REGION_ID = '2a2a2a2a-2a2a-4a2a-aa2a-2a2a2a303a30';
+
+    const POLLEN_NAMES = {
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323233': 'Hassel',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323236': 'Al',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323239': 'Tall',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323330': 'Sälg/Viden',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323331': 'Alm',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323332': 'Björk',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323335': 'Bok',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323337': 'Ek',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323338': 'Gran',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323433': 'Gräs',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323530': 'Gråbo',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323533': 'Malörtsambr.',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323833': 'Alternaria',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323834': 'Cladosporium',
+        '2a2a2a2a-2a2a-4a2a-aa2a-2a313a323839': 'Epicoccum',
+    };
+
+    const LEVEL_NAMES = ['', 'Låga', 'Låga–måttliga', 'Måttliga', 'Måttliga–höga', 'Höga', 'Höga–mycket höga', 'Mycket höga'];
+
     function levelColor(l) {
-        l = parseInt(l, 10);
         if (l <= 0) return '#d1d5db';
         if (l === 1) return '#10b981';
         if (l === 2) return '#84cc16';
         if (l === 3) return '#f59e0b';
         if (l === 4) return '#f97316';
         if (l === 5) return '#ef4444';
-        return '#a855f7'; // 6 = mycket höga
-    }
-
-    function parsePollenHtml(html) {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        // Försök hitta aktiv dag, annars ta första dagen med data
-        let container = doc.querySelector('.pollen-city__day.active') ||
-                        doc.querySelector('.pollen-city__day');
-        if (!container) throw new Error('Ingen pollendata hittades i HTML');
-        const items = container.querySelectorAll('.pollen-city__item[data-level]');
-        const all = [];
-        items.forEach(item => {
-            const level = parseInt(item.getAttribute('data-level'), 10);
-            if (level <= 0) return;
-            const name = item.querySelector('.pollen-city__item-name')?.textContent.trim() || '?';
-            const desc = item.querySelector('.pollen-city__item-desc')?.textContent.trim() || '';
-            all.push({ name, desc, level, color: levelColor(level) });
-        });
-        return all;
-    }
-
-    const pollenUrl = 'https://www.pollenkoll.se/pollenprognos/malmo/';
-    // corsproxy.io returnerar rå HTML direkt (ingen JSON-wrapper)
-    // allorigins.win som backup (returnerar JSON med contents-fält)
-    const proxies = [
-        { url: `https://corsproxy.io/?${encodeURIComponent(pollenUrl)}`, json: false },
-        { url: `https://api.allorigins.win/get?url=${encodeURIComponent(pollenUrl)}`, json: true },
-    ];
-
-    let all = [];
-    for (const proxy of proxies) {
-        try {
-            const res = await fetch(proxy.url);
-            const html = proxy.json ? (await res.json()).contents : await res.text();
-            if (!html) throw new Error('Tom respons');
-            all = parsePollenHtml(html);
-            if (all.length > 0) break;
-        } catch (e) {
-            console.warn('Pollenproxy misslyckades, försöker nästa:', e.message);
-        }
+        if (l === 6) return '#dc2626';
+        return '#a855f7'; // 7 = mycket höga
     }
 
     const card = document.getElementById('pollen');
-    if (all.length === 0) {
-        card.style.display = 'none';
-        return;
-    }
 
-    card.style.display = '';
-    document.getElementById('pollen-content').innerHTML = `
-        <div class="pollen-grid">
-            ${all.map(t => `
-                <div class="pollen-item">
-                    <div class="pollen-dot" style="background:${t.color}"></div>
-                    <span class="pollen-name">${t.name}</span>
-                    <span class="pollen-level">${t.desc}</span>
-                </div>
-            `).join('')}
-        </div>
-    `;
+    try {
+        const url = `https://api.pollenrapporten.se/v1/forecasts?current=true&region_id=${MALMO_REGION_ID}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const forecast = data.items?.[0];
+        if (!forecast) throw new Error('Ingen prognos tillgänglig');
+
+        const today = new Date().toISOString().slice(0, 10);
+
+        // Summera max-nivå per pollentyp för idag
+        const todayLevels = {};
+        (forecast.levelSeries || []).forEach(entry => {
+            if ((entry.time || '').slice(0, 10) === today && entry.level > 0) {
+                if (!todayLevels[entry.pollenId] || entry.level > todayLevels[entry.pollenId]) {
+                    todayLevels[entry.pollenId] = entry.level;
+                }
+            }
+        });
+
+        const all = Object.entries(todayLevels)
+            .map(([pollenId, level]) => ({
+                name: POLLEN_NAMES[pollenId] || pollenId,
+                level,
+                desc: LEVEL_NAMES[level] || `Nivå ${level}`,
+                color: levelColor(level),
+            }))
+            .sort((a, b) => b.level - a.level);
+
+        if (all.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+
+        card.style.display = '';
+        document.getElementById('pollen-content').innerHTML = `
+            <div class="pollen-grid">
+                ${all.map(t => `
+                    <div class="pollen-item">
+                        <div class="pollen-dot" style="background:${t.color}"></div>
+                        <span class="pollen-name">${t.name}</span>
+                        <span class="pollen-level">${t.desc}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (e) {
+        console.warn('Pollenrapporten API misslyckades:', e.message);
+        card.style.display = 'none';
+    }
 }
 
 // Kolla om en börs är öppen just nu
