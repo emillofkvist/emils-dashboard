@@ -51,8 +51,14 @@ MODULER & DATAKÄLLOR
                         Symboler: ^OMX, ^GSPC, ^IXIC, ^DJI
   Kalender            – Google Kalender via iCal-länk, proxy: corsproxy.io
   Nyheter (SVT + DN)  – RSS via corsproxy.io, max 5 totalt (3 per källa)
-  AI-nyheter          – TechCrunch AI + The Verge RSS, max 5
-  Porsche-nyheter     – Carscoops, Road & Track, Motor1 RSS, max 5
+  AI-nyheter          – OpenAI + Anthropic via Google News RSS, max 4
+  Porsche-nyheter     – Google News RSS, max 3
+  Pollenprognos       – https://api.pollenrapporten.se/v1/forecasts (Naturhistoriska riksmuseet)
+                        Region: Malmö (UUID-baserad), 7-gradig skala, visar bara nivå > 0
+  Apple Release Notes – Apple DocC JSON API via corsproxy.io
+                        Visar alltid senaste iOS/iPadOS-release
+                        Datum från developer.apple.com/news/releases/ (fallback: localStorage firstSeen)
+                        Rubrik auto-översätts till svenska. Läsarläge renderar DocC JSON inline.
   Macworld Sverige    – https://www.macworld.se/feed  (senaste 24h)
   Macworld.com        – https://www.macworld.com/feed/  (senaste 24h, auto-översätts)
   Feber               – https://feber.se/rss/  (5 senaste)
@@ -108,8 +114,19 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
   6. Pusha enligt git-workflow ovan
 
 
-SENASTE ÄNDRINGAR (2026-02-28)
--------------------------------
+SENASTE ÄNDRINGAR
+-----------------
+  2026-03-26
+  - Apple Release Notes: auto-översätter rubrik till svenska
+  - Apple Release Notes: tar alltid bort 48h-gräns, visar alltid senaste release
+  - Apple Release Notes: visar publiceringsdatum (hämtas från Apple, fallback localStorage)
+
+  2026-03-xx
+  - Pollenprognos: bytt från HTML-scraping (pollenkoll.se) till officiell REST JSON API
+    (api.pollenrapporten.se, Naturhistoriska riksmuseet, Malmö-region)
+  - Apple Release Notes: nytt kort med DocC JSON läsarläge via corsproxy.io
+
+  2026-02-28
   - Macworld: hämtar nu från både macworld.se och macworld.com
     Engelska rubriker (macworld.com) auto-översätts till svenska
   - Aftonbladet: nytt kort längst ner med 8 senaste nyheter
