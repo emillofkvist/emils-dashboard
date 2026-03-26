@@ -1020,19 +1020,17 @@ async function fetchMacworld() {
     }
 }
 
-// Hämta senaste Apple iOS/iPadOS Release Note – visar kortet 48h efter att en ny release upptäcks
+// Hämta senaste Apple iOS/iPadOS Release Note – visas alltid, datum från Apple Releases-sidan
 async function fetchAppleRelease() {
     const card = document.getElementById('apple-release-card');
     const content = document.getElementById('apple-release');
     const LS_KEY = 'apple-release-latest';
-    const HOURS_48 = 48 * 60 * 60 * 1000;
 
     try {
         const apiUrl = 'https://developer.apple.com/tutorials/data/documentation/ios-ipados-release-notes.json';
-        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`);
+        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(apiUrl)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const wrapper = await res.json();
-        const data = JSON.parse(wrapper.contents);
+        const data = await res.json();
 
         const latestId = data.topicSections?.[0]?.identifiers?.[0];
         if (!latestId) throw new Error('Ingen release hittades');
@@ -1043,23 +1041,40 @@ async function fetchAppleRelease() {
         const title = ref.title;
         const url = `https://developer.apple.com${ref.url}`;
 
+        // Spara firstSeen per release-id för att visa publiceringsdatum
         let stored = null;
         try { stored = JSON.parse(localStorage.getItem(LS_KEY)); } catch {}
-
-        const now = Date.now();
-
         if (!stored || stored.id !== latestId) {
-            stored = { id: latestId, firstSeen: now };
+            stored = { id: latestId, firstSeen: Date.now() };
             localStorage.setItem(LS_KEY, JSON.stringify(stored));
         }
 
-        const age = now - stored.firstSeen;
-        if (age > HOURS_48) {
-            card.style.display = 'none';
-            return;
-        }
+        // Försök hämta faktiskt releasedatum från Apple Releases-sidan
+        let releaseDate = null;
+        try {
+            const releasesHtml = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://developer.apple.com/news/releases/')}`)
+                .then(r => r.text());
+            const doc = new DOMParser().parseFromString(releasesHtml, 'text/html');
+            // Extrahera versionsnummer ur titeln, t.ex. "26.4" från "iOS & iPadOS 26.4 Release Notes"
+            const versionMatch = title.match(/(\d+\.\d+(?:\.\d+)?)/);
+            if (versionMatch) {
+                const version = versionMatch[1];
+                // Hitta iOS-raden på releases-sidan som matchar versionen
+                const items = [...doc.querySelectorAll('li, .release-entry, p')];
+                for (const el of items) {
+                    if (el.textContent.includes('iOS') && el.textContent.includes(version)) {
+                        const dateEl = el.querySelector('time') || el;
+                        const dateText = dateEl.getAttribute('datetime') || dateEl.textContent.match(/\w+ \d+, \d{4}/)?.[0];
+                        if (dateText) { releaseDate = new Date(dateText); break; }
+                    }
+                }
+            }
+        } catch {}
 
-        const timeAgo = getTimeAgo(new Date(stored.firstSeen));
+        // Fallback: firstSeen från localStorage
+        const displayDate = releaseDate && !isNaN(releaseDate)
+            ? releaseDate.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' })
+            : new Date(stored.firstSeen).toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' });
 
         card.style.display = '';
         content.innerHTML = `
@@ -1068,7 +1083,7 @@ async function fetchAppleRelease() {
                 <div class="news-title">
                     <a href="${url}" class="reader-link" data-url="${url}">${title}</a>
                 </div>
-                <div class="news-time">${timeAgo}</div>
+                <div class="news-time">${displayDate}</div>
             </div>
         `;
         content.querySelectorAll('.reader-link').forEach(link => {
