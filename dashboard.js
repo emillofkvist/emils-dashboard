@@ -1020,6 +1020,68 @@ async function fetchMacworld() {
     }
 }
 
+// Hämta senaste Apple iOS/iPadOS Release Note – visar kortet 48h efter att en ny release upptäcks
+async function fetchAppleRelease() {
+    const card = document.getElementById('apple-release-card');
+    const content = document.getElementById('apple-release');
+    const LS_KEY = 'apple-release-latest';
+    const HOURS_48 = 48 * 60 * 60 * 1000;
+
+    try {
+        const apiUrl = 'https://developer.apple.com/tutorials/data/documentation/ios-ipados-release-notes.json';
+        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const wrapper = await res.json();
+        const data = JSON.parse(wrapper.contents);
+
+        const latestId = data.topicSections?.[0]?.identifiers?.[0];
+        if (!latestId) throw new Error('Ingen release hittades');
+
+        const ref = data.references?.[latestId];
+        if (!ref) throw new Error('Ingen referens hittades');
+
+        const title = ref.title;
+        const url = `https://developer.apple.com${ref.url}`;
+
+        let stored = null;
+        try { stored = JSON.parse(localStorage.getItem(LS_KEY)); } catch {}
+
+        const now = Date.now();
+
+        if (!stored || stored.id !== latestId) {
+            stored = { id: latestId, firstSeen: now };
+            localStorage.setItem(LS_KEY, JSON.stringify(stored));
+        }
+
+        const age = now - stored.firstSeen;
+        if (age > HOURS_48) {
+            card.style.display = 'none';
+            return;
+        }
+
+        const hoursLeft = Math.ceil((HOURS_48 - age) / 3600000);
+        const timeAgo = getTimeAgo(new Date(stored.firstSeen));
+
+        card.style.display = '';
+        content.innerHTML = `
+            <div class="news-item">
+                <div class="news-source">Apple Developer</div>
+                <div class="news-title">
+                    <a href="${url}" class="reader-link" data-url="${url}">${title}</a>
+                </div>
+                <div class="news-time">Sedd ${timeAgo} · döljs om ${hoursLeft}h</div>
+            </div>
+        `;
+        content.querySelectorAll('.reader-link').forEach(link => {
+            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+        });
+
+    } catch (e) {
+        console.warn('Apple Release-fel:', e.message);
+        card.style.display = 'none';
+    }
+}
+
 // Hämta Feber nyheter (5 senaste)
 async function fetchFeber() {
     try {
@@ -1273,6 +1335,7 @@ async function init() {
         fetchAiNews(),
         fetchPorsche(),
         fetchMacworld(),
+        fetchAppleRelease(),
         fetchFeber(),
         fetchAftonbladet()
     ]);
