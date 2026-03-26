@@ -1255,9 +1255,9 @@ async function openAppleDocReader(pageUrl) {
             'https://developer.apple.com/tutorials/data/documentation/'
         ) + '.json';
 
-        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(jsonUrl)}`);
-        const wrapper = await res.json();
-        const data = JSON.parse(wrapper.contents);
+        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(jsonUrl)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
         const refs = data.references || {};
 
         function renderInline(items) {
