@@ -1059,7 +1059,6 @@ async function fetchAppleRelease() {
             return;
         }
 
-        const hoursLeft = Math.ceil((HOURS_48 - age) / 3600000);
         const timeAgo = getTimeAgo(new Date(stored.firstSeen));
 
         card.style.display = '';
@@ -1069,7 +1068,7 @@ async function fetchAppleRelease() {
                 <div class="news-title">
                     <a href="${url}" class="reader-link" data-url="${url}">${title}</a>
                 </div>
-                <div class="news-time">Sedd ${timeAgo} · döljs om ${hoursLeft}h</div>
+                <div class="news-time">${timeAgo}</div>
             </div>
         `;
         content.querySelectorAll('.reader-link').forEach(link => {
