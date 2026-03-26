@@ -1090,6 +1090,8 @@ async function fetchAppleRelease() {
             link.addEventListener('click', e => { e.preventDefault(); openAppleDocReader(link.dataset.url); });
         });
 
+        translateHeadlines('apple-release');
+
     } catch (e) {
         console.warn('Apple Release-fel:', e.message);
         card.style.display = 'none';
