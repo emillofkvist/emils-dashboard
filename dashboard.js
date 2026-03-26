@@ -1073,7 +1073,7 @@ async function fetchAppleRelease() {
             </div>
         `;
         content.querySelectorAll('.reader-link').forEach(link => {
-            link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+            link.addEventListener('click', e => { e.preventDefault(); openAppleDocReader(link.dataset.url); });
         });
 
     } catch (e) {
@@ -1229,6 +1229,76 @@ async function toggleTranslation() {
     btn.classList.add('active');
     btn.disabled = false;
     readerIsTranslated = true;
+}
+
+// Renderar Apple DocC JSON-innehåll direkt i läsaröverlägget (inga proxyproblem)
+async function openAppleDocReader(pageUrl) {
+    const overlay = document.getElementById('reader-overlay');
+    const content = document.getElementById('reader-content');
+    document.getElementById('reader-source-link').href = pageUrl;
+
+    readerOriginalHTML = '';
+    readerIsTranslated = false;
+    const btn = document.getElementById('translate-btn');
+    btn.textContent = 'Översätt till svenska';
+    btn.classList.remove('active');
+    btn.disabled = false;
+
+    overlay.classList.add('active');
+    overlay.scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+    content.innerHTML = '<div class="loading">Hämtar release notes...</div>';
+
+    try {
+        const jsonUrl = pageUrl.replace(
+            'https://developer.apple.com/documentation/',
+            'https://developer.apple.com/tutorials/data/documentation/'
+        ) + '.json';
+
+        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(jsonUrl)}`);
+        const wrapper = await res.json();
+        const data = JSON.parse(wrapper.contents);
+        const refs = data.references || {};
+
+        function renderInline(items) {
+            return (items || []).map(item => {
+                if (item.type === 'text') return item.text;
+                if (item.type === 'codeVoice') return `<code>${item.code}</code>`;
+                if (item.type === 'strong') return `<strong>${renderInline(item.inlineContent)}</strong>`;
+                if (item.type === 'emphasis') return `<em>${renderInline(item.inlineContent)}</em>`;
+                if (item.type === 'reference') {
+                    const ref = refs[item.identifier];
+                    const text = ref?.title || item.identifier;
+                    return ref?.url ? `<a href="https://developer.apple.com${ref.url}" target="_blank">${text}</a>` : text;
+                }
+                return '';
+            }).join('');
+        }
+
+        function renderBlock(block) {
+            if (block.type === 'heading') return `<h${block.level}>${block.text}</h${block.level}>`;
+            if (block.type === 'paragraph') return `<p>${renderInline(block.inlineContent)}</p>`;
+            if (block.type === 'unorderedList') {
+                return `<ul>${(block.items || []).map(i => `<li>${(i.content || []).map(renderBlock).join('')}</li>`).join('')}</ul>`;
+            }
+            if (block.type === 'orderedList') {
+                return `<ol>${(block.items || []).map(i => `<li>${(i.content || []).map(renderBlock).join('')}</li>`).join('')}</ol>`;
+            }
+            if (block.type === 'codeListing') return `<pre><code>${(block.code || []).join('\n')}</code></pre>`;
+            return '';
+        }
+
+        const title = data.metadata?.title || 'Release Notes';
+        const bodyHtml = (data.primaryContentSections || [])
+            .flatMap(sec => (sec.content || []).map(renderBlock))
+            .join('');
+
+        content.innerHTML = `<h1>${title}</h1>${bodyHtml}`;
+
+    } catch (e) {
+        console.warn('Apple Doc Reader-fel:', e.message);
+        content.innerHTML = `<p>Kunde inte hämta innehållet.</p><p><a href="${pageUrl}" target="_blank">Öppna i webbläsaren istället →</a></p>`;
+    }
 }
 
 async function openReader(url) {
