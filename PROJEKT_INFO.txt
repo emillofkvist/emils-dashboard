@@ -116,6 +116,10 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-03-27
+  - Apple Release Notes: fix – rubrik översätts nu direkt via translateText() innan
+    den sätts in i DOM, istället för via translateHeadlines() efteråt
+
   2026-03-26
   - Apple Release Notes: auto-översätter rubrik till svenska
   - Apple Release Notes: tar alltid bort 48h-gräns, visar alltid senaste release

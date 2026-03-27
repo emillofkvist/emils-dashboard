@@ -1038,7 +1038,8 @@ async function fetchAppleRelease() {
         const ref = data.references?.[latestId];
         if (!ref) throw new Error('Ingen referens hittades');
 
-        const title = ref.title;
+        const rawTitle = ref.title;
+        const title = (await translateText(rawTitle)) || rawTitle;
         const url = `https://developer.apple.com${ref.url}`;
 
         // Spara firstSeen per release-id för att visa publiceringsdatum
@@ -1089,8 +1090,6 @@ async function fetchAppleRelease() {
         content.querySelectorAll('.reader-link').forEach(link => {
             link.addEventListener('click', e => { e.preventDefault(); openAppleDocReader(link.dataset.url); });
         });
-
-        translateHeadlines('apple-release');
 
     } catch (e) {
         console.warn('Apple Release-fel:', e.message);
