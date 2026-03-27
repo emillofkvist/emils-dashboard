@@ -1039,7 +1039,7 @@ async function fetchAppleRelease() {
         if (!ref) throw new Error('Ingen referens hittades');
 
         const rawTitle = ref.title;
-        const title = (await translateText(rawTitle)) || rawTitle;
+        const title = rawTitle.replace('Release Notes', 'Versionsinformation');
         const url = `https://developer.apple.com${ref.url}`;
 
         // Spara firstSeen per release-id för att visa publiceringsdatum

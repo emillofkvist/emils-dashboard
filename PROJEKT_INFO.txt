@@ -117,8 +117,9 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 SENASTE ÄNDRINGAR
 -----------------
   2026-03-27
-  - Apple Release Notes: fix – rubrik översätts nu direkt via translateText() innan
-    den sätts in i DOM, istället för via translateHeadlines() efteråt
+  - Apple Release Notes: rubrik översätts nu med string replace ("Release Notes" → "Versionsinformation")
+    istället för translateText() som returnerade originaltexten oförändrad (Google Translate
+    behandlar Apple-titlar som produktnamn)
 
   2026-03-26
   - Apple Release Notes: auto-översätter rubrik till svenska
