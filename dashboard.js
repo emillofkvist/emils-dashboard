@@ -1303,12 +1303,14 @@ async function openAppleDocReader(pageUrl) {
             return '';
         }
 
-        const title = data.metadata?.title || 'Release Notes';
+        const rawTitle = data.metadata?.title || 'Release Notes';
+        const title = rawTitle.replace('Release Notes', 'Versionsinformation');
         const bodyHtml = (data.primaryContentSections || [])
             .flatMap(sec => (sec.content || []).map(renderBlock))
             .join('');
 
-        content.innerHTML = `<h1>${title}</h1>${bodyHtml}`;
+        content.innerHTML = `<h1>${title}</h1><div class="reader-body">${bodyHtml}</div>`;
+        toggleTranslation();
 
     } catch (e) {
         console.warn('Apple Doc Reader-fel:', e.message);

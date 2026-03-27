@@ -117,9 +117,10 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 SENASTE ÄNDRINGAR
 -----------------
   2026-03-27
-  - Apple Release Notes: rubrik översätts nu med string replace ("Release Notes" → "Versionsinformation")
-    istället för translateText() som returnerade originaltexten oförändrad (Google Translate
-    behandlar Apple-titlar som produktnamn)
+  - Apple Release Notes: rubrik översätts med string replace ("Release Notes" → "Versionsinformation")
+    (translateText fungerade ej – Google Translate behandlar Apple-titlar som produktnamn)
+  - Apple Release Notes: reader-vyn auto-översätter nu hela innehållet till svenska vid öppning
+    (lade till .reader-body wrapper + anropar toggleTranslation() automatiskt)
 
   2026-03-26
   - Apple Release Notes: auto-översätter rubrik till svenska
