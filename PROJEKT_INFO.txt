@@ -116,6 +116,12 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-03-28
+  - Aftonbladet RSS: byt från rss2json (stöder ej formatet) till corsproxy.io + manuell XML-parsing
+  - Reader: h1-titeln översätts nu också vid auto-translate (inkl. revert)
+  - Reader: strippar "| Källnamn"-suffix från Readability-titlar (t.ex. "| TechCrunch")
+  - Reader: lade till aftonbladet.se i swedishSource (auto-översattes felaktigt innan)
+
   2026-03-27
   - Apple Release Notes: rubrik översätts med string replace ("Release Notes" → "Versionsinformation")
     (translateText fungerade ej – Google Translate behandlar Apple-titlar som produktnamn)

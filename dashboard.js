@@ -1133,10 +1133,21 @@ async function fetchFeber() {
     }
 }
 
-// Hämta Aftonbladet nyheter (8 senaste)
+// Hämta Aftonbladet nyheter via corsproxy.io + XML-parsing (rss2json stöder ej deras format)
+async function fetchAftonbladetRSS(feedUrl) {
+    const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(feedUrl)}`);
+    const xml = await r.text();
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    return [...doc.querySelectorAll('item')].map(item => ({
+        title: item.querySelector('title')?.textContent || '',
+        link: item.querySelector('link')?.textContent || item.querySelector('guid')?.textContent || '',
+        date: new Date(item.querySelector('pubDate')?.textContent || '')
+    }));
+}
+
 async function fetchAftonbladet() {
     try {
-        const items = await fetchRSS(CONFIG.aftonbladetFeed);
+        const items = await fetchAftonbladetRSS(CONFIG.aftonbladetFeed);
         const news = items.slice(0, CONFIG.maxAftonbladetNews).map(item => ({ title: item.title, link: item.link, date: item.date }));
 
         if (news.length === 0) {
@@ -1222,6 +1233,7 @@ async function toggleTranslation() {
 
     if (readerIsTranslated) {
         body.innerHTML = readerOriginalHTML;
+        if (btn._revertTitle) { btn._revertTitle(); btn._revertTitle = null; }
         btn.textContent = 'Översätt till svenska';
         btn.classList.remove('active');
         readerIsTranslated = false;
@@ -1232,19 +1244,28 @@ async function toggleTranslation() {
     btn.textContent = 'Översätter...';
     btn.disabled = true;
 
-    // Hämta alla textelement och översätt parallellt
+    const titleEl = document.querySelector('.reader-title');
+    const originalTitle = titleEl ? titleEl.textContent : null;
+
+    // Hämta alla textelement och översätt parallellt (inkl. h1-titeln)
     const elements = [...body.querySelectorAll('p, h2, h3, h4, li, figcaption')];
     const texts = elements.map(el => el.textContent.trim());
-    const translated = await Promise.all(texts.map(t => translateText(t)));
-    elements.forEach((el, i) => {
-        if (translated[i]) el.textContent = translated[i];
-    });
+    const [translatedTitle, ...translatedRest] = await Promise.all([
+        titleEl ? translateText(titleEl.textContent.trim()) : Promise.resolve(null),
+        ...texts.map(t => translateText(t))
+    ]);
+
+    if (titleEl && translatedTitle) titleEl.textContent = translatedTitle;
+    elements.forEach((el, i) => { if (translatedRest[i]) el.textContent = translatedRest[i]; });
 
     btn.textContent = 'Visa originalspråk';
     btn.classList.add('active');
     btn.disabled = false;
     readerIsTranslated = true;
+
+    btn._revertTitle = () => { if (titleEl && originalTitle) titleEl.textContent = originalTitle; };
 }
+
 
 // Renderar Apple DocC JSON-innehåll direkt i läsaröverlägget (inga proxyproblem)
 async function openAppleDocReader(pageUrl) {
@@ -1343,9 +1364,10 @@ async function openReader(url) {
     const article = await fetchAndExtract(url);
 
     if (article) {
-        const swedishSource = /svt\.se|dn\.se|macworld\.se|feber\.se/i.test(url);
+        const swedishSource = /svt\.se|dn\.se|macworld\.se|feber\.se|aftonbladet\.se/i.test(url);
+        const cleanTitle = (article.title || '').replace(/\s*[|–—]\s*[^|–—]+$/, '').trim();
         content.innerHTML = `
-            <h1 class="reader-title">${article.title || ''}</h1>
+            <h1 class="reader-title">${cleanTitle}</h1>
             <div class="reader-body">${article.content}</div>
             <div style="text-align:center; padding: 32px 0 8px;">
                 <button onclick="closeReader()" style="
