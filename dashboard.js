@@ -1468,7 +1468,8 @@ async function fetchBonnieLunch(now) {
 
 async function fetchIsabelleLunch(now) {
     const { year, week } = getISOYearWeek(now);
-    const resp = await fetch(`https://skolmaten.se/api/4/menu/school/elinebergsskolan?year=${year}&week=${week}`);
+    const apiUrl = `https://skolmaten.se/api/4/menu/school/elinebergsskolan?year=${year}&week=${week}`;
+    const resp = await fetch(CONFIG.corsProxy + encodeURIComponent(apiUrl));
     const data = await resp.json();
     const dateNum = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
     for (const w of (data.weeks || [])) {
