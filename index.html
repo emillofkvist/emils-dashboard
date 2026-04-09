@@ -301,6 +301,31 @@
         }
 
         /* AI-nyheter */
+        .lunch-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            gap: 12px;
+        }
+        .lunch-row:last-child { border-bottom: none; }
+        .lunch-name {
+            font-weight: 600;
+            font-size: 13px;
+            white-space: nowrap;
+            color: #374151;
+        }
+        .lunch-dish {
+            font-size: 13px;
+            color: #6b7280;
+            text-align: right;
+        }
+        .lunch-error { color: #d1d5db; font-style: italic; }
+        body.dark .lunch-row { border-bottom-color: #334155; }
+        body.dark .lunch-name { color: #e2e8f0; }
+        body.dark .lunch-dish { color: #94a3b8; }
+
         .ai-card {
             border-left: 4px solid #10a37f;
         }
@@ -878,6 +903,12 @@
             </div>
         </div>
 
+        <!-- Skollunch -->
+        <div class="card" id="lunch-card">
+            <div class="card-header">Skolmåltid</div>
+            <div id="lunch"><div class="loading">Hämtar matsedel...</div></div>
+        </div>
+
         <!-- Nyheter -->
         <div class="card">
             <div class="card-header">Nyheter</div>
@@ -1019,6 +1050,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.js"></script>
     <script src="config.js?v=2"></script>
-    <script src="dashboard.js?v=17"></script>
+    <script src="dashboard.js?v=18"></script>
 </body>
 </html>

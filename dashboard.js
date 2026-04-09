@@ -1428,6 +1428,84 @@ function toggleDarkMode() {
 }
 
 // Starta dashboard
+// ============================================
+// SKOLMÅLTID
+// ============================================
+
+function getISOYearWeek(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const isoYear = d.getUTCFullYear();
+    const yearStart = new Date(Date.UTC(isoYear, 0, 1));
+    const isoWeek = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return { year: isoYear, week: isoWeek };
+}
+
+async function fetchBonnieLunch(now) {
+    const { week } = getISOYearWeek(now);
+    const url = 'https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html';
+    const resp = await fetch(CONFIG.corsProxy + encodeURIComponent(url));
+    const html = await resp.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const tables = doc.querySelectorAll('table');
+    let weekTable = null;
+    for (const t of tables) {
+        const header = t.querySelector('caption, thead');
+        if (header && header.textContent.toLowerCase().includes(`vecka ${week}`)) {
+            weekTable = t; break;
+        }
+    }
+    if (!weekTable) throw new Error('ingen tabell');
+    const dayNames = ['', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag'];
+    const todayName = dayNames[now.getDay()];
+    for (const row of weekTable.querySelectorAll('tbody tr')) {
+        const cells = row.querySelectorAll('td');
+        if (cells[0] && cells[0].textContent.trim().startsWith(todayName) && cells[1]) {
+            return cells[1].textContent.trim();
+        }
+    }
+    throw new Error('dag ej hittad');
+}
+
+async function fetchIsabelleLunch(now) {
+    const { year, week } = getISOYearWeek(now);
+    const resp = await fetch(`https://skolmaten.se/api/4/menu/school/elinebergsskolan?year=${year}&week=${week}`);
+    const data = await resp.json();
+    const dateNum = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    for (const w of (data.weeks || [])) {
+        for (const day of (w.days || [])) {
+            if (parseInt(day.date) === dateNum) {
+                return (day.items || []).map(i => i.value).filter(Boolean).join(', ');
+            }
+        }
+    }
+    throw new Error('dag ej hittad');
+}
+
+async function fetchLunch() {
+    const now = new Date();
+    const card = document.getElementById('lunch-card');
+    if (now.getDay() === 0 || now.getDay() === 6) {
+        card.style.display = 'none';
+        return;
+    }
+    const [bonnieResult, isabelleResult] = await Promise.allSettled([
+        fetchBonnieLunch(now),
+        fetchIsabelleLunch(now)
+    ]);
+    const row = (emoji, name, result) => {
+        const dish = result.status === 'fulfilled'
+            ? `<span class="lunch-dish">${result.value}</span>`
+            : `<span class="lunch-dish lunch-error">Kunde inte hämta</span>`;
+        return `<div class="lunch-row"><span class="lunch-name">${emoji} ${name}</span>${dish}</div>`;
+    };
+    document.getElementById('lunch').innerHTML =
+        row('🎀', 'Bonnie', bonnieResult) +
+        row('⭐', 'Isabelle', isabelleResult);
+}
+
 async function init() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
@@ -1446,7 +1524,8 @@ async function init() {
         fetchMacworld(),
         fetchAppleRelease(),
         fetchFeber(),
-        fetchAftonbladet()
+        fetchAftonbladet(),
+        fetchLunch()
     ]);
     fetchCalendar();
 }

@@ -138,6 +138,11 @@ SENASTE ÄNDRINGAR
     (api.pollenrapporten.se, Naturhistoriska riksmuseet, Malmö-region)
   - Apple Release Notes: nytt kort med DocC JSON läsarläge via corsproxy.io
 
+  2026-04-09
+  - Skolmåltid: nytt kort med dagens lunch för Bonnie (Hyllinge skola, astorp.se via CORS-proxy)
+    och Isabelle (Elinebergsskolan, skolmaten.se API)
+  - Döljs automatiskt på helger
+
   2026-02-28
   - Macworld: hämtar nu från både macworld.se och macworld.com
     Engelska rubriker (macworld.com) auto-översätts till svenska
