@@ -606,7 +606,7 @@ async function fetchCalendar() {
 
     try {
         const proxy = CONFIG.calendarProxy || CONFIG.corsProxy;
-        const url = `${proxy}${encodeURIComponent(CONFIG.calendar.icalUrl)}`;
+        const url = `${proxy}${CONFIG.calendar.icalUrl}`;
         let icalText = '';
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
@@ -1442,7 +1442,7 @@ function getISOYearWeek(date) {
 async function fetchBonnieLunch(now) {
     const { week } = getISOYearWeek(now);
     const url = 'https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html';
-    const resp = await fetch(CONFIG.corsProxy + encodeURIComponent(url));
+    const resp = await fetch(CONFIG.corsProxy + url);
     const html = await resp.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -1469,7 +1469,7 @@ async function fetchBonnieLunch(now) {
 async function fetchIsabelleLunch(now) {
     const { year, week } = getISOYearWeek(now);
     const apiUrl = `https://skolmaten.se/api/4/menu/school/elinebergsskolan?year=${year}&week=${week}`;
-    const resp = await fetch(CONFIG.corsProxy + encodeURIComponent(apiUrl));
+    const resp = await fetch(CONFIG.skolmatenProxy + encodeURIComponent(apiUrl));
     const data = await resp.json();
     const dateNum = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
     for (const w of (data.weeks || [])) {

@@ -17,10 +17,14 @@ const CONFIG = {
     },
 
     // RSS-proxy för att undvika CORS-problem
-    corsProxy: "https://api.cors.lol/?url=",
+    // cors.eu.org: append URL direkt (ingen encodeURIComponent, URL utan & i query funkar bäst)
+    corsProxy: "https://cors.eu.org/",
 
-    // Alternativ proxy för kalender
-    calendarProxy: "https://api.cors.lol/?url=",
+    // Proxy för kalender (cors.eu.org funkar bra utan query-params med &)
+    calendarProxy: "https://cors.eu.org/",
+
+    // Proxy för Isabelle skolmat (skolmaten.se kräver år+vecka, cors.lol bäst för detta)
+    skolmatenProxy: "https://api.cors.lol/?url=",
 
     // Svenska nyheter - SVT och DN
     newsFeeds: [

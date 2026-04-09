@@ -69,8 +69,10 @@ MODULER & DATAKÄLLOR
 CORS-PROXYER
 ------------
   Nyheter/RSS/börs:   https://corsproxy.io/?{encoded_url}
-  Kalender (backup):  https://corsproxy.io/?{encoded_url}
+  Kalender + Bonnie:  https://cors.eu.org/{url}  (URL direkt utan encodeURIComponent)
+  Isabelle skolmat:   https://api.cors.lol/?url={encoded_url}
   OBS: allorigins.win är nere (522-fel) – använd inte den.
+  OBS: cors.lol rate-limiteras (429) om för många anrop görs parallellt.
 
 
 TEKNISKT
@@ -144,6 +146,13 @@ SENASTE ÄNDRINGAR
   - Skolmåltid: nytt kort med dagens lunch för Bonnie (Hyllinge skola, astorp.se via CORS-proxy)
     och Isabelle (Elinebergsskolan, skolmaten.se API)
   - Döljs automatiskt på helger
+
+  2026-04-10
+  - CORS-proxy: bytt corsProxy + calendarProxy från cors.lol till cors.eu.org
+    (cors.lol rate-limiterade vid parallella anrop → kalender och Bonnie-lunch misslyckades)
+  - cors.eu.org: URL appendas direkt utan encodeURIComponent (formatskillnad mot cors.lol)
+  - Nytt config-värde: CONFIG.skolmatenProxy = cors.lol (Isabelle-lunch kräver &-params)
+  - Cache-bust: config.js → v3, dashboard.js → v21
 
   2026-02-28
   - Macworld: hämtar nu från både macworld.se och macworld.com
