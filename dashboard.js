@@ -71,24 +71,21 @@ async function fetchNameday() {
 async function fetchWeather() {
     try {
         const { lat, lon } = CONFIG.weather;
-        const url = `https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/${lon}/lat/${lat}/data.json`;
+        // Ny SMHI API (snow1g/v1) ersatte pmp3g/v2 den 31 mars 2026
+        const url = `https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/${lon}/lat/${lat}/data.json`;
 
         const response = await fetch(url);
         const data = await response.json();
 
         // Första timserien är aktuellt väder
         const current = data.timeSeries[0];
-        const params = {};
-        current.parameters.forEach(p => {
-            params[p.name] = p.values[0];
-        });
+        const d = current.data;
 
-        // t = temperatur, ws = vindhastighet, r = luftfuktighet
-        // Wsymb2 = vädersymbol
-        const temp = Math.round(params.t);
-        const wind = Math.round(params.ws);
-        const humidity = Math.round(params.r);
-        const symbol = params.Wsymb2;
+        // Nya parameternamn i snow1g API
+        const temp = Math.round(d.air_temperature);
+        const wind = Math.round(d.wind_speed);
+        const humidity = Math.round(d.relative_humidity);
+        const symbol = d.symbol_code;
 
         const weatherIcons = {
             1: '☀️', 2: '🌤️', 3: '⛅', 4: '🌥️', 5: '☁️', 6: '☁️',

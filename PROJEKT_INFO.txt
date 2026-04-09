@@ -139,6 +139,8 @@ SENASTE ÄNDRINGAR
   - Apple Release Notes: nytt kort med DocC JSON läsarläge via corsproxy.io
 
   2026-04-09
+  - Väder: bytt SMHI API från pmp3g/v2 (nedlagd 31 mars 2026) till snow1g/v1
+    Nya parameternamn: air_temperature, wind_speed, relative_humidity, symbol_code
   - Skolmåltid: nytt kort med dagens lunch för Bonnie (Hyllinge skola, astorp.se via CORS-proxy)
     och Isabelle (Elinebergsskolan, skolmaten.se API)
   - Döljs automatiskt på helger
