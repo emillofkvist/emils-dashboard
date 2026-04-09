@@ -147,6 +147,11 @@ SENASTE ÄNDRINGAR
     och Isabelle (Elinebergsskolan, skolmaten.se API)
   - Döljs automatiskt på helger
 
+  2026-04-10 (2)
+  - Isabelle lunch: skolmaten.se blockerar alla CORS-proxyer och server-side-anrop
+    Lösning: visar klickbar länk "Visa matsedel →" till skolmaten.se/elinebergsskolan/ istället
+  - dashboard.js v22
+
   2026-04-10
   - CORS-proxy: bytt corsProxy + calendarProxy från cors.lol till cors.eu.org
     (cors.lol rate-limiterade vid parallella anrop → kalender och Bonnie-lunch misslyckades)

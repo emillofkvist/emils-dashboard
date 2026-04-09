@@ -1467,19 +1467,8 @@ async function fetchBonnieLunch(now) {
 }
 
 async function fetchIsabelleLunch(now) {
-    const { year, week } = getISOYearWeek(now);
-    const apiUrl = `https://skolmaten.se/api/4/menu/school/elinebergsskolan?year=${year}&week=${week}`;
-    const resp = await fetch(CONFIG.skolmatenProxy + encodeURIComponent(apiUrl));
-    const data = await resp.json();
-    const dateNum = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-    for (const w of (data.weeks || [])) {
-        for (const day of (w.days || [])) {
-            if (parseInt(day.date) === dateNum) {
-                return (day.items || []).map(i => i.value).filter(Boolean).join(', ');
-            }
-        }
-    }
-    throw new Error('dag ej hittad');
+    // skolmaten.se blockerar alla CORS-proxyer — visa länk istället
+    throw new Error('link');
 }
 
 async function fetchLunch() {
@@ -1493,15 +1482,20 @@ async function fetchLunch() {
         fetchBonnieLunch(now),
         fetchIsabelleLunch(now)
     ]);
-    const row = (emoji, name, result) => {
-        const dish = result.status === 'fulfilled'
-            ? `<span class="lunch-dish">${result.value}</span>`
-            : `<span class="lunch-dish lunch-error">Kunde inte hämta</span>`;
+    const row = (emoji, name, result, fallbackLink) => {
+        let dish;
+        if (result.status === 'fulfilled') {
+            dish = `<span class="lunch-dish">${result.value}</span>`;
+        } else if (fallbackLink) {
+            dish = `<a class="lunch-dish lunch-link" href="${fallbackLink}" target="_blank">Visa matsedel →</a>`;
+        } else {
+            dish = `<span class="lunch-dish lunch-error">Kunde inte hämta</span>`;
+        }
         return `<div class="lunch-row"><span class="lunch-name">${emoji} ${name}</span>${dish}</div>`;
     };
     document.getElementById('lunch').innerHTML =
         row('🎀', 'Bonnie', bonnieResult) +
-        row('⭐', 'Isabelle', isabelleResult);
+        row('⭐', 'Isabelle', isabelleResult, 'https://skolmaten.se/elinebergsskolan/');
 }
 
 async function init() {
