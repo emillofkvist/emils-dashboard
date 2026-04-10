@@ -17,9 +17,10 @@ const CONFIG = {
     },
 
     // RSS-proxy för att undvika CORS-problem
-    corsProxy: "https://api.allorigins.win/raw?url=",
+    // OBS: allorigins.win är nere (522-fel) – använd corsproxy.io
+    corsProxy: "https://corsproxy.io/?",
 
-    // Alternativ proxy för kalender (vissa proxies fungerar bättre för olika tjänster)
+    // Proxy för kalender
     calendarProxy: "https://corsproxy.io/?",
 
     // Svenska nyheter - använder SVT och DN
@@ -37,11 +38,11 @@ const CONFIG = {
     // Macworld Sverige RSS
     macworldFeed: "https://www.macworld.se/feed",
 
-    // AI-nyheter
+    // AI-nyheter (openai.com/news/rss.xml existerar ej längre – byt till TechCrunch AI)
     aiFeeds: [
         {
-            name: "OpenAI",
-            url: "https://openai.com/news/rss.xml",
+            name: "TechCrunch AI",
+            url: "https://techcrunch.com/category/artificial-intelligence/feed/",
             className: "openai"
         },
         {
