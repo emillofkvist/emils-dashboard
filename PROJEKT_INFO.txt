@@ -1,0 +1,81 @@
+EMILS DASHBOARD – PROJEKTINFO
+==============================
+Senast kontrollerad: 2026-04-10
+
+ARKITEKTUR
+----------
+- index.html       : Startsida, laddar config.js och dashboard.js
+- config.js        : Konfiguration – API-URL:er, CORS-proxies, RSS-feeds
+- dashboard.js     : All hämtning och rendering av data
+
+API-ENDPOINTS (vad koden faktiskt använder)
+--------------------------------------------
+1. Väder (SMHI pmp3g/v2):
+   https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/12.8167/lat/56.1167/data.json
+   Förväntar: timeSeries[].parameters[] med t, ws, r, Wsymb2
+
+2. Elpris SE4:
+   https://www.elprisetjustnu.se/api/v1/prices/{year}/{mm}-{dd}_SE4.json
+   Förväntar: array med SEK_per_kWh och time_start
+
+3. Börskurser (Yahoo Finance via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=2d
+   Symboler: ^OMX, ^GSPC, ^IXIC, ^DJI
+   Förväntar: chart.result[0].indicators.quote[0].close[]
+
+4. Google Kalender (iCal via corsproxy.io):
+   https://corsproxy.io/?<encoded-ical-url>
+   Förväntar: iCal-text med BEGIN:VEVENT-block
+
+5. Nyheter SVT (RSS via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https://www.svt.se/nyheter/rss.xml
+   Förväntar: RSS XML med <item>-element
+
+6. Nyheter DN (RSS via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https://www.dn.se/rss/
+   Förväntar: RSS XML med <item>-element
+
+7. AI-nyheter OpenAI (RSS via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https://openai.com/news/rss.xml
+   OBS: Oklar URL – OpenAI har bytt URL-struktur flera gånger
+
+8. AI-nyheter The Verge AI (RSS via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+   Förväntar: RSS XML med <item>-element
+
+9. Macworld Sverige (RSS via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https://www.macworld.se/feed
+   Förväntar: RSS XML med <item>-element
+
+DAGLIG KONTROLL 2026-04-10
+----------------------------
+BEGRÄNSNING: Testmiljön (Claude Code sandbox) blockerar all utgående nättrafik
+till externa API-hosts. Direkt verifiering av live-svar ej möjlig.
+
+Statisk kodanalys:
+[OK] SMHI-endpoint: pmp3g/v2 är korrekt SMHI-produkt för väderprognos
+[OK] Elprisetjustnu.se: Endpoint-format och fältnamn stämmer med koden
+[OK] Börs: Parsing av Yahoo Finance-svar ser korrekt ut (chart.result[0].indicators.quote[0].close)
+[OK] Kalender: iCal-parser hanterar flerradiga värden och tidszoner korrekt
+[OK] SVT RSS: Standard RSS 2.0, <item>/<title>/<link> – parsing ser OK ut
+[OK] The Verge RSS: Standard RSS 2.0-feed
+[OK] Macworld RSS: Standard RSS 2.0-feed
+[VARNING] OpenAI RSS: URL openai.com/news/rss.xml är osäker – OpenAI har inte alltid haft RSS
+[VARNING] DN RSS: dn.se/rss/ – oklar om DN fortfarande publicerar öppen RSS
+[VARNING] Yahoo Finance: Känt för anti-bot-åtgärder, kan blockera allorigins-proxy
+[INFO] Ingen reader mode (Readability.js) finns implementerad i koden
+
+Cache-bust: Inga ?v=N-parametrar på script-taggar i index.html (saknas helt)
+PROJEKT_INFO.txt: Skapades idag (saknades tidigare)
+
+KÄNDA PROBLEM / ATT FÖLJA UPP
+-------------------------------
+- Verifiera att OpenAI RSS https://openai.com/news/rss.xml returnerar data
+- Verifiera att DN RSS https://www.dn.se/rss/ fungerar och ej kräver prenumeration
+- Yahoo Finance via allorigins.win kan vara opålitlig – överväg alternativ proxy
+- Lägg till ?v=N cache-bust på config.js och dashboard.js i index.html
+
+GIT
+---
+Gren: master (GitHub Pages serveras från master)
+Remote: emillofkvist/emils-dashboard (via lokal proxy)
