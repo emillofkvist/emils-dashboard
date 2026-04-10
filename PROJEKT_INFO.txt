@@ -160,6 +160,17 @@ SENASTE ÄNDRINGAR
   - Nytt config-värde: CONFIG.skolmatenProxy = cors.lol (Isabelle-lunch kräver &-params)
   - Cache-bust: config.js → v3, dashboard.js → v21
 
+  2026-04-10 (daglig kontroll)
+  - Daglig kontroll: kodanalys av master-grenen avslöjade kritiska buggar
+    som gh-pages redan fixat men master inte:
+    * SMHI pmp3g/v2 (nedlagd 31 mars) → snow1g/v1 + ny parameterstruktur
+    * allorigins.win (522-fel) → corsproxy.io
+    * OpenAI RSS (existerar ej) → TechCrunch AI
+  - master-grenen uppdaterad med dessa fixar, ?v=2 cache-bust tillagd
+  - OBS: master och gh-pages är divergerade (gh-pages har fler features).
+    Mergea INTE master→gh-pages utan att manuellt hantera konflikter.
+  - Live-verifiering av API:er ej möjlig pga sandbox-nätverksbegränsning
+
   2026-02-28
   - Macworld: hämtar nu från både macworld.se och macworld.com
     Engelska rubriker (macworld.com) auto-översätts till svenska
