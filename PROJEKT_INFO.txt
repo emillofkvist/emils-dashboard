@@ -148,9 +148,10 @@ SENASTE ÄNDRINGAR
   - Döljs automatiskt på helger
 
   2026-04-10 (2)
-  - Isabelle lunch: skolmaten.se blockerar alla CORS-proxyer och server-side-anrop
-    Lösning: visar klickbar länk "Visa matsedel →" till skolmaten.se/elinebergsskolan/ istället
-  - dashboard.js v22
+  - Isabelle lunch: löst via skolmaten.se RSS-flöde (api.rss2json.com, CORS: *)
+    URL: https://skolmaten.se/api/4/rss/week/elinebergsskolan?locale=sv
+    Client-Token krävs för JSON-API men ej för RSS. rss2json.com cachetar 30 min.
+  - config.js v4, dashboard.js v23
 
   2026-04-10
   - CORS-proxy: bytt corsProxy + calendarProxy från cors.lol till cors.eu.org

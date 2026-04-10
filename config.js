@@ -23,9 +23,6 @@ const CONFIG = {
     // Proxy för kalender (cors.eu.org funkar bra utan query-params med &)
     calendarProxy: "https://cors.eu.org/",
 
-    // Proxy för Isabelle skolmat (skolmaten.se kräver år+vecka, cors.lol bäst för detta)
-    skolmatenProxy: "https://api.cors.lol/?url=",
-
     // Svenska nyheter - SVT och DN
     newsFeeds: [
         { name: "SVT Nyheter", url: "https://www.svt.se/nyheter/rss.xml" },

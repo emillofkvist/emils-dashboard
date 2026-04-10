@@ -1467,8 +1467,21 @@ async function fetchBonnieLunch(now) {
 }
 
 async function fetchIsabelleLunch(now) {
-    // skolmaten.se blockerar alla CORS-proxyer — visa länk istället
-    throw new Error('link');
+    // skolmaten.se har RSS-flöde via api.rss2json.com (CORS: *)
+    const rssUrl = 'https://skolmaten.se/api/4/rss/week/elinebergsskolan?locale=sv';
+    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data.status !== 'ok' || !data.items) throw new Error('ingen data');
+    const todayStr = now.toISOString().slice(0, 10); // "2026-04-10"
+    for (const item of data.items) {
+        if (item.pubDate && item.pubDate.startsWith(todayStr)) {
+            const meal = (item.description || '').trim();
+            if (!meal) throw new Error('lov eller stängt');
+            return meal;
+        }
+    }
+    throw new Error('dag ej hittad');
 }
 
 async function fetchLunch() {
@@ -1482,20 +1495,15 @@ async function fetchLunch() {
         fetchBonnieLunch(now),
         fetchIsabelleLunch(now)
     ]);
-    const row = (emoji, name, result, fallbackLink) => {
-        let dish;
-        if (result.status === 'fulfilled') {
-            dish = `<span class="lunch-dish">${result.value}</span>`;
-        } else if (fallbackLink) {
-            dish = `<a class="lunch-dish lunch-link" href="${fallbackLink}" target="_blank">Visa matsedel →</a>`;
-        } else {
-            dish = `<span class="lunch-dish lunch-error">Kunde inte hämta</span>`;
-        }
+    const row = (emoji, name, result) => {
+        const dish = result.status === 'fulfilled'
+            ? `<span class="lunch-dish">${result.value}</span>`
+            : `<span class="lunch-dish lunch-error">Kunde inte hämta</span>`;
         return `<div class="lunch-row"><span class="lunch-name">${emoji} ${name}</span>${dish}</div>`;
     };
     document.getElementById('lunch').innerHTML =
         row('🎀', 'Bonnie', bonnieResult) +
-        row('⭐', 'Isabelle', isabelleResult, 'https://skolmaten.se/elinebergsskolan/');
+        row('⭐', 'Isabelle', isabelleResult);
 }
 
 async function init() {
