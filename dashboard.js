@@ -193,11 +193,11 @@ async function fetchElectricity() {
         const response = await fetch(url);
         const data = await response.json();
 
-        // Hitta aktuellt timpris
-        const currentHour = now.getHours();
+        // Hitta aktuellt pris – fungerar med kvartstaxor (96/dag) sedan okt 2025
         const currentPrice = data.find(p => {
-            const priceHour = new Date(p.time_start).getHours();
-            return priceHour === currentHour;
+            const start = new Date(p.time_start);
+            const end   = new Date(p.time_end);
+            return now >= start && now < end;
         });
 
         // Beräkna min, max och snitt för dagen
@@ -238,10 +238,12 @@ async function fetchElectricity() {
         // Skapa graf
         const ctx = document.getElementById('electricityChart').getContext('2d');
 
-        // Förbered data för grafen
+        // Förbered data för grafen (stöd för kvartstaxor: HH:MM-format)
         const labels = data.map(p => {
-            const hour = new Date(p.time_start).getHours();
-            return `${hour}:00`;
+            const d = new Date(p.time_start);
+            const h = d.getHours().toString().padStart(2, '0');
+            const m = d.getMinutes().toString().padStart(2, '0');
+            return `${h}:${m}`;
         });
         const pricesOre = data.map(p => (p.SEK_per_kWh * 100).toFixed(1));
 
@@ -252,14 +254,16 @@ async function fetchElectricity() {
             return '#10b981';
         });
 
-        // Markera aktuell timme
-        const borderColors = data.map((p, i) => {
-            const hour = new Date(p.time_start).getHours();
-            return hour === currentHour ? '#1a1a2e' : 'transparent';
+        // Markera aktuellt kvartsintervall
+        const borderColors = data.map(p => {
+            const start = new Date(p.time_start);
+            const end   = new Date(p.time_end);
+            return (now >= start && now < end) ? '#1a1a2e' : 'transparent';
         });
-        const borderWidths = data.map((p, i) => {
-            const hour = new Date(p.time_start).getHours();
-            return hour === currentHour ? 2 : 0;
+        const borderWidths = data.map(p => {
+            const start = new Date(p.time_start);
+            const end   = new Date(p.time_end);
+            return (now >= start && now < end) ? 2 : 0;
         });
 
         // Ta bort gammal graf om den finns
@@ -297,8 +301,11 @@ async function fetchElectricity() {
                             font: { size: 10 },
                             maxRotation: 0,
                             callback: function(val, index) {
-                                // Visa bara var 3:e timme
-                                return index % 3 === 0 ? this.getLabelForValue(val) : '';
+                                // Visa bara hela timmar var 3:e timme (kvartstaxor: 4 poster/timme)
+                                const label = this.getLabelForValue(val);
+                                const [h, m] = label.split(':');
+                                if (m !== '00') return '';
+                                return parseInt(h) % 3 === 0 ? h : '';
                             }
                         }
                     },

@@ -118,6 +118,14 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-11
+  - Elpris: fixat bugg med kvartstaxor (96 poster/dag sedan okt 2025)
+    * currentPrice-sökning bytt från getHours()-jämförelse till time_start≤now<time_end
+    * Graf-etiketter ändrade till HH:MM (visade felaktigt HH:00 för alla kvartsstaplar)
+    * Graf-markering av aktuell stapel bytt till time_start/time_end-intervall (markerade hela timmen förut)
+    * X-axel callback justerat: visar nu bara HH-etiketter var 3:e timme (m!='00' filtreras bort)
+  - dashboard.js → v24
+
   2026-03-28
   - Aftonbladet RSS: byt från rss2json (stöder ej formatet) till corsproxy.io + manuell XML-parsing
   - Reader: h1-titeln översätts nu också vid auto-translate (inkl. revert)
