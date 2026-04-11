@@ -1137,21 +1137,9 @@ async function fetchFeber() {
     }
 }
 
-// Hämta Aftonbladet nyheter via corsproxy.io + XML-parsing (rss2json stöder ej deras format)
-async function fetchAftonbladetRSS(feedUrl) {
-    const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(feedUrl)}`);
-    const xml = await r.text();
-    const doc = new DOMParser().parseFromString(xml, 'text/xml');
-    return [...doc.querySelectorAll('item')].map(item => ({
-        title: item.querySelector('title')?.textContent || '',
-        link: item.querySelector('link')?.textContent || item.querySelector('guid')?.textContent || '',
-        date: new Date(item.querySelector('pubDate')?.textContent || '')
-    }));
-}
-
 async function fetchAftonbladet() {
     try {
-        const items = await fetchAftonbladetRSS(CONFIG.aftonbladetFeed);
+        const items = await fetchRSS(CONFIG.aftonbladetFeed);
         const news = items.slice(0, CONFIG.maxAftonbladetNews).map(item => ({ title: item.title, link: item.link, date: item.date }));
 
         if (news.length === 0) {
