@@ -147,6 +147,10 @@ SENASTE ÄNDRINGAR
     och Isabelle (Elinebergsskolan, skolmaten.se API)
   - Döljs automatiskt på helger
 
+  2026-04-11
+  - Aftonbladet: corsproxy.io kräver nu betalkonto → bytt till rss2json.com (samma som övriga flöden)
+    Tog bort fetchAftonbladetRSS(), använder nu fetchRSS() direkt. dashboard.js v24
+
   2026-04-10 (2)
   - Isabelle lunch: löst via skolmaten.se RSS-flöde (api.rss2json.com, CORS: *)
     URL: https://skolmaten.se/api/4/rss/week/elinebergsskolan?locale=sv
