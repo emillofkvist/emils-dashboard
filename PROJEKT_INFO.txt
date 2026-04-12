@@ -118,6 +118,13 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-12
+  - Börs: tog bort corsproxy.io (kräver betalplan) från proxy-fallback-listan
+    cors.lol och allorigins.win används nu som primära proxyer för Yahoo Finance
+  - Apple Release Notes: bytt corsproxy.io mot CONFIG.corsProxy (cors.eu.org) för alla 3 API-anrop
+    (ios-ipados-release-notes.json, developer.apple.com/news/releases/, doc-reader JSON)
+  - dashboard.js → v25
+
   2026-04-11
   - Elpris: fixat bugg med kvartstaxor (96 poster/dag sedan okt 2025)
     * currentPrice-sökning bytt från getHours()-jämförelse till time_start≤now<time_end
