@@ -17,11 +17,11 @@ const CONFIG = {
     },
 
     // RSS-proxy för att undvika CORS-problem
-    // OBS: allorigins.win är nere (522-fel) – använd corsproxy.io
-    corsProxy: "https://corsproxy.io/?",
+    // OBS: corsproxy.io kräver nu betalplan – använd cors.eu.org (format: https://cors.eu.org/FULL_URL)
+    corsProxy: "https://cors.eu.org/",
 
     // Proxy för kalender
-    calendarProxy: "https://corsproxy.io/?",
+    calendarProxy: "https://cors.eu.org/",
 
     // Svenska nyheter - använder SVT och DN
     newsFeeds: [

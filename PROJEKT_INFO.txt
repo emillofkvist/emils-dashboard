@@ -32,38 +32,45 @@ API-ENDPOINTS (vad koden faktiskt använder)
    https://www.elprisetjustnu.se/api/v1/prices/{year}/{mm}-{dd}_SE4.json
    Förväntar: array med SEK_per_kWh och time_start
 
-3. Börskurser (Yahoo Finance via corsproxy.io):
-   https://corsproxy.io/?<encoded-yahoo-url>
+3. Börskurser (Yahoo Finance via cors.eu.org):
+   https://cors.eu.org/https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?...
    Symboler: ^OMX, ^GSPC, ^IXIC, ^DJI
    Förväntar: chart.result[0].indicators.quote[0].close[]
 
-4. Google Kalender (iCal via corsproxy.io):
-   https://corsproxy.io/?<encoded-ical-url>
+4. Google Kalender (iCal via cors.eu.org):
+   https://cors.eu.org/{ical-url}
    Förväntar: iCal-text med BEGIN:VEVENT-block
 
-5. Nyheter SVT (RSS via corsproxy.io):
+5. Nyheter SVT (RSS via cors.eu.org):
    Förväntar: RSS XML med <item>-element
 
-6. Nyheter DN (RSS via corsproxy.io):
+6. Nyheter DN (RSS via cors.eu.org):
    Förväntar: RSS XML med <item>-element
 
-7. AI-nyheter TechCrunch AI (RSS via corsproxy.io):
+7. AI-nyheter TechCrunch AI (RSS via cors.eu.org):
    https://techcrunch.com/category/artificial-intelligence/feed/
    OBS: ersatte openai.com/news/rss.xml som inte längre existerar
 
-8. AI-nyheter The Verge AI (RSS via corsproxy.io):
+8. AI-nyheter The Verge AI (RSS via cors.eu.org):
    https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
 
-9. Macworld Sverige (RSS via corsproxy.io):
+9. Macworld Sverige (RSS via cors.eu.org):
    https://www.macworld.se/feed
 
 CORS-PROXYER
 ------------
-  Allt RSS/börs/kalender: https://corsproxy.io/?{encoded_url}
-  OBS: allorigins.win är nere (522-fel) – använd INTE den
+  Allt RSS/börs/kalender: https://cors.eu.org/{full_url}
+  OBS: corsproxy.io kräver betalplan (returnerar 200 med error-JSON) – använd INTE
+  OBS: allorigins.win/raw?url= är ett alternativ men cors.eu.org är primär
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-12
+  - CORS-proxy: bytt corsProxy och calendarProxy från corsproxy.io (kräver nu betalplan)
+    till cors.eu.org (gratis, format: https://cors.eu.org/FULL_URL)
+  - dashboard.js: tagit bort encodeURIComponent() från alla proxy-URL-konstruktioner (5 ställen)
+    eftersom cors.eu.org tar raw URL i path istället för encoded query string
+
   2026-04-10
   - Väder: bytt SMHI API från pmp3g/v2 (nedlagd 31 mars 2026) till snow1g/v1
     Ny parameterstruktur: timeSeries[].data.{air_temperature, wind_speed, ...}

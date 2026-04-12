@@ -162,7 +162,7 @@ async function fetchStocks() {
     // Använder Yahoo Finance via en CORS-proxy
     for (const stock of stocks) {
         try {
-            const url = `${CONFIG.corsProxy}${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`)}`;
+            const url = `${CONFIG.corsProxy}https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -229,7 +229,7 @@ async function fetchCalendar() {
 
     try {
         const proxy = CONFIG.calendarProxy || CONFIG.corsProxy;
-        const url = `${proxy}${encodeURIComponent(CONFIG.calendar.icalUrl)}`;
+        const url = `${proxy}${CONFIG.calendar.icalUrl}`;
         const response = await fetch(url);
         const icalText = await response.text();
 
@@ -335,7 +335,7 @@ async function fetchNews() {
 
     for (const feed of CONFIG.newsFeeds) {
         try {
-            const url = `${CONFIG.corsProxy}${encodeURIComponent(feed.url)}`;
+            const url = `${CONFIG.corsProxy}${feed.url}`;
             const response = await fetch(url);
             const text = await response.text();
 
@@ -390,7 +390,7 @@ async function fetchAiNews() {
 
     for (const feed of CONFIG.aiFeeds) {
         try {
-            const url = `${CONFIG.corsProxy}${encodeURIComponent(feed.url)}`;
+            const url = `${CONFIG.corsProxy}${feed.url}`;
             const response = await fetch(url);
             const text = await response.text();
 
@@ -443,7 +443,7 @@ async function fetchAiNews() {
 // Hämta Macworld nyheter
 async function fetchMacworld() {
     try {
-        const url = `${CONFIG.corsProxy}${encodeURIComponent(CONFIG.macworldFeed)}`;
+        const url = `${CONFIG.corsProxy}${CONFIG.macworldFeed}`;
         const response = await fetch(url);
         const text = await response.text();
 
