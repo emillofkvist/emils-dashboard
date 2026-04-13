@@ -525,12 +525,12 @@ async function fetchStocks() {
         const enc1 = encodeURIComponent(yahooUrl1);
 
         const stockProxies = [
-            () => fetch(`https://corsproxy.io/?${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
-            () => fetch(`https://corsproxy.io/?${enc1}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+            // cors.lol och allorigins.win som primära (corsproxy.io kräver betalplan sedan apr 2026)
             () => fetch(`https://api.cors.lol/?url=${enc}`, {
                 headers: { 'x-cors-headers': JSON.stringify({ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' }) }
             }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
             () => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => r.json()).then(j => { if (!j.contents) throw new Error('tom'); return JSON.parse(j.contents); }),
+            () => fetch(`https://api.allorigins.win/get?url=${enc1}`).then(r => r.json()).then(j => { if (!j.contents) throw new Error('tom'); return JSON.parse(j.contents); }),
         ];
 
         for (const proxy of stockProxies) {
@@ -766,12 +766,18 @@ async function fetchHtmlViaProxy(articleUrl) {
         throw new Error('readability failed');
     };
 
-    // cors.lol för artiklar — corsproxy.io blockerat (403)
+    // cors.lol primärt, cors.eu.org som fallback (aftonbladet.se ger 429 på cors.lol)
     const enc = encodeURIComponent(articleUrl);
     try {
-        return await fetch(`https://api.cors.lol/?url=${enc}`).then(r => r.text()).then(parseHtml);
+        const r = await fetch(`https://api.cors.lol/?url=${enc}`);
+        if (!r.ok) throw new Error(r.status);
+        return await r.text().then(parseHtml);
     } catch {
-        return null;
+        try {
+            return await fetch(`https://cors.eu.org/${articleUrl}`).then(r => r.text()).then(parseHtml);
+        } catch {
+            return null;
+        }
     }
 }
 
@@ -1032,7 +1038,7 @@ async function fetchAppleRelease() {
 
     try {
         const apiUrl = 'https://developer.apple.com/tutorials/data/documentation/ios-ipados-release-notes.json';
-        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(apiUrl)}`);
+        const res = await fetch(`${CONFIG.corsProxy}${apiUrl}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
@@ -1057,7 +1063,7 @@ async function fetchAppleRelease() {
         // Försök hämta faktiskt releasedatum från Apple Releases-sidan
         let releaseDate = null;
         try {
-            const releasesHtml = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://developer.apple.com/news/releases/')}`)
+            const releasesHtml = await fetch(`${CONFIG.corsProxy}https://developer.apple.com/news/releases/`)
                 .then(r => r.text());
             const doc = new DOMParser().parseFromString(releasesHtml, 'text/html');
             // Extrahera versionsnummer ur titeln, t.ex. "26.4" från "iOS & iPadOS 26.4 Release Notes"
@@ -1283,7 +1289,7 @@ async function openAppleDocReader(pageUrl) {
             'https://developer.apple.com/tutorials/data/documentation/'
         ) + '.json';
 
-        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(jsonUrl)}`);
+        const res = await fetch(`${CONFIG.corsProxy}${jsonUrl}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const refs = data.references || {};
