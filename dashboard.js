@@ -766,12 +766,18 @@ async function fetchHtmlViaProxy(articleUrl) {
         throw new Error('readability failed');
     };
 
-    // cors.lol för artiklar — corsproxy.io blockerat (403)
+    // cors.lol primärt, cors.eu.org som fallback (aftonbladet.se ger 429 på cors.lol)
     const enc = encodeURIComponent(articleUrl);
     try {
-        return await fetch(`https://api.cors.lol/?url=${enc}`).then(r => r.text()).then(parseHtml);
+        const r = await fetch(`https://api.cors.lol/?url=${enc}`);
+        if (!r.ok) throw new Error(r.status);
+        return await r.text().then(parseHtml);
     } catch {
-        return null;
+        try {
+            return await fetch(`https://cors.eu.org/${articleUrl}`).then(r => r.text()).then(parseHtml);
+        } catch {
+            return null;
+        }
     }
 }
 

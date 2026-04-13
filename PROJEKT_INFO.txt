@@ -118,6 +118,11 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-13 (2)
+  - Läsarläget: cors.eu.org tillagd som fallback i fetchHtmlViaProxy
+    cors.lol returnerar 429 för aftonbladet.se → artiklar kunde inte öppnas i läsarläge
+  - dashboard.js → v26
+
   2026-04-13
   - Börs: ta bort corsproxy.io från stockProxies (kräver betalplan apr 2026, returnerar 200+error-JSON)
     Primära proxies är nu cors.lol + allorigins.win (query1 och query2.finance.yahoo.com)
