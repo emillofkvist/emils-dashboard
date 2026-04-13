@@ -103,12 +103,13 @@ async function fetchElectricity() {
         const response = await fetch(url);
         const data = await response.json();
 
-        // Hitta aktuellt timpris
+        // Hitta aktuellt kvartstimspris (sedan okt 2025: 96 poster/dag, 15-min intervall)
         const currentHour = now.getHours();
+        const currentQuarter = Math.floor(now.getMinutes() / 15) * 15;
         const currentPrice = data.find(p => {
-            const priceHour = new Date(p.time_start).getHours();
-            return priceHour === currentHour;
-        });
+            const priceTime = new Date(p.time_start);
+            return priceTime.getHours() === currentHour && priceTime.getMinutes() === currentQuarter;
+        }) || data.find(p => new Date(p.time_start).getHours() === currentHour);
 
         // Beräkna min, max och snitt för dagen
         const prices = data.map(p => p.SEK_per_kWh);

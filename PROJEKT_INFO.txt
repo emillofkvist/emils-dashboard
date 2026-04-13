@@ -65,6 +65,11 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-13
+  - Elpris: fixat kvartstimspris – sedan okt 2025 returnerar elprisetjustnu.se 96 poster/dag
+    (15-min intervall). Koden matchade bara på timme, vilket alltid visade priset för
+    kvartet xx:00. Nu matchas rätt kvart med Math.floor(min/15)*15, med fallback till timme.
+
   2026-04-12
   - CORS-proxy: bytt corsProxy och calendarProxy från corsproxy.io (kräver nu betalplan)
     till cors.eu.org (gratis, format: https://cors.eu.org/FULL_URL)
