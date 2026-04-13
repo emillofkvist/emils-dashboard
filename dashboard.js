@@ -34,24 +34,21 @@ function updateDateTime() {
 async function fetchWeather() {
     try {
         const { lat, lon } = CONFIG.weather;
-        const url = `https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/${lon}/lat/${lat}/data.json`;
+        // snow1g/v1 ersatte pmp3g/v2 den 31 mars 2026
+        const url = `https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/${lon}/lat/${lat}/data.json`;
 
         const response = await fetch(url);
         const data = await response.json();
 
         // Första timserien är aktuellt väder
         const current = data.timeSeries[0];
-        const params = {};
-        current.parameters.forEach(p => {
-            params[p.name] = p.values[0];
-        });
+        const d = current.data;
 
-        // t = temperatur, ws = vindhastighet, r = luftfuktighet
-        // Wsymb2 = vädersymbol
-        const temp = Math.round(params.t);
-        const wind = Math.round(params.ws);
-        const humidity = Math.round(params.r);
-        const symbol = params.Wsymb2;
+        // Nya parameternamn i snow1g/v1 API
+        const temp = Math.round(d.air_temperature);
+        const wind = Math.round(d.wind_speed);
+        const humidity = Math.round(d.relative_humidity);
+        const symbol = d.symbol_code;
 
         const weatherIcons = {
             1: '☀️', 2: '🌤️', 3: '⛅', 4: '🌥️', 5: '☁️', 6: '☁️',
@@ -106,12 +103,13 @@ async function fetchElectricity() {
         const response = await fetch(url);
         const data = await response.json();
 
-        // Hitta aktuellt timpris
+        // Hitta aktuellt kvartstimspris (sedan okt 2025: 96 poster/dag, 15-min intervall)
         const currentHour = now.getHours();
+        const currentQuarter = Math.floor(now.getMinutes() / 15) * 15;
         const currentPrice = data.find(p => {
-            const priceHour = new Date(p.time_start).getHours();
-            return priceHour === currentHour;
-        });
+            const priceTime = new Date(p.time_start);
+            return priceTime.getHours() === currentHour && priceTime.getMinutes() === currentQuarter;
+        }) || data.find(p => new Date(p.time_start).getHours() === currentHour);
 
         // Beräkna min, max och snitt för dagen
         const prices = data.map(p => p.SEK_per_kWh);
@@ -165,7 +163,7 @@ async function fetchStocks() {
     // Använder Yahoo Finance via en CORS-proxy
     for (const stock of stocks) {
         try {
-            const url = `${CONFIG.corsProxy}${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`)}`;
+            const url = `${CONFIG.corsProxy}https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -232,7 +230,7 @@ async function fetchCalendar() {
 
     try {
         const proxy = CONFIG.calendarProxy || CONFIG.corsProxy;
-        const url = `${proxy}${encodeURIComponent(CONFIG.calendar.icalUrl)}`;
+        const url = `${proxy}${CONFIG.calendar.icalUrl}`;
         const response = await fetch(url);
         const icalText = await response.text();
 
@@ -338,7 +336,7 @@ async function fetchNews() {
 
     for (const feed of CONFIG.newsFeeds) {
         try {
-            const url = `${CONFIG.corsProxy}${encodeURIComponent(feed.url)}`;
+            const url = `${CONFIG.corsProxy}${feed.url}`;
             const response = await fetch(url);
             const text = await response.text();
 
@@ -393,7 +391,7 @@ async function fetchAiNews() {
 
     for (const feed of CONFIG.aiFeeds) {
         try {
-            const url = `${CONFIG.corsProxy}${encodeURIComponent(feed.url)}`;
+            const url = `${CONFIG.corsProxy}${feed.url}`;
             const response = await fetch(url);
             const text = await response.text();
 
@@ -446,7 +444,7 @@ async function fetchAiNews() {
 // Hämta Macworld nyheter
 async function fetchMacworld() {
     try {
-        const url = `${CONFIG.corsProxy}${encodeURIComponent(CONFIG.macworldFeed)}`;
+        const url = `${CONFIG.corsProxy}${CONFIG.macworldFeed}`;
         const response = await fetch(url);
         const text = await response.text();
 

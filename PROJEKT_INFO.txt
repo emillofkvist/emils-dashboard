@@ -1,0 +1,88 @@
+EMILS DASHBOARD – PROJEKTINFO
+==============================
+Repo:      https://github.com/emillofkvist/emils-dashboard
+Live sajt: https://emillofkvist.github.io/emils-dashboard/
+
+FILER
+-----
+- index.html    : HTML + CSS
+- config.js     : API-URL:er, CORS-proxies, RSS-feeds
+- dashboard.js  : All hämtning och rendering
+
+GIT-WORKFLOW (varje gång du gör ändringar)
+-------------------------------------------
+  1. git add config.js dashboard.js index.html PROJEKT_INFO.txt
+  2. git commit -m "Beskrivning av ändringen"
+  3. git push origin master
+  4. git checkout gh-pages
+  5. git merge master
+  6. git push origin gh-pages
+  7. git checkout master
+
+Ändringen syns live på GitHub Pages inom ~1 minut efter steg 6.
+
+API-ENDPOINTS (vad koden faktiskt använder)
+--------------------------------------------
+1. Väder (SMHI snow1g/v1):
+   https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/...
+   Förväntar: timeSeries[].data.{air_temperature, wind_speed, relative_humidity, symbol_code}
+   OBS: pmp3g/v2 lades ned 31 mars 2026
+
+2. Elpris SE4:
+   https://www.elprisetjustnu.se/api/v1/prices/{year}/{mm}-{dd}_SE4.json
+   Förväntar: array med SEK_per_kWh och time_start
+
+3. Börskurser (Yahoo Finance via cors.eu.org):
+   https://cors.eu.org/https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?...
+   Symboler: ^OMX, ^GSPC, ^IXIC, ^DJI
+   Förväntar: chart.result[0].indicators.quote[0].close[]
+
+4. Google Kalender (iCal via cors.eu.org):
+   https://cors.eu.org/{ical-url}
+   Förväntar: iCal-text med BEGIN:VEVENT-block
+
+5. Nyheter SVT (RSS via cors.eu.org):
+   Förväntar: RSS XML med <item>-element
+
+6. Nyheter DN (RSS via cors.eu.org):
+   Förväntar: RSS XML med <item>-element
+
+7. AI-nyheter TechCrunch AI (RSS via cors.eu.org):
+   https://techcrunch.com/category/artificial-intelligence/feed/
+   OBS: ersatte openai.com/news/rss.xml som inte längre existerar
+
+8. AI-nyheter The Verge AI (RSS via cors.eu.org):
+   https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+
+9. Macworld Sverige (RSS via cors.eu.org):
+   https://www.macworld.se/feed
+
+CORS-PROXYER
+------------
+  Allt RSS/börs/kalender: https://cors.eu.org/{full_url}
+  OBS: corsproxy.io kräver betalplan (returnerar 200 med error-JSON) – använd INTE
+  OBS: allorigins.win/raw?url= är ett alternativ men cors.eu.org är primär
+
+SENASTE ÄNDRINGAR
+-----------------
+  2026-04-13
+  - Elpris: fixat kvartstimspris – sedan okt 2025 returnerar elprisetjustnu.se 96 poster/dag
+    (15-min intervall). Koden matchade bara på timme, vilket alltid visade priset för
+    kvartet xx:00. Nu matchas rätt kvart med Math.floor(min/15)*15, med fallback till timme.
+
+  2026-04-12
+  - CORS-proxy: bytt corsProxy och calendarProxy från corsproxy.io (kräver nu betalplan)
+    till cors.eu.org (gratis, format: https://cors.eu.org/FULL_URL)
+  - dashboard.js: tagit bort encodeURIComponent() från alla proxy-URL-konstruktioner (5 ställen)
+    eftersom cors.eu.org tar raw URL i path istället för encoded query string
+
+  2026-04-10
+  - Väder: bytt SMHI API från pmp3g/v2 (nedlagd 31 mars 2026) till snow1g/v1
+    Ny parameterstruktur: timeSeries[].data.{air_temperature, wind_speed, ...}
+  - CORS-proxy: bytt corsProxy från allorigins.win (nere, 522-fel) till corsproxy.io
+  - AI-nyheter: bytt OpenAI RSS (saknas) till TechCrunch AI
+  - Cache-bust: lagt till ?v=2 på script-taggar i index.html
+  - Skapade PROJEKT_INFO.txt
+
+  2026-04-09 (gh-pages direkt)
+  - Väder: bytt SMHI pmp3g/v2 → snow1g/v1 i gh-pages-grenen
