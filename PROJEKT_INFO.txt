@@ -118,6 +118,13 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-13
+  - Börs: ta bort corsproxy.io från stockProxies (kräver betalplan apr 2026, returnerar 200+error-JSON)
+    Primära proxies är nu cors.lol + allorigins.win (query1 och query2.finance.yahoo.com)
+  - Apple Release Notes: byt corsproxy.io → cors.eu.org (CONFIG.corsProxy) för fetchAppleRelease
+    och openAppleDocReader (3 fetch-anrop). Utan denna fix döljs widget helt (catch-block).
+  - dashboard.js → v25
+
   2026-04-11
   - Elpris: fixat bugg med kvartstaxor (96 poster/dag sedan okt 2025)
     * currentPrice-sökning bytt från getHours()-jämförelse till time_start≤now<time_end
