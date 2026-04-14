@@ -58,6 +58,6 @@ const CONFIG = {
     // Hur många nyheter att visa (SVT + DN)
     maxNews: 5,
 
-    // Anthropic API-nyckel för AI-dagsbriefing (sparas i localStorage, inte här)
+    // Gemini API-nyckel för AI-dagsbriefing (sparas i localStorage som 'gemini_api_key', inte här)
     anthropicApiKey: ""
 };

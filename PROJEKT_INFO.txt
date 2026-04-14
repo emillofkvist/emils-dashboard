@@ -47,15 +47,15 @@ MODULER & DATAKÄLLOR
   Soluppgång/-nedgång – https://api.sunrise-sunset.org/json?lat=56.1167&lng=12.8167
   Elpris SE4 + graf   – https://www.elprisetjustnu.se/api/v1/prices/{år}/{mån-dag}_SE4.json
                         Graf renderas med Chart.js (CDN)
-  Börs                – Yahoo Finance via https://corsproxy.io (CORS-proxy)
+  Börs                – Yahoo Finance (query1/query2) via cors.lol (primär) + allorigins.win (fallback)
                         Symboler: ^OMX, ^GSPC, ^IXIC, ^DJI
-  Kalender            – Google Kalender via iCal-länk, proxy: corsproxy.io
-  Nyheter (SVT + DN)  – RSS via corsproxy.io, max 5 totalt (3 per källa)
-  AI-nyheter          – OpenAI + Anthropic via Google News RSS, max 4
-  Porsche-nyheter     – Google News RSS, max 3
+  Kalender            – Google Kalender via iCal-länk, proxy: cors.eu.org
+  Nyheter (SVT + DN)  – RSS via api.rss2json.com, max 5 totalt (3 per källa)
+  AI-nyheter          – TechCrunch AI + The Verge via api.rss2json.com, max 5
+  Porsche-nyheter     – Carscoops, Road & Track, Motor1 via api.rss2json.com, max 5
   Pollenprognos       – https://api.pollenrapporten.se/v1/forecasts (Naturhistoriska riksmuseet)
                         Region: Malmö (UUID-baserad), 7-gradig skala, visar bara nivå > 0
-  Apple Release Notes – Apple DocC JSON API via corsproxy.io
+  Apple Release Notes – Apple DocC JSON API via cors.eu.org
                         Visar alltid senaste iOS/iPadOS-release
                         Datum från developer.apple.com/news/releases/ (fallback: localStorage firstSeen)
                         Rubrik auto-översätts till svenska. Läsarläge renderar DocC JSON inline.
@@ -68,11 +68,15 @@ MODULER & DATAKÄLLOR
 
 CORS-PROXYER
 ------------
-  Nyheter/RSS/börs:   https://corsproxy.io/?{encoded_url}
-  Kalender + Bonnie:  https://cors.eu.org/{url}  (URL direkt utan encodeURIComponent)
-  Isabelle skolmat:   https://api.cors.lol/?url={encoded_url}
-  OBS: allorigins.win är nere (522-fel) – använd inte den.
-  OBS: cors.lol rate-limiteras (429) om för många anrop görs parallellt.
+  RSS/nyheter (alla):  https://api.rss2json.com/v1/api.json?rss_url={encoded_url}
+  Kalender + Bonnie:   https://cors.eu.org/{url}  (URL direkt utan encodeURIComponent)
+  Apple Release Notes: https://cors.eu.org/{url}
+  Börs (primär):       https://api.cors.lol/?url={encoded_url}
+  Börs (fallback):     https://api.allorigins.win/get?url={encoded_url}
+  Reader (primär):     https://api.cors.lol/?url={encoded_url}
+  Reader (fallback):   https://cors.eu.org/{url}
+  OBS: corsproxy.io kräver betalplan sedan apr 2026 – returnerar 200+error-JSON, använd INTE.
+  OBS: cors.lol kan rate-limitera (429) vid många anrop – cors.eu.org används som fallback.
 
 
 TEKNISKT
@@ -118,6 +122,13 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-14
+  - Dokumentation: korrigerade utdaterade proxy-uppgifter i PROJEKT_INFO.txt
+    * MODULER-sektionen: Börs, Kalender, Nyheter, AI-nyheter, Porsche, Apple – rätt proxyer
+    * CORS-PROXYER-sektionen: omskriven för att spegla faktisk kod (rss2json/cors.lol/cors.eu.org)
+    * config.js: kommentar "Anthropic API-nyckel" → "Gemini API-nyckel" (briefing använder Gemini)
+  - Inget funktionellt i koden ändrat – allt fungerar sedan 2026-04-13
+
   2026-04-13 (2)
   - Läsarläget: cors.eu.org tillagd som fallback i fetchHtmlViaProxy
     cors.lol returnerar 429 för aftonbladet.se → artiklar kunde inte öppnas i läsarläge
