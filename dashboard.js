@@ -1511,10 +1511,20 @@ async function fetchHemnet() {
     const card = document.getElementById('hemnet-card');
     const container = document.getElementById('hemnet-listings');
     try {
-        const proxyUrl = `https://api.cors.lol/?url=${encodeURIComponent(CONFIG.hemnet.searchUrl)}`;
-        const resp = await fetch(proxyUrl);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const html = await resp.text();
+        // Prova cors.lol, fallback till cors.eu.org
+        let html = null;
+        const enc = encodeURIComponent(CONFIG.hemnet.searchUrl);
+        const proxies = [
+            () => fetch(`https://api.cors.lol/?url=${enc}`),
+            () => fetch(`https://cors.eu.org/${CONFIG.hemnet.searchUrl}`)
+        ];
+        for (const tryProxy of proxies) {
+            try {
+                const resp = await tryProxy();
+                if (resp.ok) { html = await resp.text(); break; }
+            } catch {}
+        }
+        if (!html) throw new Error('Alla proxyer misslyckades');
 
         // Extrahera __NEXT_DATA__ JSON från Next.js-sidan
         const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([^<]+)<\/script>/);
