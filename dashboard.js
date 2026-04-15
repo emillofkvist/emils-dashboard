@@ -1507,6 +1507,107 @@ async function fetchLunch() {
         row('⭐', 'Isabelle', isabelleResult);
 }
 
+async function fetchHemnet() {
+    const card = document.getElementById('hemnet-card');
+    const container = document.getElementById('hemnet-listings');
+    try {
+        const proxyUrl = `https://api.cors.lol/?url=${encodeURIComponent(CONFIG.hemnet.searchUrl)}`;
+        const resp = await fetch(proxyUrl);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const html = await resp.text();
+
+        // Extrahera __NEXT_DATA__ JSON från Next.js-sidan
+        const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([^<]+)<\/script>/);
+        if (!match) throw new Error('__NEXT_DATA__ ej hittad');
+
+        const nextData = JSON.parse(match[1]);
+
+        // Navigera till listings — logga strukturen om debug behövs
+        const pageProps = nextData?.props?.pageProps ?? {};
+
+        // Hemnet kan lägga listings på flera ställen beroende på version
+        const listings =
+            pageProps?.searchResult?.listings ??
+            pageProps?.listings ??
+            pageProps?.result?.listings ??
+            [];
+
+        if (!Array.isArray(listings)) throw new Error('Inga listings i JSON');
+
+        // Filtrera på publicerade inom 48h
+        const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+        const recent = listings.filter(l => {
+            const raw = l.publishedAt ?? l.listingDate ?? l.published_at ?? l.createdAt ?? null;
+            if (!raw) return false;
+            return new Date(raw).getTime() >= cutoff;
+        }).slice(0, CONFIG.hemnet.maxItems);
+
+        if (recent.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+
+        const formatPrice = p => {
+            if (!p) return '–';
+            if (p >= 1_000_000) return `${(p / 1_000_000).toFixed(2).replace('.', ',')} mkr`;
+            return `${p.toLocaleString('sv-SE')} kr`;
+        };
+
+        const formatDate = raw => {
+            if (!raw) return '';
+            const d = new Date(raw);
+            const diffH = Math.round((Date.now() - d.getTime()) / 3_600_000);
+            if (diffH < 1) return 'Precis publicerad';
+            if (diffH < 24) return `Publicerad för ${diffH}h sedan`;
+            return 'Publicerad igår';
+        };
+
+        const typeLabel = t => {
+            const map = { villa: 'Villa', gard: 'Gård', radhus: 'Radhus', tomt: 'Tomt' };
+            return map[(t ?? '').toLowerCase()] ?? t ?? '';
+        };
+
+        container.innerHTML = recent.map(l => {
+            const address = l.streetAddress ?? l.street_address ?? '–';
+            const area = l.location?.area?.name ?? l.area?.name ?? l.area ?? '';
+            const municipality = l.location?.municipality?.name ?? l.municipality?.name ?? '';
+            const locationStr = [area, municipality].filter(Boolean).join(', ');
+            const price = formatPrice(l.askingPrice ?? l.asking_price);
+            const rooms = l.rooms != null ? `${l.rooms} rum` : '';
+            const size = l.livingArea != null ? `${l.livingArea} m²` : (l.living_area != null ? `${l.living_area} m²` : '');
+            const broker = l.broker?.name ?? l.agent?.name ?? '';
+            const publishedRaw = l.publishedAt ?? l.listingDate ?? l.published_at ?? l.createdAt ?? null;
+            const publishedStr = formatDate(publishedRaw);
+            const imgUrl = l.images?.[0]?.url ?? l.mainImage?.url ?? l.image?.url ?? null;
+            const slug = l.id ? `https://www.hemnet.se/bostad/${l.id}` : (l.url ?? '#');
+
+            const thumb = imgUrl
+                ? `<img class="hemnet-thumb" src="${imgUrl}" alt="${address}" loading="lazy" onerror="this.style.display='none'">`
+                : `<div class="hemnet-thumb-placeholder">🏡</div>`;
+
+            const meta = [rooms, size].filter(Boolean).join(' · ');
+            const brokerHtml = broker ? `<div class="hemnet-broker">${broker}${publishedStr ? ' · ' + publishedStr : ''}</div>` : (publishedStr ? `<div class="hemnet-broker">${publishedStr}</div>` : '');
+
+            return `<a class="hemnet-listing" href="${slug}" target="_blank" rel="noopener">
+                ${thumb}
+                <div class="hemnet-info">
+                    <div class="hemnet-address">${address}</div>
+                    <div class="hemnet-type">${typeLabel(l.listingType ?? l.listing_type)}${locationStr ? ' · ' + locationStr : ''}</div>
+                    <div class="hemnet-price">${price}</div>
+                    ${meta ? `<div class="hemnet-meta">${meta}</div>` : ''}
+                    ${brokerHtml}
+                </div>
+            </a>`;
+        }).join('');
+
+        card.style.display = '';
+    } catch (error) {
+        console.error('Hemnet-fel:', error);
+        container.innerHTML = '<div class="loading">Kunde inte hämta Hemnet-data</div>';
+        card.style.display = '';
+    }
+}
+
 async function init() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
@@ -1526,7 +1627,8 @@ async function init() {
         fetchAppleRelease(),
         fetchFeber(),
         fetchAftonbladet(),
-        fetchLunch()
+        fetchLunch(),
+        fetchHemnet()
     ]);
     fetchCalendar();
 }
