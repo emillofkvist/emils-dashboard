@@ -64,6 +64,9 @@ MODULER & DATAKÄLLOR
   Feber               – https://feber.se/rss/  (5 senaste)
   Aftonbladet         – https://rss.aftonbladet.se/rss2/small/pages/sections/senastenytt/
                         (8 senaste nyheter)
+  Hemnet (48h-nya)    – https://www.hemnet.se/bostader?item_types[]=villa&item_types[]=gard...
+                        Scraping via cors.lol + __NEXT_DATA__ JSON (Next.js SSR)
+                        Villor/gårdar inom location_ids[]=956675, max 10, senaste 48h
 
 
 CORS-PROXYER
@@ -108,6 +111,8 @@ INSTÄLLNINGAR I config.js
   CONFIG.maxAiNews               – Max AI-nyheter (default 5)
   CONFIG.maxPorscheNews          – Max Porsche-nyheter (default 5)
   CONFIG.maxAftonbladetNews      – Max Aftonbladet-nyheter (default 8)
+  CONFIG.hemnet.searchUrl        – Hemnet-sök-URL (villor/gårdar i område)
+  CONFIG.hemnet.maxItems         – Max antal listings att visa (default 10)
 
 
 LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
@@ -123,17 +128,13 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 SENASTE ÄNDRINGAR
 -----------------
   2026-04-15
+  - Hemnet: nytt kort längst ner, villor/gårdar senaste 48h
+    Scraping via cors.lol + __NEXT_DATA__ JSON. Visar bild, adress, pris, rum, m², mäklare.
+  - dashboard.js → v27
   - Daglig kontroll: fullständig statisk kodanalys av alla 22 datakällor
     Inga kodbuggar hittades. Alla proxyer och URL:er ser korrekta ut.
     Nätverkstestning ej möjlig från sandlådan (alla externa domäner blockerade).
     Senaste kända fungerande tillstånd: 2026-04-14.
-    Verifierade via kodanalys + websökning:
-      * SMHI snow1g/v1: symbol_code är numerisk (1–27), ikoner mappas korrekt
-      * Elpris: time_start/time_end-intervall korrekt för kvartstaxor (96/dag)
-      * Isabelle lunch: elinebergsskolan bekräftad som korrekt slug på skolmaten.se
-      * Alla RSS-flöden: rss2json.com hanterar RSS 2.0 och Atom, korrekt implementerat
-      * Börs: 3 proxyfallbacks (cors.lol → allorigins.win query2 → allorigins.win query1)
-      * cors.eu.org: används för kalender, Bonnie lunch, Apple Release — korrekt format
 
   2026-04-14
   - Dokumentation: korrigerade utdaterade proxy-uppgifter i PROJEKT_INFO.txt
