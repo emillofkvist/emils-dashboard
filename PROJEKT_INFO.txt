@@ -122,6 +122,19 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-15
+  - Daglig kontroll: fullständig statisk kodanalys av alla 22 datakällor
+    Inga kodbuggar hittades. Alla proxyer och URL:er ser korrekta ut.
+    Nätverkstestning ej möjlig från sandlådan (alla externa domäner blockerade).
+    Senaste kända fungerande tillstånd: 2026-04-14.
+    Verifierade via kodanalys + websökning:
+      * SMHI snow1g/v1: symbol_code är numerisk (1–27), ikoner mappas korrekt
+      * Elpris: time_start/time_end-intervall korrekt för kvartstaxor (96/dag)
+      * Isabelle lunch: elinebergsskolan bekräftad som korrekt slug på skolmaten.se
+      * Alla RSS-flöden: rss2json.com hanterar RSS 2.0 och Atom, korrekt implementerat
+      * Börs: 3 proxyfallbacks (cors.lol → allorigins.win query2 → allorigins.win query1)
+      * cors.eu.org: används för kalender, Bonnie lunch, Apple Release — korrekt format
+
   2026-04-14
   - Dokumentation: korrigerade utdaterade proxy-uppgifter i PROJEKT_INFO.txt
     * MODULER-sektionen: Börs, Kalender, Nyheter, AI-nyheter, Porsche, Apple – rätt proxyer
