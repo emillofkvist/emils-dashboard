@@ -1511,18 +1511,17 @@ async function fetchHemnet() {
     const card = document.getElementById('hemnet-card');
     const container = document.getElementById('hemnet-listings');
     try {
-        // Prova cors.lol, fallback till cors.eu.org
+        // Prova flera proxyer i tur och ordning
         let html = null;
         const enc = encodeURIComponent(CONFIG.hemnet.searchUrl);
         const proxies = [
-            () => fetch(`https://api.cors.lol/?url=${enc}`),
-            () => fetch(`https://cors.eu.org/${CONFIG.hemnet.searchUrl}`)
+            async () => { const r = await fetch(`https://api.cors.lol/?url=${enc}`); if (!r.ok) throw new Error(r.status); return r.text(); },
+            async () => { const r = await fetch(`https://api.allorigins.win/get?url=${enc}`); if (!r.ok) throw new Error(r.status); const j = await r.json(); return j.contents; },
+            async () => { const r = await fetch(`https://thingproxy.freeboard.io/fetch/${CONFIG.hemnet.searchUrl}`); if (!r.ok) throw new Error(r.status); return r.text(); },
+            async () => { const r = await fetch(`https://cors.eu.org/${CONFIG.hemnet.searchUrl}`); if (!r.ok) throw new Error(r.status); return r.text(); }
         ];
         for (const tryProxy of proxies) {
-            try {
-                const resp = await tryProxy();
-                if (resp.ok) { html = await resp.text(); break; }
-            } catch {}
+            try { html = await tryProxy(); if (html) break; } catch {}
         }
         if (!html) throw new Error('Alla proxyer misslyckades');
 
