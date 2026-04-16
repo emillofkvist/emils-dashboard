@@ -397,13 +397,20 @@ async function fetchAiNews() {
 
             const parser = new DOMParser();
             const xml = parser.parseFromString(text, 'text/xml');
-            const items = xml.querySelectorAll('item');
+            // Stöd både RSS (<item>) och Atom 1.0 (<entry>), t.ex. The Verge använder Atom
+            let items = xml.querySelectorAll('item');
+            if (items.length === 0) items = xml.querySelectorAll('entry');
 
             items.forEach((item, index) => {
                 if (index < 2) { // Max 2 per källa
                     const title = item.querySelector('title')?.textContent || '';
-                    const link = item.querySelector('link')?.textContent || '';
-                    const pubDate = item.querySelector('pubDate')?.textContent || '';
+                    // Atom: <link href="..."/>, RSS: <link>url</link>
+                    const linkEl = item.querySelector('link');
+                    const link = linkEl?.textContent?.trim() || linkEl?.getAttribute('href') || '';
+                    // Atom: <published>/<updated>, RSS: <pubDate>
+                    const pubDate = item.querySelector('pubDate')?.textContent ||
+                                    item.querySelector('published')?.textContent ||
+                                    item.querySelector('updated')?.textContent || '';
 
                     allNews.push({
                         source: feed.name,

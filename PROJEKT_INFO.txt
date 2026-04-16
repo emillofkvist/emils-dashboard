@@ -65,6 +65,14 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-16
+  - AI-nyheter: lagt till Atom 1.0-stöd i fetchAiNews() – The Verge och liknande
+    Vox Media-sajter publicerar Atom-feeds med <entry>/<link href="">/<published>
+    istället för RSS-format med <item>/<link>text/<pubDate>.
+    querySelectorAll('item') returnerade 0 resultat för The Verge.
+    Fix: om item-elements saknas, försök med entry; länk läses från textContent
+    ELLER href-attribut; datum läses från pubDate/published/updated.
+
   2026-04-13
   - Elpris: fixat kvartstimspris – sedan okt 2025 returnerar elprisetjustnu.se 96 poster/dag
     (15-min intervall). Koden matchade bara på timme, vilket alltid visade priset för
