@@ -1145,8 +1145,26 @@ async function fetchFeber() {
 
 async function fetchAftonbladet() {
     try {
-        const items = await fetchRSS(CONFIG.aftonbladetFeed);
-        const news = items.slice(0, CONFIG.maxAftonbladetNews).map(item => ({ title: item.title, link: item.link, date: item.date }));
+        let news = [];
+
+        // Försök 1: rss2json – snabb men kan ge status:"error" för Aftonbladets format (se 2026-03-28)
+        try {
+            const items = await fetchRSS(CONFIG.aftonbladetFeed);
+            news = items.slice(0, CONFIG.maxAftonbladetNews).map(i => ({ title: i.title, link: i.link, date: i.date }));
+        } catch {
+            // Fallback: cors.eu.org + manuell XML-parsing (samma approach som fungerade med corsproxy.io)
+            const resp = await fetch(`${CONFIG.corsProxy}${CONFIG.aftonbladetFeed}`);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const xml = new DOMParser().parseFromString(await resp.text(), 'text/xml');
+            xml.querySelectorAll('item').forEach((item, index) => {
+                if (index < CONFIG.maxAftonbladetNews) {
+                    const title = item.querySelector('title')?.textContent || '';
+                    const link = item.querySelector('link')?.textContent || '';
+                    const pubDate = item.querySelector('pubDate')?.textContent || '';
+                    news.push({ title, link, date: new Date(pubDate) });
+                }
+            });
+        }
 
         if (news.length === 0) {
             document.getElementById('aftonbladet').innerHTML = '<div class="loading">Inga nyheter hittades</div>';

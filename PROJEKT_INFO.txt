@@ -127,6 +127,14 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-16
+  - Aftonbladet: lade till cors.eu.org + manuell XML-parsing som fallback i fetchAftonbladet()
+    Bakgrund: rss2json stödde ej Aftonbladets format (noterat 2026-03-28). När corsproxy.io
+    (som fungerade) blev betaltjänst 2026-04-11 återgick koden till rss2json — troligen bruten
+    sedan dess. Fix: försöker rss2json primärt, faller tillbaka på cors.eu.org + DOMParser
+    om rss2json returnerar status:"error". Ingen UI-ändring.
+  - dashboard.js → v31
+
   2026-04-15
   - Hemnet: nytt kort längst ner, villor/gårdar senaste 48h
     Scraping via cors.lol + __NEXT_DATA__ JSON. Visar bild, adress, pris, rum, m², mäklare.
