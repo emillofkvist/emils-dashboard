@@ -64,9 +64,9 @@ MODULER & DATAKÄLLOR
   Feber               – https://feber.se/rss/  (5 senaste)
   Aftonbladet         – https://rss.aftonbladet.se/rss2/small/pages/sections/senastenytt/
                         (8 senaste nyheter)
-  Hemnet (48h-nya)    – https://www.hemnet.se/bostader?item_types[]=villa&item_types[]=gard...
-                        Scraping via cors.lol + __NEXT_DATA__ JSON (Next.js SSR)
-                        Villor/gårdar inom location_ids[]=956675, max 10, senaste 48h
+  Hemnet              – https://www.hemnet.se/bostader?item_types[]=villa&item_types[]=gard...
+                        Genvägsknapp (scraping via CORS-proxy blockeras av Cloudflare sedan 2026-04-15)
+                        Klick öppnar Hemnet-sökning direkt: villor/gårdar i Hyllinge/Åstorp
 
 
 CORS-PROXYER
@@ -127,6 +127,23 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-17
+  - Daglig kontroll: fullständig kodanalys av alla 22 datakällor i main-grenen (dashboard.js v31)
+    Nätverkstestning ej möjlig (Anthropic-sandbox blockerar alla externa domäner).
+    Kodanalys-fynd:
+      * SMHI snow1g/v1: korrekt struktur (timeSeries[].data.air_temperature m.fl.) ✅
+      * Elprisetjustnu: korrekt time_start≤now<time_end för kvartstimspris ✅
+      * Aftonbladet: rss2json-fallback till cors.eu.org OK (fixades 2026-04-16) ✅
+      * Isabelle-lunch: elinebergsskolan finns på skolmaten.se, rss2json-URL korrekt ✅
+      * Alla RSS-flöden (SVT, DN, AI, Porsche, Macworld, Feber): korrekt via rss2json ✅
+      * Börs: cors.lol + allorigins.win-fallback, Yahoo Finance instabilt men hanteras ✅
+      * Pollen, Namnsdag, Soluppgång: direkta API-anrop utan proxy, ser korrekta ut ✅
+    Bugg hittad och fixad:
+      * PROJEKT_INFO.txt beskrev Hemnet som "Scraping via cors.lol + __NEXT_DATA__"
+        men koden (sedan 2026-04-15) visar en statisk genvägsknapp.
+        Beskrivningen korrigerad under MODULER & DATAKÄLLOR.
+    Senaste kända fungerande tillstånd: 2026-04-16 (Aftonbladet-fix).
+
   2026-04-16
   - Aftonbladet: lade till cors.eu.org + manuell XML-parsing som fallback i fetchAftonbladet()
     Bakgrund: rss2json stödde ej Aftonbladets format (noterat 2026-03-28). När corsproxy.io
