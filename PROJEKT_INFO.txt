@@ -127,6 +127,25 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-18
+  - Daglig kontroll: fullständig kodanalys av alla datakällor i main-grenen (dashboard.js v31)
+    Nätverkstestning ej möjlig (Anthropic-sandbox blockerar alla externa domäner).
+    Kodanalys-fynd:
+      * SMHI snow1g/v1: timeSeries[].data.{air_temperature,wind_speed,...} – bekräftat korrekt
+        mot officiell SMHI-dokumentation (snow1g ersatte pmp3g/v2 den 31 mars 2026) ✅
+      * Elprisetjustnu: time_start≤now<time_end – korrekt för kvartstaxor (96 poster/dag) ✅
+      * Alla RSS-flöden (SVT, DN, AI-nyheter, Porsche, Macworld, Feber): rss2json.com ✅
+      * Aftonbladet: rss2json + cors.eu.org-fallback (fixades 2026-04-16) ✅
+      * Börs: cors.lol + allorigins.win-fallback, Yahoo Finance instabilt men hanteras ✅
+      * Kalender: cors.eu.org med 3 retry-försök ✅
+      * Apple Release Notes: cors.eu.org + Apple DocC JSON API ✅
+      * Pollen, Namnsdag, Soluppgång: direkta API-anrop utan proxy ✅
+      * Hemnet: statisk knapp (ingen nätverkshämtning) ✅
+      * Bonnie-lunch: cors.eu.org + astorp.se HTML-tabell (fragil men funktionell) ✅
+      * Isabelle-lunch: rss2json + skolmaten.se RSS, pubDate-matchning korrekt ✅
+    Git-kontroll: main och gh-pages har identiska kod-filer (dashboard.js, config.js, index.html).
+    Inga buggar hittade. Senaste kända fungerande tillstånd: 2026-04-16 (Aftonbladet-fix).
+
   2026-04-17
   - Daglig kontroll: fullständig kodanalys av alla 22 datakällor i main-grenen (dashboard.js v31)
     Nätverkstestning ej möjlig (Anthropic-sandbox blockerar alla externa domäner).
