@@ -62,8 +62,10 @@ const CONFIG = {
     anthropicApiKey: "",
 
     // Hemnet – villor/gårdar i område, senaste 48h
+    // workerUrl: URL till Cloudflare Worker som proxar Hemnet (lämna "" tills Worker är deployad)
     hemnet: {
         searchUrl: "https://www.hemnet.se/bostader?item_types%5B%5D=villa&item_types%5B%5D=gard&expand_locations=10000&location_ids%5B%5D=956675",
-        maxItems: 10
+        maxItems: 10,
+        workerUrl: ""
     }
 };

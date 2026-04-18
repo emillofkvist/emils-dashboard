@@ -64,9 +64,11 @@ MODULER & DATAKÄLLOR
   Feber               – https://feber.se/rss/  (5 senaste)
   Aftonbladet         – https://rss.aftonbladet.se/rss2/small/pages/sections/senastenytt/
                         (8 senaste nyheter)
-  Hemnet              – https://www.hemnet.se/bostader?item_types[]=villa&item_types[]=gard...
-                        Genvägsknapp (scraping via CORS-proxy blockeras av Cloudflare sedan 2026-04-15)
-                        Klick öppnar Hemnet-sökning direkt: villor/gårdar i Hyllinge/Åstorp
+  Hemnet (48h-nya)    – https://www.hemnet.se/bostader?item_types[]=villa&item_types[]=gard...
+                        Cloudflare Worker (hemnet-worker/) kringgår Cloudflares bot-skydd
+                        Hämtar __APOLLO_STATE__ via Hemnets _next/data JSON-endpoint
+                        CONFIG.hemnet.workerUrl: sätt till Worker-URL efter deploy
+                        Fallback: länkknapp om ingen Worker konfigurerad
 
 
 CORS-PROXYER
@@ -127,6 +129,15 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-19
+  - Hemnet: fetchHemnet() omskriven till async med Cloudflare Worker-stöd
+    Läser data från localStorage (satt av Worker eller extern automation)
+    Faller tillbaka på länkknapp om ingen data finns
+    Cloudflare Worker-kod: hemnet-worker/index.js + wrangler.toml
+    Deploy-instruktioner i hemnet-worker/index.js
+    CONFIG.hemnet.workerUrl — sätt till Worker-URL efter deploy
+  - dashboard.js → v31
+
   2026-04-18
   - Daglig kontroll: fullständig kodanalys av alla datakällor i main-grenen (dashboard.js v31)
     Nätverkstestning ej möjlig (Anthropic-sandbox blockerar alla externa domäner).
@@ -169,7 +180,6 @@ SENASTE ÄNDRINGAR
     (som fungerade) blev betaltjänst 2026-04-11 återgick koden till rss2json — troligen bruten
     sedan dess. Fix: försöker rss2json primärt, faller tillbaka på cors.eu.org + DOMParser
     om rss2json returnerar status:"error". Ingen UI-ändring.
-  - dashboard.js → v31
 
   2026-04-15
   - Hemnet: nytt kort längst ner, villor/gårdar senaste 48h
