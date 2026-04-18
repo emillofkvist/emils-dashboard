@@ -1525,19 +1525,96 @@ async function fetchLunch() {
         row('⭐', 'Isabelle', isabelleResult);
 }
 
-function fetchHemnet() {
-    // Hemnet skyddas av Cloudflare bot-skydd — scraping via CORS-proxy fungerar ej.
-    // Visar istället en genvägsknapp som öppnar sökningen direkt i Hemnet.
-    const container = document.getElementById('hemnet-listings');
+async function fetchHemnet() {
     const card = document.getElementById('hemnet-card');
-    container.innerHTML = `
-        <div style="text-align:center; padding: 4px 0 8px;">
-            <div style="font-size:13px; color:#6b7280; margin-bottom:12px;">Villor &amp; gårdar · Hyllinge/Åstorp · Sortering: Nyast</div>
-            <a href="${CONFIG.hemnet.searchUrl}" target="_blank" rel="noopener" class="hemnet-btn">
-                Visa nya hus på Hemnet ↗
-            </a>
-        </div>
-    `;
+    const container = document.getElementById('hemnet-listings');
+
+    // 1. Försök hämta färsk data via Cloudflare Worker (konfigureras i config.js)
+    const workerUrl = CONFIG.hemnet.workerUrl || '';
+    if (workerUrl) {
+        try {
+            const params = CONFIG.hemnet.searchUrl.split('?')[1] || '';
+            const resp = await fetch(`${workerUrl}?${params}`);
+            if (resp.ok) {
+                const json = await resp.json();
+                if (Array.isArray(json.listings) && json.listings.length > 0) {
+                    const fresh = {
+                        ts: Date.now(),
+                        listings: json.listings.map(l => ({
+                            id: l.id, a: l.streetAddress, loc: l.locationDescription,
+                            p: l.askingPrice, r: l.rooms, m: l.area,
+                            t: l.housingForm, b: l.brokerName, ba: l.brokerAgencyName,
+                            pub: parseFloat(l.publishedAt), slug: l.slug,
+                            img: l.thumbnail || ''
+                        }))
+                    };
+                    localStorage.setItem('hemnet_cache', JSON.stringify(fresh));
+                }
+            }
+        } catch(e) {
+            console.warn('Hemnet Worker-fel:', e);
+        }
+    }
+
+    // 2. Läs från localStorage (satt av Worker ovan eller av extern automation)
+    let cache = null;
+    try {
+        const raw = localStorage.getItem('hemnet_cache');
+        if (raw) cache = JSON.parse(raw);
+    } catch(e) {}
+
+    // 3. Ingen data — visa länkknapp
+    if (!cache?.listings?.length) {
+        container.innerHTML = `
+            <div style="text-align:center; padding: 4px 0 8px;">
+                <div style="font-size:13px; color:#6b7280; margin-bottom:12px;">Villor &amp; gårdar · Hyllinge/Åstorp</div>
+                <a href="${CONFIG.hemnet.searchUrl}" target="_blank" rel="noopener" class="hemnet-btn">
+                    Visa nya hus på Hemnet ↗
+                </a>
+            </div>
+        `;
+        card.style.display = '';
+        return;
+    }
+
+    // 4. Filtrera på 48h
+    const cutoff = Date.now() / 1000 - 48 * 3600;
+    const recent = cache.listings.filter(l => l.pub >= cutoff);
+
+    if (!recent.length) {
+        card.style.display = 'none';
+        return;
+    }
+
+    const fmtAge = pub => {
+        const h = Math.round((Date.now() / 1000 - pub) / 3600);
+        if (h < 1) return 'Precis publicerad';
+        if (h < 24) return `${h}h sedan`;
+        return 'Igår';
+    };
+
+    container.innerHTML = recent.map(l => {
+        const thumb = l.img
+            ? `<img class="hemnet-thumb" src="${l.img}" alt="${l.a}" loading="lazy" onerror="this.style.display='none'">`
+            : `<div class="hemnet-thumb-placeholder">🏡</div>`;
+        const meta = [l.r, l.m].filter(Boolean).join(' · ');
+        const broker = [l.b, l.ba].filter(Boolean).join(', ');
+        const url = `https://www.hemnet.se/bostad/${l.slug}`;
+        return `<a class="hemnet-listing" href="${url}" target="_blank" rel="noopener">
+            ${thumb}
+            <div class="hemnet-info">
+                <div class="hemnet-address">${l.a}</div>
+                <div class="hemnet-type">${l.t}${l.loc ? ' · ' + l.loc : ''}</div>
+                <div class="hemnet-price">${l.p || '–'}</div>
+                ${meta ? `<div class="hemnet-meta">${meta}</div>` : ''}
+                <div class="hemnet-broker">${broker}${broker ? ' · ' : ''}${fmtAge(l.pub)}</div>
+            </div>
+        </a>`;
+    }).join('');
+
+    const ageMin = Math.round((Date.now() - cache.ts) / 60000);
+    container.innerHTML += `<div style="font-size:11px;color:#9ca3af;text-align:right;padding-top:8px;margin-top:4px;">Uppdaterad för ${ageMin} min sedan</div>`;
+
     card.style.display = '';
 }
 
