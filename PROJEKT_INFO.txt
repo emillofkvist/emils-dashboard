@@ -129,6 +129,23 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-19 (övervakningskontroll)
+  - Daglig kontroll: fullständig kodanalys av alla datakällor i main-grenen (dashboard.js v31)
+    Nätverkstestning ej möjlig (Anthropic-sandbox blockerar alla externa domäner).
+    Kodanalys-fynd: Inga buggar hittade. Alla proxyer, URL:er och parsningslogik ser korrekta ut.
+      * SMHI snow1g/v1: timeSeries[].data.{air_temperature,...} korrekt ✅
+      * Elprisetjustnu: time_start≤now<time_end korrekt ✅
+      * Börs: cors.lol + allorigins.win fallback (Yahoo Finance instabilt men hanteras) ✅
+      * Nyheter (SVT, DN, AI, Porsche, Macworld, Feber): rss2json.com ✅
+      * Aftonbladet: rss2json primär + cors.eu.org-fallback ✅
+      * Kalender: cors.eu.org med 3 retry-försök ✅
+      * Apple Release Notes: cors.eu.org + Apple DocC JSON ✅
+      * Pollen, Namnsdag, Soluppgång: direkta API-anrop ✅
+      * Bonnie-lunch: cors.eu.org + astorp.se HTML ✅
+      * Isabelle-lunch: rss2json + skolmaten.se RSS ✅
+      * Hemnet: Worker-stöd (ny idag) + localStorage + länkknapp-fallback ✅
+    main var ett steg före gh-pages med Hemnet Worker-commit (e098b27) → deployes nu.
+
   2026-04-19
   - Hemnet: fetchHemnet() omskriven till async med Cloudflare Worker-stöd
     Läser data från localStorage (satt av Worker eller extern automation)
