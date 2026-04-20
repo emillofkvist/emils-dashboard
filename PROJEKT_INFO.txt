@@ -129,6 +129,25 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-20 (övervakningskontroll)
+  - Daglig kontroll: fullständig kodanalys av alla datakällor i main-grenen (dashboard.js v31)
+    Nätverkstestning ej möjlig (Anthropic-sandbox blockerar alla externa domäner).
+    Kodanalys-fynd: Inga buggar hittade. Alla proxyer, URL:er och parsningslogik ser korrekta ut.
+      * SMHI snow1g/v1: symbol_code (1-27 numeriskt) bekräftat oförändrat vs pmp3g/v2 ✅
+      * Elprisetjustnu: time_start≤now<time_end korrekt för kvartstaxor ✅
+      * Börs: cors.lol + allorigins.win (query2 + query1 fallback), regularMarketPrice ✅
+      * Nyheter (SVT, DN, AI, Porsche, Macworld, Feber): rss2json.com ✅
+      * Aftonbladet: rss2json primär + cors.eu.org XML-fallback ✅
+      * Kalender: cors.eu.org med 3 retry-försök ✅
+      * Apple Release Notes: cors.eu.org + Apple DocC JSON API ✅
+      * Pollen, Namnsdag, Soluppgång: direkta API-anrop utan proxy ✅
+      * Bonnie-lunch: cors.eu.org + astorp.se HTML-tabell ✅
+      * Isabelle-lunch: rss2json + skolmaten.se/elinebergsskolan RSS ✅
+      * Hemnet: Worker-stöd (CONFIG.hemnet.workerUrl = "" → visar länkknapp) ✅
+      * Reader: cors.lol primär + cors.eu.org fallback, Readability.js @0.5.0 ✅
+    main och gh-pages är synkade (senaste deploy: 2026-04-19).
+    WebSearch bekräftar att cors.lol, allorigins.win och rss2json.com är aktiva 2026.
+
   2026-04-19 (övervakningskontroll)
   - Daglig kontroll: fullständig kodanalys av alla datakällor i main-grenen (dashboard.js v31)
     Nätverkstestning ej möjlig (Anthropic-sandbox blockerar alla externa domäner).
