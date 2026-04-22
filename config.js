@@ -17,11 +17,12 @@ const CONFIG = {
     },
 
     // RSS-proxy för att undvika CORS-problem
-    // OBS: corsproxy.io kräver nu betalplan – använd cors.eu.org (format: https://cors.eu.org/FULL_URL)
-    corsProxy: "https://cors.eu.org/",
+    // OBS: cors.eu.org kräver nu allowlist (returnerar 403 host_not_allowed) – använd api.allorigins.win
+    // Format: https://api.allorigins.win/raw?url=ENCODED_URL
+    corsProxy: "https://api.allorigins.win/raw?url=",
 
     // Proxy för kalender
-    calendarProxy: "https://cors.eu.org/",
+    calendarProxy: "https://api.allorigins.win/raw?url=",
 
     // Svenska nyheter - använder SVT och DN
     newsFeeds: [

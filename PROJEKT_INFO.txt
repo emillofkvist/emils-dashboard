@@ -59,12 +59,22 @@ API-ENDPOINTS (vad koden faktiskt använder)
 
 CORS-PROXYER
 ------------
-  Allt RSS/börs/kalender: https://cors.eu.org/{full_url}
+  Allt RSS/börs/kalender: https://api.allorigins.win/raw?url={encoded_full_url}
   OBS: corsproxy.io kräver betalplan (returnerar 200 med error-JSON) – använd INTE
-  OBS: allorigins.win/raw?url= är ett alternativ men cors.eu.org är primär
+  OBS: cors.eu.org kräver nu allowlist (returnerar 403 host_not_allowed för allt) – använd INTE
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-22
+  - CORS-proxy: bytt corsProxy och calendarProxy från cors.eu.org till api.allorigins.win/raw
+    cors.eu.org returnerar nu HTTP 403 "host_not_allowed" för ALLA mål-URL:er (bekräftat med curl).
+    Gäller alla proxy-beroende funktioner: SVT, DN, TechCrunch, The Verge, Macworld, Yahoo Finance, Kalender.
+    Nytt format: https://api.allorigins.win/raw?url=ENCODED_URL (returnerar innehållet direkt med CORS: *)
+  - dashboard.js: lagt till encodeURIComponent() på alla 5 URL-konstruktioner (proxy kräver encoded query param)
+    Ställen: fetchStocks (targetUrl), fetchCalendar (icalUrl), fetchNews (feed.url),
+             fetchAiNews (feed.url), fetchMacworld (macworldFeed)
+  - Cache-bust: config.js?v=4, dashboard.js?v=6
+
   2026-04-16
   - AI-nyheter: lagt till Atom 1.0-stöd i fetchAiNews() – The Verge och liknande
     Vox Media-sajter publicerar Atom-feeds med <entry>/<link href="">/<published>
