@@ -613,7 +613,7 @@ async function fetchCalendar() {
 
     try {
         const proxy = CONFIG.calendarProxy || CONFIG.corsProxy;
-        const url = `${proxy}${CONFIG.calendar.icalUrl}`;
+        const url = `${proxy}${encodeURIComponent(CONFIG.calendar.icalUrl)}`;
         let icalText = '';
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
@@ -774,7 +774,7 @@ async function fetchHtmlViaProxy(articleUrl) {
         return await r.text().then(parseHtml);
     } catch {
         try {
-            return await fetch(`https://cors.eu.org/${articleUrl}`).then(r => r.text()).then(parseHtml);
+            return await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(articleUrl)}`).then(r => r.text()).then(parseHtml);
         } catch {
             return null;
         }
@@ -1038,7 +1038,7 @@ async function fetchAppleRelease() {
 
     try {
         const apiUrl = 'https://developer.apple.com/tutorials/data/documentation/ios-ipados-release-notes.json';
-        const res = await fetch(`${CONFIG.corsProxy}${apiUrl}`);
+        const res = await fetch(`${CONFIG.corsProxy}${encodeURIComponent(apiUrl)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
@@ -1063,7 +1063,7 @@ async function fetchAppleRelease() {
         // Försök hämta faktiskt releasedatum från Apple Releases-sidan
         let releaseDate = null;
         try {
-            const releasesHtml = await fetch(`${CONFIG.corsProxy}https://developer.apple.com/news/releases/`)
+            const releasesHtml = await fetch(`${CONFIG.corsProxy}${encodeURIComponent('https://developer.apple.com/news/releases/')}`)
                 .then(r => r.text());
             const doc = new DOMParser().parseFromString(releasesHtml, 'text/html');
             // Extrahera versionsnummer ur titeln, t.ex. "26.4" från "iOS & iPadOS 26.4 Release Notes"
@@ -1152,8 +1152,8 @@ async function fetchAftonbladet() {
             const items = await fetchRSS(CONFIG.aftonbladetFeed);
             news = items.slice(0, CONFIG.maxAftonbladetNews).map(i => ({ title: i.title, link: i.link, date: i.date }));
         } catch {
-            // Fallback: cors.eu.org + manuell XML-parsing (samma approach som fungerade med corsproxy.io)
-            const resp = await fetch(`${CONFIG.corsProxy}${CONFIG.aftonbladetFeed}`);
+            // Fallback: allorigins.win + manuell XML-parsing
+            const resp = await fetch(`${CONFIG.corsProxy}${encodeURIComponent(CONFIG.aftonbladetFeed)}`);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const xml = new DOMParser().parseFromString(await resp.text(), 'text/xml');
             xml.querySelectorAll('item').forEach((item, index) => {
@@ -1307,7 +1307,7 @@ async function openAppleDocReader(pageUrl) {
             'https://developer.apple.com/tutorials/data/documentation/'
         ) + '.json';
 
-        const res = await fetch(`${CONFIG.corsProxy}${jsonUrl}`);
+        const res = await fetch(`${CONFIG.corsProxy}${encodeURIComponent(jsonUrl)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const refs = data.references || {};
@@ -1461,7 +1461,7 @@ function getISOYearWeek(date) {
 async function fetchBonnieLunch(now) {
     const { week } = getISOYearWeek(now);
     const url = 'https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html';
-    const resp = await fetch(CONFIG.corsProxy + url);
+    const resp = await fetch(CONFIG.corsProxy + encodeURIComponent(url));
     const html = await resp.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
