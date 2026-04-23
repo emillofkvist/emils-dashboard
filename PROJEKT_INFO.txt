@@ -129,6 +129,29 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-23 (övervakningskontroll)
+  - Fullständig kodanalys av gh-pages dashboard.js v32 och config.js v5.
+    Nätverkstestning ej möjlig (Anthropic-sandbox blockerar alla externa domäner).
+    Kodanalys och WebSearch-verifiering:
+      * SMHI snow1g/v1: symbol_code bekräftat som int 1-27 (oförändrat vs Wsymb2) ✅
+      * Elprisetjustnu.se: API v1 bekräftat operativt, 96 poster/dag hanteras korrekt ✅
+      * rss2json.com: bekräftat aktiv tjänst 2026 ✅
+      * cors.lol: bekräftat aktiv CORS-proxy 2026 ✅
+      * allorigins.win: känd intermittent instabilitet (GitHub-issue: ~50% fel), men
+        fortfarande bästa gratisflödet – kalender har 3-retry-logik ✅
+      * roadandtrack.com/rss/all.xml: URL bekräftat giltig per dec 2025 ✅
+      * skolmaten.se RSS (Isabelle): client-token krävs INTE för RSS-endpoint ✅
+      * Aftonbladet: rss2json primär + allorigins XML-fallback korrekt ✅
+      * Apple Release Notes: allorigins + Apple DocC JSON API korrekt ✅
+      * Pollen, Namnsdag, Soluppgång/ned: direkta API-anrop utan proxy ✅
+      * Börs: cors.lol primär + allorigins.win/get fallback (query2+query1) ✅
+      * Bonnie-lunch: allorigins + astorp.se HTML-tabell (korrekt efter 2026-04-22 fix) ✅
+      * Hemnet: Worker-stöd + localStorage + länkknapp-fallback ✅
+    Inga buggar hittade. Inga kodändringar gjorda.
+    Senaste kända fungerande tillstånd: 2026-04-22 (cors.eu.org→allorigins fix).
+    OBS: Local master-branch innehåller förenklad, äldre version av dashboard.
+         Mergea INTE master→gh-pages. Arbeta alltid direkt på gh-pages.
+
   2026-04-22 (övervakningskontroll)
   - CORS-proxy: cors.eu.org returnerar nu HTTP 403 "host_not_allowed" för ALLA mål-URL:er
     Bekräftat med curl från sandbox: `x-deny-reason: host_not_allowed` oavsett Origin-header.
