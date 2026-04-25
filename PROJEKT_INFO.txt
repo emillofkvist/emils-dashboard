@@ -129,6 +129,28 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-25 (övervakningskontroll)
+  - Bugg hittad och fixad: The Verge RSS-URL i aiNewsFeeds pekade på hela
+    huvudfeeden (rss/index.xml) istället för AI-specifika feeden.
+    Följd: "AI nyheter"-kortet visade ALLA Verge-artiklar (tech, kultur, mm.)
+    istället för enbart AI-nyheter.
+    Fix: config.js aiNewsFeeds[1].url bytt till
+         https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+    Bekräftat att AI-specifika feeden är aktiv 2026 (WebSearch + feedspot.com).
+  - Cache-bust: config.js?v=5 → ?v=6
+  - Övriga kodkontroller: inga buggar hittade.
+      * SMHI snow1g/v1: symbol_code int 1-27, format korrekt ✅
+      * elprisetjustnu.se: time_start≤now<time_end för kvartstaxor ✅
+      * rss2json.com: aktiv tjänst (bekräftat via WebSearch 2026) ✅
+      * cors.lol: aktiv CORS-proxy (bekräftat via WebSearch 2026) ✅
+      * allorigins.win/raw: används för kalender, Apple, Aftonbladet-fallback, Bonnie ✅
+      * Aftonbladet: rss2json primär + allorigins fallback korrekt ✅
+      * Pollen, Namnsdag, Soluppgång: direkta API-anrop ✅
+      * Börs: cors.lol + allorigins.win/get fallback ✅
+      * Bonnie-lunch: allorigins + astorp.se HTML ✅
+      * Isabelle-lunch: rss2json + skolmaten.se RSS ✅
+      * motor1.com RSS URL: bekräftat aktiv 2026 (feedspot.com) ✅
+
   2026-04-23 (övervakningskontroll)
   - Fullständig kodanalys av gh-pages dashboard.js v32 och config.js v5.
     Nätverkstestning ej möjlig (Anthropic-sandbox blockerar alla externa domäner).
