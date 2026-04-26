@@ -11,15 +11,13 @@ FILER
 
 GIT-WORKFLOW (varje gång du gör ändringar)
 -------------------------------------------
+  OBS: GitHub Pages serverar direkt från master-grenen – ingen gh-pages-branch behövs.
+
   1. git add config.js dashboard.js index.html PROJEKT_INFO.txt
   2. git commit -m "Beskrivning av ändringen"
   3. git push origin master
-  4. git checkout gh-pages
-  5. git merge master
-  6. git push origin gh-pages
-  7. git checkout master
 
-Ändringen syns live på GitHub Pages inom ~1 minut efter steg 6.
+  Ändringen syns live på GitHub Pages inom ~1 minut efter steg 3.
 
 API-ENDPOINTS (vad koden faktiskt använder)
 --------------------------------------------
@@ -32,30 +30,34 @@ API-ENDPOINTS (vad koden faktiskt använder)
    https://www.elprisetjustnu.se/api/v1/prices/{year}/{mm}-{dd}_SE4.json
    Förväntar: array med SEK_per_kWh och time_start
 
-3. Börskurser (Yahoo Finance via cors.eu.org):
-   https://cors.eu.org/https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?...
+3. Börskurser (Yahoo Finance via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https%3A%2F%2Fquery1.finance.yahoo.com%2Fv8%2Ffinance%2Fchart%2F{symbol}%3F...
    Symboler: ^OMX, ^GSPC, ^IXIC, ^DJI
    Förväntar: chart.result[0].indicators.quote[0].close[]
+   OBS: Yahoo Finance begränsar server-side requests – kan ge "Ej tillgänglig" vid blockering
 
-4. Google Kalender (iCal via cors.eu.org):
-   https://cors.eu.org/{ical-url}
+4. Google Kalender (iCal via api.allorigins.win):
+   https://api.allorigins.win/raw?url={encoded-ical-url}
    Förväntar: iCal-text med BEGIN:VEVENT-block
 
-5. Nyheter SVT (RSS via cors.eu.org):
+5. Nyheter SVT (RSS via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.svt.se%2Fnyheter%2Frss.xml
    Förväntar: RSS XML med <item>-element
 
-6. Nyheter DN (RSS via cors.eu.org):
+6. Nyheter DN (RSS via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.dn.se%2Frss%2F
    Förväntar: RSS XML med <item>-element
 
-7. AI-nyheter TechCrunch AI (RSS via cors.eu.org):
-   https://techcrunch.com/category/artificial-intelligence/feed/
+7. AI-nyheter TechCrunch AI (RSS via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https%3A%2F%2Ftechcrunch.com%2Fcategory%2Fartificial-intelligence%2Ffeed%2F
    OBS: ersatte openai.com/news/rss.xml som inte längre existerar
 
-8. AI-nyheter The Verge AI (RSS via cors.eu.org):
-   https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+8. AI-nyheter The Verge AI (Atom-feed via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.theverge.com%2Frss%2Fai-artificial-intelligence%2Findex.xml
+   OBS: Atom 1.0-format (<entry>/<link href="">/<published>) – koden hanterar båda RSS och Atom
 
-9. Macworld Sverige (RSS via cors.eu.org):
-   https://www.macworld.se/feed
+9. Macworld Sverige (RSS via api.allorigins.win):
+   https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.macworld.se%2Ffeed
 
 CORS-PROXYER
 ------------
@@ -65,6 +67,17 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-26
+  - Övervakningskontroll: Alla API:er och proxyer verifierade via kodgranskning och websök.
+    ✅ SMHI snow1g/v1: korrekt API och parametrar (air_temperature, wind_speed, relative_humidity, symbol_code 1–27)
+    ✅ elprisetjustnu.se: korrekt format (96 poster/dag, kvartstimspris)
+    ✅ allorigins.win-proxy: i drift, korrekt format för RSS/iCal
+    ✅ SVT RSS, DN RSS, TechCrunch AI RSS, The Verge AI RSS, Macworld RSS: alla flöden aktiva
+    ⚠️ Yahoo Finance via allorigins: Yahoo begränsar server-side requests utan autentisering;
+       koden hanterar felet men börskurser kan visa "Ej tillgänglig" beroende på Yahoos blockering
+  - Korrigerat felaktig dokumentation: API-endpoints 3–9 visade "cors.eu.org" men koden använder allorigins.win/raw
+  - Korrigerat git-workflow: gh-pages-grenen existerar inte – GitHub Pages serverar direkt från master
+
   2026-04-22
   - CORS-proxy: bytt corsProxy och calendarProxy från cors.eu.org till api.allorigins.win/raw
     cors.eu.org returnerar nu HTTP 403 "host_not_allowed" för ALLA mål-URL:er (bekräftat med curl).
