@@ -67,6 +67,20 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-27
+  - Övervakningskontroll: Alla API:er och datakällor verifierade via kodgranskning och websökning.
+    ✅ SMHI snow1g/v1: API aktivt, symbol_code är heltal 1–27 (bekräftat via Home Assistant PR #167212)
+    ✅ elprisetjustnu.se: API aktivt, 96 poster/dag (kvartstaxor) fungerar korrekt
+    ✅ api.allorigins.win: Inga rapporterade driftstopp 2026; CORS-headers stabila
+    ✅ SVT Nyheter RSS, DN RSS: Båda flöden bekräftade aktiva i RSS-aggregatorer
+    ✅ TechCrunch AI RSS, The Verge AI Atom: Båda aktiva; Atom-parsning fungerar
+    ✅ Macworld.se RSS: Sajten publicerar aktivt innehåll 2026
+    ✅ Google Kalender iCal via allorigins: Kod korrekt
+    ⚠️ Yahoo Finance via allorigins: Känd begränsning kvarstår (Yahoo blockerar server-side requests)
+       Ingen gratis no-auth-alternativ hittad; graceful fallback "Ej tillgänglig" fungerar korrekt
+  - Inga kodändringar nödvändiga – allt korrekt konfigurerat
+  - Fixat git-tillstånd: lokal master-branch låg 1 commit efter origin/master, återställd med reset --hard
+
   2026-04-26
   - Övervakningskontroll: Alla API:er och proxyer verifierade via kodgranskning och websök.
     ✅ SMHI snow1g/v1: korrekt API och parametrar (air_temperature, wind_speed, relative_humidity, symbol_code 1–27)
