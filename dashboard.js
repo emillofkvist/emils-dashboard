@@ -87,6 +87,15 @@ async function fetchWeather() {
         const humidity = Math.round(d.relative_humidity);
         const symbol = d.symbol_code;
 
+        // Min/max för dagens timmar (lokal tid)
+        const todayDate = new Date().toLocaleDateString('sv-SE');
+        const todayTemps = data.timeSeries
+            .filter(ts => new Date(ts.validTime).toLocaleDateString('sv-SE') === todayDate)
+            .map(ts => ts.data.air_temperature)
+            .filter(t => t !== undefined);
+        const tempMin = todayTemps.length ? Math.round(Math.min(...todayTemps)) : null;
+        const tempMax = todayTemps.length ? Math.round(Math.max(...todayTemps)) : null;
+
         const weatherIcons = {
             1: '☀️', 2: '🌤️', 3: '⛅', 4: '🌥️', 5: '☁️', 6: '☁️',
             7: '🌫️', 8: '🌧️', 9: '🌧️', 10: '🌧️', 11: '⛈️',
@@ -120,6 +129,7 @@ async function fetchWeather() {
             <div class="weather-details">
                 <div class="weather-detail">Vind: <span>${wind} m/s</span></div>
                 <div class="weather-detail">Luftfuktighet: <span>${humidity}%</span></div>
+                ${tempMin !== null ? `<div class="weather-detail">Idag: <span>↓${tempMin}° ↑${tempMax}°</span></div>` : ''}
             </div>
             <div class="sun-info" id="sun-info">
                 <div class="loading">Hämtar soltider...</div>
