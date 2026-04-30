@@ -95,7 +95,7 @@ async function fetchWeather() {
         const dayAfterStart = new Date(y, mo, day + 2).getTime();
 
         const tempsInRange = (from, to) => data.timeSeries
-            .filter(ts => { const t = new Date(ts.validTime).getTime(); return t >= from && t < to; })
+            .filter(ts => { const t = new Date(ts.time).getTime(); return t >= from && t < to; })
             .map(ts => ts.data.air_temperature)
             .filter(t => t !== undefined);
 
