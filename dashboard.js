@@ -1567,20 +1567,37 @@ async function fetchBonnieLunch(now) {
 }
 
 async function fetchIsabelleLunch(now) {
-    // skolmaten.se har RSS-flöde via api.rss2json.com (CORS: *)
-    const rssUrl = 'https://skolmaten.se/api/4/rss/week/elinebergsskolan?locale=sv';
-    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
-    const resp = await fetch(url);
-    const data = await resp.json();
-    if (data.status !== 'ok' || !data.items) throw new Error('ingen data');
-    const todayStr = now.toISOString().slice(0, 10); // "2026-04-10"
-    for (const item of data.items) {
-        if (item.pubDate && item.pubDate.startsWith(todayStr)) {
-            const meal = (item.description || '').trim();
-            if (!meal) throw new Error('lov eller stängt');
-            return meal;
+    const todayStr = now.toISOString().slice(0, 10);
+    const cacheKey = `isabelle_lunch_${todayStr}`;
+
+    // Försök hämta färsk data från RSS
+    try {
+        const rssUrl = 'https://skolmaten.se/api/4/rss/week/elinebergsskolan?locale=sv';
+        const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+        const data = await fetch(url).then(r => r.json());
+        if (data.status === 'ok' && data.items) {
+            // Cacha alla dagar i veckan som finns i RSS-svaret
+            for (const item of data.items) {
+                if (item.pubDate && item.description) {
+                    const dateStr = item.pubDate.slice(0, 10);
+                    try { localStorage.setItem(`isabelle_lunch_${dateStr}`, item.description.trim()); } catch {}
+                }
+            }
+            const todayItem = data.items.find(i => i.pubDate?.startsWith(todayStr));
+            if (todayItem) {
+                const meal = (todayItem.description || '').trim();
+                if (!meal) throw new Error('lov eller stängt');
+                return meal;
+            }
         }
+    } catch (e) {
+        if (e.message === 'lov eller stängt') throw e;
     }
+
+    // Fallback: localStorage-cache
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return cached;
+
     throw new Error('dag ej hittad');
 }
 

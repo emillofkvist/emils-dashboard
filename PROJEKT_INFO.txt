@@ -132,6 +132,11 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-30 (v36)
+  - fetchIsabelleLunch: localStorage-cache per dag (isabelle_lunch_{datum})
+    RSS-svaret sparar hela veckans dagar; vid nätverksfel visas cachad data
+  - dashboard.js → v36
+
   2026-04-30 (v35)
   - fetchBonnieLunch: localStorage-cache – sparar hela veckans matsedel vid varje hämtning
     (nyckel: bonnie_lunch_{år}_v{vecka}). Om astorp.se tagit bort aktuell vecka används cachen.
