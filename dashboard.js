@@ -87,14 +87,32 @@ async function fetchWeather() {
         const humidity = Math.round(d.relative_humidity);
         const symbol = d.symbol_code;
 
-        // Min/max för dagens timmar (lokal tid)
-        const todayDate = new Date().toLocaleDateString('sv-SE');
-        const todayTemps = data.timeSeries
-            .filter(ts => new Date(ts.validTime).toLocaleDateString('sv-SE') === todayDate)
+        // Min/max — jämför med lokala midnattstidsstämplar (undviker toLocaleDateString-buggar)
+        const now2 = new Date();
+        const y = now2.getFullYear(), mo = now2.getMonth(), day = now2.getDate();
+        const todayStart    = new Date(y, mo, day).getTime();
+        const tomorrowStart = new Date(y, mo, day + 1).getTime();
+        const dayAfterStart = new Date(y, mo, day + 2).getTime();
+
+        const tempsInRange = (from, to) => data.timeSeries
+            .filter(ts => { const t = new Date(ts.validTime).getTime(); return t >= from && t < to; })
             .map(ts => ts.data.air_temperature)
             .filter(t => t !== undefined);
-        const tempMin = todayTemps.length ? Math.round(Math.min(...todayTemps)) : null;
-        const tempMax = todayTemps.length ? Math.round(Math.max(...todayTemps)) : null;
+
+        let tempMin = null, tempMax = null, tempLabel = 'Idag';
+        const todayTemps = tempsInRange(todayStart, tomorrowStart);
+        if (todayTemps.length >= 3) {
+            tempMin = Math.round(Math.min(...todayTemps));
+            tempMax = Math.round(Math.max(...todayTemps));
+        } else {
+            // Sen kväll — visa morgondagens istället
+            const tomorrowTemps = tempsInRange(tomorrowStart, dayAfterStart);
+            if (tomorrowTemps.length) {
+                tempMin = Math.round(Math.min(...tomorrowTemps));
+                tempMax = Math.round(Math.max(...tomorrowTemps));
+                tempLabel = 'Imorgon';
+            }
+        }
 
         const weatherIcons = {
             1: '☀️', 2: '🌤️', 3: '⛅', 4: '🌥️', 5: '☁️', 6: '☁️',
@@ -129,7 +147,7 @@ async function fetchWeather() {
             <div class="weather-details">
                 <div class="weather-detail">Vind: <span>${wind} m/s</span></div>
                 <div class="weather-detail">Luftfuktighet: <span>${humidity}%</span></div>
-                ${tempMin !== null ? `<div class="weather-detail">Idag: <span>↓${tempMin}° ↑${tempMax}°</span></div>` : ''}
+                ${tempMin !== null ? `<div class="weather-detail">${tempLabel}: <span>↓${tempMin}° ↑${tempMax}°</span></div>` : ''}
             </div>
             <div class="sun-info" id="sun-info">
                 <div class="loading">Hämtar soltider...</div>
