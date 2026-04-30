@@ -1484,9 +1484,20 @@ function getISOYearWeek(date) {
 
 async function fetchBonnieLunch(now) {
     const { week } = getISOYearWeek(now);
-    const url = 'https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html';
-    const resp = await fetch(CONFIG.corsProxy + url);
-    const html = await resp.text();
+    const targetUrl = 'https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html';
+    const enc = encodeURIComponent(targetUrl);
+
+    // allorigins.win primär, cors.lol fallback
+    let html = '';
+    try {
+        const resp = await fetch(`https://api.allorigins.win/raw?url=${enc}`);
+        if (!resp.ok) throw new Error(resp.status);
+        html = await resp.text();
+    } catch {
+        const resp = await fetch(`https://api.cors.lol/?url=${enc}`);
+        if (!resp.ok) throw new Error(resp.status);
+        html = await resp.text();
+    }
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const tables = doc.querySelectorAll('table');
