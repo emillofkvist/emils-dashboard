@@ -1487,34 +1487,53 @@ async function fetchBonnieLunch(now) {
     const targetUrl = 'https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html';
     const enc = encodeURIComponent(targetUrl);
 
-    // allorigins.win primär, cors.lol fallback
+    // corsproxy.io primär (allorigins.win blockeras av astorp.se), cors.lol fallback
     let html = '';
     try {
-        const resp = await fetch(`https://api.allorigins.win/raw?url=${enc}`);
+        const resp = await fetch(`https://corsproxy.io/?${enc}`, { signal: AbortSignal.timeout(8000) });
         if (!resp.ok) throw new Error(resp.status);
         html = await resp.text();
     } catch {
-        const resp = await fetch(`https://api.cors.lol/?url=${enc}`);
-        if (!resp.ok) throw new Error(resp.status);
-        html = await resp.text();
-    }
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const tables = doc.querySelectorAll('table');
-    let weekTable = null;
-    for (const t of tables) {
-        const header = t.querySelector('caption, thead');
-        if (header && header.textContent.toLowerCase().includes(`vecka ${week}`)) {
-            weekTable = t; break;
+        try {
+            const resp = await fetch(`https://api.cors.lol/?url=${enc}`, { signal: AbortSignal.timeout(8000) });
+            if (!resp.ok) throw new Error(resp.status);
+            html = await resp.text();
+        } catch {
+            throw new Error('proxy ej tillgänglig');
         }
     }
-    if (!weekTable) throw new Error('ingen tabell');
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Bygg upp karta veckonummer → tabell
+    const weekTables = [];
+    for (const t of doc.querySelectorAll('table')) {
+        const caption = t.querySelector('caption');
+        if (!caption) continue;
+        const m = caption.textContent.match(/vecka\s+(\d+)/i);
+        if (m) weekTables.push({ w: parseInt(m[1]), table: t });
+    }
+    if (!weekTables.length) throw new Error('inga matsedelstabeller');
+
+    // Försök hitta exakt vecka, annars närmaste kommande vecka
+    let entry = weekTables.find(e => e.w === week);
+    let isNextWeek = false;
+    if (!entry) {
+        const future = weekTables.filter(e => e.w > week).sort((a, b) => a.w - b.w);
+        if (!future.length) throw new Error('inga kommande veckor');
+        entry = future[0];
+        isNextWeek = true;
+    }
+
     const dayNames = ['', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag'];
-    const todayName = dayNames[now.getDay()];
-    for (const row of weekTable.querySelectorAll('tbody tr')) {
+    // Vid nästa vecka — visa måndag som försmak
+    const todayName = isNextWeek ? 'Måndag' : dayNames[now.getDay()];
+    for (const row of entry.table.querySelectorAll('tbody tr')) {
         const cells = row.querySelectorAll('td');
         if (cells[0] && cells[0].textContent.trim().startsWith(todayName) && cells[1]) {
-            return cells[1].textContent.trim();
+            const meal = cells[1].textContent.trim();
+            return isNextWeek ? `v${entry.w} mån: ${meal}` : meal;
         }
     }
     throw new Error('dag ej hittad');

@@ -132,6 +132,12 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-30
+  - fetchBonnieLunch: byt primär proxy till corsproxy.io (allorigins.win blockeras av astorp.se/SiteVision)
+  - fetchBonnieLunch: om aktuell vecka saknas på sidan, visa nästa publicerade veckas måndag med etikett "vX mån:"
+    (astorp.se tar bort gamla veckor löpande; från tors/fre visas bara kommande veckor)
+  - dashboard.js → v34
+
   2026-04-27
   - fetchBonnieLunch: URL-encodas nu korrekt med encodeURIComponent, resp.ok-kontroll tillagd,
     cors.lol lagt till som fallback när allorigins.win misslyckas
