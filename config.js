@@ -17,11 +17,11 @@ const CONFIG = {
     },
 
     // RSS-proxy för att undvika CORS-problem
-    // cors.eu.org: append URL direkt (ingen encodeURIComponent, URL utan & i query funkar bäst)
-    corsProxy: "https://cors.eu.org/",
+    // allorigins.win/raw: returnerar rådata med CORS-headers, URL läggs direkt efter "?url="
+    corsProxy: "https://api.allorigins.win/raw?url=",
 
-    // Proxy för kalender (cors.eu.org funkar bra utan query-params med &)
-    calendarProxy: "https://cors.eu.org/",
+    // Proxy för kalender
+    calendarProxy: "https://api.allorigins.win/raw?url=",
 
     // Svenska nyheter - SVT och DN
     newsFeeds: [

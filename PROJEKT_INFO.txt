@@ -49,13 +49,13 @@ MODULER & DATAKÄLLOR
                         Graf renderas med Chart.js (CDN)
   Börs                – Yahoo Finance (query1/query2) via cors.lol (primär) + allorigins.win (fallback)
                         Symboler: ^OMX, ^GSPC, ^IXIC, ^DJI
-  Kalender            – Google Kalender via iCal-länk, proxy: cors.eu.org
+  Kalender            – Google Kalender via iCal-länk, proxy: allorigins.win/raw
   Nyheter (SVT + DN)  – RSS via api.rss2json.com, max 5 totalt (3 per källa)
   AI-nyheter          – TechCrunch AI + The Verge via api.rss2json.com, max 5
   Porsche-nyheter     – Carscoops, Road & Track, Motor1 via api.rss2json.com, max 5
   Pollenprognos       – https://api.pollenrapporten.se/v1/forecasts (Naturhistoriska riksmuseet)
                         Region: Malmö (UUID-baserad), 7-gradig skala, visar bara nivå > 0
-  Apple Release Notes – Apple DocC JSON API via cors.eu.org
+  Apple Release Notes – Apple DocC JSON API via allorigins.win/raw
                         Visar alltid senaste iOS/iPadOS-release
                         Datum från developer.apple.com/news/releases/ (fallback: localStorage firstSeen)
                         Rubrik auto-översätts till svenska. Läsarläge renderar DocC JSON inline.
@@ -77,11 +77,14 @@ CORS-PROXYER
   Kalender + Bonnie:   https://cors.eu.org/{url}  (URL direkt utan encodeURIComponent)
   Apple Release Notes: https://cors.eu.org/{url}
   Börs (primär):       https://api.cors.lol/?url={encoded_url}
-  Börs (fallback):     https://api.allorigins.win/get?url={encoded_url}
+  Börs (fallback 1):   https://api.allorigins.win/raw?url={encoded_url}
+  Börs (fallback 2-3): https://api.allorigins.win/get?url={encoded_url}
   Reader (primär):     https://api.cors.lol/?url={encoded_url}
-  Reader (fallback):   https://cors.eu.org/{url}
+  Reader (fallback):   https://api.allorigins.win/raw?url={encoded_url}
+  Kalender + Bonnie:   https://api.allorigins.win/raw?url={encoded_url}  (CONFIG.corsProxy/calendarProxy)
+  Apple Release Notes: https://api.allorigins.win/raw?url={encoded_url}
   OBS: corsproxy.io kräver betalplan sedan apr 2026 – returnerar 200+error-JSON, använd INTE.
-  OBS: cors.lol kan rate-limitera (429) vid många anrop – cors.eu.org används som fallback.
+  OBS: cors.eu.org returnerar 403 (nere) sedan 2026-04-30 – ersatt med allorigins.win/raw.
 
 
 TEKNISKT
@@ -129,6 +132,14 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-30
+  - Ersatt cors.eu.org med allorigins.win/raw (cors.eu.org returnerar 403, nere)
+    Påverkade: kalender, Apple Release Notes, Bonnie lunch, Aftonbladet-fallback, Reader-fallback
+  - Feber läsarläge: förfyller nu articleCache med RSS-innehåll vid sidladdning (som Macworld)
+  - Feber läsarläge: förbättrad HTML-extraktion – lägger till f-article-body p och body-textfallback
+  - Börs: lagt till allorigins.win/raw som extra proxy (proxy 2 av 4)
+  - config.js → v5, dashboard.js → v32
+
   2026-04-19
   - Hemnet: fetchHemnet() omskriven till async med Cloudflare Worker-stöd
     Läser data från localStorage (satt av Worker eller extern automation)
