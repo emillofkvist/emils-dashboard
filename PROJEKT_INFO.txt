@@ -132,7 +132,12 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
-  2026-04-30
+  2026-04-30 (v35)
+  - fetchBonnieLunch: localStorage-cache – sparar hela veckans matsedel vid varje hämtning
+    (nyckel: bonnie_lunch_{år}_v{vecka}). Om astorp.se tagit bort aktuell vecka används cachen.
+  - dashboard.js → v35
+
+  2026-04-30 (v34)
   - fetchBonnieLunch: byt primär proxy till corsproxy.io (allorigins.win blockeras av astorp.se/SiteVision)
   - fetchBonnieLunch: om aktuell vecka saknas på sidan, visa nästa publicerade veckas måndag med etikett "vX mån:"
     (astorp.se tar bort gamla veckor löpande; från tors/fre visas bara kommande veckor)

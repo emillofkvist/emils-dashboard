@@ -1482,12 +1482,37 @@ function getISOYearWeek(date) {
     return { year: isoYear, week: isoWeek };
 }
 
+function bonnieCacheKey(year, week) { return `bonnie_lunch_${year}_v${week}`; }
+
+function bonnieSaveToCache(year, week, meals) {
+    try { localStorage.setItem(bonnieCacheKey(year, week), JSON.stringify(meals)); } catch {}
+}
+
+function bonnieLoadFromCache(year, week) {
+    try { return JSON.parse(localStorage.getItem(bonnieCacheKey(year, week)) || 'null'); } catch { return null; }
+}
+
+function bonnieParseTable(table) {
+    const meals = {};
+    for (const row of table.querySelectorAll('tbody tr')) {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 2) {
+            const day = cells[0].textContent.trim();
+            const meal = cells[1].textContent.trim();
+            if (day && meal) meals[day] = meal;
+        }
+    }
+    return meals;
+}
+
 async function fetchBonnieLunch(now) {
-    const { week } = getISOYearWeek(now);
+    const { year, week } = getISOYearWeek(now);
+    const dayNames = ['', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag'];
+    const todayName = dayNames[now.getDay()];
+
+    // Hämta HTML via proxy
     const targetUrl = 'https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html';
     const enc = encodeURIComponent(targetUrl);
-
-    // corsproxy.io primär (allorigins.win blockeras av astorp.se), cors.lol fallback
     let html = '';
     try {
         const resp = await fetch(`https://corsproxy.io/?${enc}`, { signal: AbortSignal.timeout(8000) });
@@ -1498,45 +1523,47 @@ async function fetchBonnieLunch(now) {
             const resp = await fetch(`https://api.cors.lol/?url=${enc}`, { signal: AbortSignal.timeout(8000) });
             if (!resp.ok) throw new Error(resp.status);
             html = await resp.text();
-        } catch {
-            throw new Error('proxy ej tillgänglig');
+        } catch { html = ''; }
+    }
+
+    if (html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+
+        // Hitta och cacha alla veckor som finns på sidan
+        for (const t of doc.querySelectorAll('table')) {
+            const caption = t.querySelector('caption');
+            if (!caption) continue;
+            const m = caption.textContent.match(/vecka\s+(\d+)/i);
+            if (!m) continue;
+            const w = parseInt(m[1]);
+            // Spara i cache (skriver alltid över med färsk data)
+            const meals = bonnieParseTable(t);
+            if (Object.keys(meals).length) bonnieSaveToCache(year, w, meals);
         }
     }
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    // Försök hämta dagens mål från cache (täcker även fallet att veckan tagits bort från sidan)
+    const cached = bonnieLoadFromCache(year, week);
+    if (cached && cached[todayName]) return cached[todayName];
 
-    // Bygg upp karta veckonummer → tabell
-    const weekTables = [];
-    for (const t of doc.querySelectorAll('table')) {
-        const caption = t.querySelector('caption');
-        if (!caption) continue;
-        const m = caption.textContent.match(/vecka\s+(\d+)/i);
-        if (m) weekTables.push({ w: parseInt(m[1]), table: t });
-    }
-    if (!weekTables.length) throw new Error('inga matsedelstabeller');
-
-    // Försök hitta exakt vecka, annars närmaste kommande vecka
-    let entry = weekTables.find(e => e.w === week);
-    let isNextWeek = false;
-    if (!entry) {
-        const future = weekTables.filter(e => e.w > week).sort((a, b) => a.w - b.w);
-        if (!future.length) throw new Error('inga kommande veckor');
-        entry = future[0];
-        isNextWeek = true;
-    }
-
-    const dayNames = ['', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag'];
-    // Vid nästa vecka — visa måndag som försmak
-    const todayName = isNextWeek ? 'Måndag' : dayNames[now.getDay()];
-    for (const row of entry.table.querySelectorAll('tbody tr')) {
-        const cells = row.querySelectorAll('td');
-        if (cells[0] && cells[0].textContent.trim().startsWith(todayName) && cells[1]) {
-            const meal = cells[1].textContent.trim();
-            return isNextWeek ? `v${entry.w} mån: ${meal}` : meal;
+    // Inget för idag — visa nästa tillgängliga veckas måndag som försmak
+    if (html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const future = [];
+        for (const t of doc.querySelectorAll('table')) {
+            const caption = t.querySelector('caption');
+            if (!caption) continue;
+            const m = caption.textContent.match(/vecka\s+(\d+)/i);
+            if (m && parseInt(m[1]) > week) future.push({ w: parseInt(m[1]), table: t });
+        }
+        future.sort((a, b) => a.w - b.w);
+        if (future.length) {
+            const meals = bonnieParseTable(future[0].table);
+            if (meals['Måndag']) return `v${future[0].w} mån: ${meals['Måndag']}`;
         }
     }
-    throw new Error('dag ej hittad');
+
+    throw new Error('ingen meny tillgänglig');
 }
 
 async function fetchIsabelleLunch(now) {
