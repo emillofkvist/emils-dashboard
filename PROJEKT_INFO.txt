@@ -132,6 +132,11 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-27
+  - fetchBonnieLunch: URL-encodas nu korrekt med encodeURIComponent, resp.ok-kontroll tillagd,
+    cors.lol lagt till som fallback när allorigins.win misslyckas
+  - dashboard.js → v33
+
   2026-04-30
   - Ersatt cors.eu.org med allorigins.win/raw (cors.eu.org returnerar 403, nere)
     Påverkade: kalender, Apple Release Notes, Bonnie lunch, Aftonbladet-fallback, Reader-fallback
