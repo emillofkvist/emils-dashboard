@@ -525,10 +525,12 @@ async function fetchStocks() {
         const enc1 = encodeURIComponent(yahooUrl1);
 
         const stockProxies = [
-            // cors.lol och allorigins.win som primära (corsproxy.io kräver betalplan sedan apr 2026)
+            // cors.lol primär (corsproxy.io kräver betalplan sedan apr 2026)
             () => fetch(`https://api.cors.lol/?url=${enc}`, {
                 headers: { 'x-cors-headers': JSON.stringify({ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' }) }
             }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+            // allorigins raw returnerar rådata direkt (undviker JSON-wrapping)
+            () => fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
             () => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => r.json()).then(j => { if (!j.contents) throw new Error('tom'); return JSON.parse(j.contents); }),
             () => fetch(`https://api.allorigins.win/get?url=${enc1}`).then(r => r.json()).then(j => { if (!j.contents) throw new Error('tom'); return JSON.parse(j.contents); }),
         ];
@@ -739,12 +741,24 @@ async function fetchHtmlViaProxy(articleUrl) {
 
         // Feber: extrahera direkt från custom web components — kringgå Readability
         if (articleUrl.includes('feber.se')) {
-            const headline = doc.querySelector('f-article-headline b, f-article-headline');
-            const paras = [...doc.querySelectorAll('f-article-body f-para')]
+            const headline = doc.querySelector('f-article-headline b, f-article-headline, h1');
+
+            // Försök 1: f-para eller p-element i f-article-body
+            let paras = [...doc.querySelectorAll('f-article-body f-para, f-article-body p')]
                 .map(el => el.textContent.trim())
-                .filter(t => t.length > 0)
+                .filter(t => t.length > 20)
                 .map(t => `<p>${t}</p>`)
                 .join('');
+
+            // Försök 2: all text i f-article-body om inga stycken hittades
+            if (!paras) {
+                const bodyEl = doc.querySelector('f-article-body');
+                if (bodyEl) {
+                    const text = bodyEl.textContent.trim();
+                    if (text.length > 50) paras = `<p>${text}</p>`;
+                }
+            }
+
             if (paras) return { title: headline ? headline.textContent.trim() : doc.title, content: paras };
             throw new Error('no feber content');
         }
@@ -766,7 +780,7 @@ async function fetchHtmlViaProxy(articleUrl) {
         throw new Error('readability failed');
     };
 
-    // cors.lol primärt, cors.eu.org som fallback (aftonbladet.se ger 429 på cors.lol)
+    // cors.lol primärt, allorigins.win/raw som fallback
     const enc = encodeURIComponent(articleUrl);
     try {
         const r = await fetch(`https://api.cors.lol/?url=${enc}`);
@@ -774,7 +788,7 @@ async function fetchHtmlViaProxy(articleUrl) {
         return await r.text().then(parseHtml);
     } catch {
         try {
-            return await fetch(`https://cors.eu.org/${articleUrl}`).then(r => r.text()).then(parseHtml);
+            return await fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => r.text()).then(parseHtml);
         } catch {
             return null;
         }
@@ -1112,6 +1126,16 @@ async function fetchFeber() {
     try {
         const items = await fetchRSS(CONFIG.feberFeed);
         const news = items.slice(0, 5).map(item => ({ title: item.title, link: item.link, date: item.date }));
+
+        // Förfyll artikelcachen med RSS-innehåll som fallback (samma mönster som Macworld)
+        items.slice(0, 5).forEach(item => {
+            if (!articleCache.has(item.link)) {
+                const body = item.content || item.description;
+                if (body && body.length > 100) {
+                    articleCache.set(item.link, { title: item.title, content: body });
+                }
+            }
+        });
 
         if (news.length === 0) {
             document.getElementById('feber').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
