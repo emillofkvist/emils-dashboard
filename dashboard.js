@@ -1669,6 +1669,9 @@ async function fetchHemnet() {
                 <a href="${CONFIG.hemnet.searchUrl}" target="_blank" rel="noopener" class="hemnet-btn">
                     Visa nya hus på Hemnet ↗
                 </a>
+                <a href="https://www.booli.se/sok/till-salu?areaIds=117043&objectType=Villa" target="_blank" rel="noopener" class="hemnet-btn" style="margin-top:8px;">
+                    Visa nya hus på Booli ↗
+                </a>
             </div>
         `;
         card.style.display = '';
