@@ -1533,12 +1533,10 @@ function bonnieParseTable(table) {
     return meals;
 }
 
-async function fetchBonnieLunch(now) {
-    const { year, week } = getISOYearWeek(now);
-    const dayNames = ['', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag'];
-    const todayName = dayNames[now.getDay()];
+async function fetchBonnieLunch(target, isToday) {
+    const dayNames = ['', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', ''];
 
-    // Hämta HTML via proxy
+    // Hämta HTML via proxy och cacha alla veckor
     const targetUrl = 'https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html';
     const enc = encodeURIComponent(targetUrl);
     let html = '';
@@ -1556,90 +1554,84 @@ async function fetchBonnieLunch(now) {
 
     if (html) {
         const doc = new DOMParser().parseFromString(html, 'text/html');
-
-        // Hitta och cacha alla veckor som finns på sidan
+        const { year } = getISOYearWeek(target);
         for (const t of doc.querySelectorAll('table')) {
             const caption = t.querySelector('caption');
             if (!caption) continue;
             const m = caption.textContent.match(/vecka\s+(\d+)/i);
             if (!m) continue;
-            const w = parseInt(m[1]);
-            // Spara i cache (skriver alltid över med färsk data)
             const meals = bonnieParseTable(t);
-            if (Object.keys(meals).length) bonnieSaveToCache(year, w, meals);
+            if (Object.keys(meals).length) bonnieSaveToCache(year, parseInt(m[1]), meals);
         }
     }
 
-    // Försök hämta dagens mål från cache (täcker även fallet att veckan tagits bort från sidan)
-    const cached = bonnieLoadFromCache(year, week);
-    if (cached && cached[todayName]) return cached[todayName];
-
-    // Inget för idag — visa nästa tillgängliga veckas måndag som försmak
-    if (html) {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const future = [];
-        for (const t of doc.querySelectorAll('table')) {
-            const caption = t.querySelector('caption');
-            if (!caption) continue;
-            const m = caption.textContent.match(/vecka\s+(\d+)/i);
-            if (m && parseInt(m[1]) > week) future.push({ w: parseInt(m[1]), table: t });
-        }
-        future.sort((a, b) => a.w - b.w);
-        if (future.length) {
-            const meals = bonnieParseTable(future[0].table);
-            if (meals['Måndag']) return `v${future[0].w} mån: ${meals['Måndag']}`;
-        }
+    // Försök target-datum, sedan nästa skoldag(ar) upp till 7 dagar
+    for (let offset = 0; offset <= 7; offset++) {
+        const d = new Date(target);
+        d.setDate(d.getDate() + offset);
+        if (d.getDay() === 0 || d.getDay() === 6) continue;
+        const { year: y, week: w } = getISOYearWeek(d);
+        const dayName = dayNames[d.getDay()];
+        const prefix = (!isToday || offset > 0) ? `${dayName}: ` : '';
+        const cached = bonnieLoadFromCache(y, w);
+        if (cached && cached[dayName]) return prefix + cached[dayName];
     }
 
     throw new Error('ingen meny tillgänglig');
 }
 
-async function fetchIsabelleLunch(now) {
-    const todayStr = now.toISOString().slice(0, 10);
-    const cacheKey = `isabelle_lunch_${todayStr}`;
+async function fetchIsabelleLunch(target, isToday) {
+    const dayNames = ['', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', ''];
 
-    // Försök hämta färsk data från RSS
+    // Hämta och cacha RSS
+    let items = [];
     try {
         const rssUrl = 'https://skolmaten.se/api/4/rss/week/elinebergsskolan?locale=sv';
         const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
         const data = await fetch(url).then(r => r.json());
         if (data.status === 'ok' && data.items) {
-            // Cacha alla dagar i veckan som finns i RSS-svaret
-            for (const item of data.items) {
+            items = data.items;
+            for (const item of items) {
                 if (item.pubDate && item.description) {
                     const dateStr = item.pubDate.slice(0, 10);
                     try { localStorage.setItem(`isabelle_lunch_${dateStr}`, item.description.trim()); } catch {}
                 }
             }
-            const todayItem = data.items.find(i => i.pubDate?.startsWith(todayStr));
-            if (todayItem) {
-                const meal = (todayItem.description || '').trim();
-                if (!meal) throw new Error('lov eller stängt');
-                return meal;
-            }
         }
-    } catch (e) {
-        if (e.message === 'lov eller stängt') throw e;
+    } catch {}
+
+    // Försök target-datum, sedan nästa skoldag(ar) upp till 7 dagar
+    for (let offset = 0; offset <= 7; offset++) {
+        const d = new Date(target);
+        d.setDate(d.getDate() + offset);
+        if (d.getDay() === 0 || d.getDay() === 6) continue;
+        const dateStr = d.toISOString().slice(0, 10);
+        const prefix = (!isToday || offset > 0) ? `${dayNames[d.getDay()]}: ` : '';
+
+        const item = items.find(i => i.pubDate?.startsWith(dateStr));
+        if (item && item.description?.trim()) return prefix + item.description.trim();
+
+        const cached = localStorage.getItem(`isabelle_lunch_${dateStr}`);
+        if (cached) return prefix + cached;
     }
 
-    // Fallback: localStorage-cache
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) return cached;
-
-    throw new Error('dag ej hittad');
+    throw new Error('ingen meny hittad');
 }
 
 async function fetchLunch() {
     const now = new Date();
     const card = document.getElementById('lunch-card');
-    if (now.getDay() === 0 || now.getDay() === 6) {
-        card.style.display = 'none';
-        return;
-    }
+
+    // Nästa skoldag (hoppar helg)
+    const target = new Date(now);
+    while (target.getDay() === 0 || target.getDay() === 6) target.setDate(target.getDate() + 1);
+    const isToday = target.toDateString() === now.toDateString();
+
     const [bonnieResult, isabelleResult] = await Promise.allSettled([
-        fetchBonnieLunch(now),
-        fetchIsabelleLunch(now)
+        fetchBonnieLunch(target, isToday),
+        fetchIsabelleLunch(target, isToday)
     ]);
+    card.style.display = '';
     const row = (emoji, name, result) => {
         const dish = result.status === 'fulfilled'
             ? `<span class="lunch-dish">${result.value}</span>`
