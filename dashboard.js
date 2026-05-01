@@ -1633,9 +1633,14 @@ async function fetchLunch() {
     ]);
     card.style.display = '';
     const row = (emoji, name, result) => {
-        const dish = result.status === 'fulfilled'
-            ? `<span class="lunch-dish">${result.value}</span>`
-            : `<span class="lunch-dish lunch-error">Kunde inte hämta</span>`;
+        let dish;
+        if (result.status === 'fulfilled') {
+            dish = `<span class="lunch-dish">${result.value}</span>`;
+        } else {
+            const msg = result.reason?.message || '';
+            const ej = msg.includes('ingen meny') || msg.includes('dag ej hittad');
+            dish = `<span class="lunch-dish lunch-error">${ej ? 'Meny ej publicerad' : 'Kunde inte hämta'}</span>`;
+        }
         return `<div class="lunch-row"><span class="lunch-name">${emoji} ${name}</span>${dish}</div>`;
     };
     document.getElementById('lunch').innerHTML =
