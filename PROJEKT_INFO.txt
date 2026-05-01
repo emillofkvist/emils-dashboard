@@ -67,6 +67,20 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-01
+  - Övervakningskontroll: Kodgranskning + websökningar (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; platt data-struktur bekräftad via MagicMirror-issue (#4081); symbol_code 1–27 oförändrat
+    ✅ elprisetjustnu.se: API aktivt, 96 poster/dag (kvartstaxor) bekräftat via dataportal.se
+    ✅ SVT RSS, DN RSS: Båda aktiva, listade i 2026 RSS-kataloger (Feedspot, Feeder)
+    ✅ TechCrunch AI RSS: Aktivt, bekräftat i "10 Best Tech & AI RSS Feeds (2026)"
+    ✅ The Verge AI Atom: Aktivt, listat hos Feeder.co; Atom-parsning i koden fungerar
+    ✅ macworld.se: Aktivt, publicerade artiklar om iOS 26.5 och Apple-event i maj 2026
+    ✅ api.allorigins.win: Operativt; känt intermittent CORS-header-fel (issue #135, 2024) men ej kritiskt
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår; graceful fallback "Ej tillgänglig" fungerar
+  - Git: Återhämtade 4 orphaned commits (29d41c2–c08f583, 2026-04-26 t.o.m. 2026-04-30) som föregående
+    övervakningsagenter skapat i detached HEAD-läge – fast-forward-mergade till master
+  - Inga kodändringar nödvändiga
+
   2026-04-30
   - Övervakningskontroll: Kodgranskning + websökningar (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; timeSeries[0].data.{air_temperature,wind_speed,relative_humidity,symbol_code}
