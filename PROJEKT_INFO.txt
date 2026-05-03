@@ -67,6 +67,27 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-03
+  - Övervakningskontroll: Kodgranskning + websökningar (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; bekräftat via SMHI OpenData-portal och Home Assistant/MagicMirror-issues (2026).
+       Datastruktur: timeSeries[0].data.{air_temperature, wind_speed, relative_humidity, symbol_code (int 1–27)}.
+    ✅ elprisetjustnu.se: API aktivt, 96 poster/dag (kvartstaxor) bekräftat via elprisetjustnu.se/elpris-api
+       och dataportal.se. Koden matchar korrekt kvart med Math.floor(min/15)*15.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt, listat i RSS-aggregatorer 2026 (feedspot, feeder.co).
+    ✅ DN RSS (dn.se/rss/): Aktivt, listat i RSS-aggregatorer 2026.
+    ✅ TechCrunch AI RSS: Aktivt, listat i "10 Best Tech & AI RSS Feeds (2026)" och feeder.co.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt, listat 2026.
+    ✅ Macworld.se: Sajten aktiv med artiklar om Apple-event maj 2026; RSS på macworld.se/feed.
+    ✅ api.allorigins.win: Operativt (19 800+ dagliga besökare nov 2025, inga kritiska avbrott).
+       Issue #143 (nov 2025, 408-timeout) stängd. Intermittent CORS-header-miss (issue #135) kvarstår
+       men är inte kritiskt. Används korrekt med /raw?url=encodeURIComponent(url).
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (bekräftat via yfinance-forum
+       och MarketXLS 2026); graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: Återhämtade 6 orphaned commits (29d41c2–470bea0, 2026-04-26 t.o.m. 2026-05-02)
+    via git checkout master + git reset --hard 470bea0; lokal master fast-forward:ad till 470bea0.
+    Koden i origin/master (a341f98) identisk med detached HEAD – enbart PROJEKT_INFO.txt skilde sig.
+  - Inga kodändringar nödvändiga
+
   2026-05-02
   - Övervakningskontroll: Kodgranskning + websökningar (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; flat data-struktur bekräftad: timeSeries[0].data.{air_temperature,
