@@ -67,6 +67,24 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-07
+  - Övervakningskontroll: Kodgranskning + websökningar (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; bekräftat via MagicMirror/Home Assistant-forum 2026.
+       timeSeries[0].data.{air_temperature, wind_speed, relative_humidity, symbol_code (int 1–27)} korrekt.
+    ✅ elprisetjustnu.se: API aktivt; SE4-priser visas per kvartstimme för maj 2026 (t.ex. 1.66 kr/kWh 2026-05-06).
+       96 poster/dag bekräftat; koden matchar rätt kvart korrekt.
+    ✅ api.allorigins.win: Operativt; senaste GitHub-issue sept 2024; inga nya driftstopp rapporterade.
+       Används korrekt med /raw?url=encodeURIComponent(url) för RSS/kalender/börs.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt, listat i Feeder.co och FeedSpot 2026.
+    ✅ DN RSS (dn.se/rss/): Aktivt, listat i Feeder.co 2026 (RSS-feed fungerar oavsett artikelpaywall).
+    ✅ TechCrunch AI RSS: Aktivt, listat i "10 Best Tech & AI RSS Feeds (2026)"; full-text utan paywall.
+    ✅ The Verge AI Atom: Aktivt, listat i Feeder.co och Best AI News RSS Feeds 2026.
+    ✅ Macworld.se RSS: Sajten aktiv; artiklar publicerade t.o.m. maj 2026 (MacBook Air M5, Apple-event mars 2026).
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; privat URL ej verifierbar men koden har fungerat sedan april.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår; graceful fallback "Ej tillgänglig" fungerar.
+  - Git: Lokal master låg 3 commits bakom origin/master (fb58a65 2026-05-06) – återsynkroniserat med reset --hard.
+  - Inga kodändringar nödvändiga
+
   2026-05-06
   - Övervakningskontroll: Kodgranskning + websökningar (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; bekräftat via SMHI Open Data Portal och Home Assistant/MagicMirror-issues 2026.
