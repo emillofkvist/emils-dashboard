@@ -84,6 +84,34 @@
             font-style: italic;
         }
 
+        /* Flaggdag */
+        .flag-card {
+            background: linear-gradient(135deg, #006AA7 0%, #005a8e 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .flag-svg {
+            width: 100px;
+            height: 63px;
+            margin: 0 auto 12px;
+            display: block;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .flag-day-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            opacity: 0.8;
+            margin-bottom: 4px;
+        }
+        .flag-day-name {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
         /* Väder */
         .weather-main {
             display: flex;
@@ -948,6 +976,11 @@
             <div class="nameday" id="nameday"></div>
         </div>
 
+        <!-- Flaggdag -->
+        <div class="card flag-card" id="flag-card" style="display:none">
+            <div id="flag-content"></div>
+        </div>
+
         <!-- Väder -->
         <div class="card">
             <div class="card-header">Väder i Hyllinge</div>
@@ -1167,6 +1200,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.js"></script>
     <script src="config.js?v=5"></script>
-    <script src="dashboard.js?v=42"></script>
+    <script src="dashboard.js?v=43"></script>
 </body>
 </html>
