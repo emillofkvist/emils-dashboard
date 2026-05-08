@@ -2,6 +2,80 @@
 // EMILS DASHBOARD
 // ============================================
 
+// ============================================
+// FLAGGDAGAR
+// ============================================
+
+const FIXED_FLAG_DAYS = [
+    { month: 1,  day: 1,  label: 'Nyårsdagen' },
+    { month: 1,  day: 28, label: 'Konung Carl XVI Gustafs namnsdag' },
+    { month: 3,  day: 12, label: 'Kronprinsessan Victorias namnsdag' },
+    { month: 4,  day: 30, label: 'Konung Carl XVI Gustafs födelsedag' },
+    { month: 5,  day: 1,  label: 'Internationella arbetardagen' },
+    { month: 5,  day: 29, label: 'Veterandagen' },
+    { month: 6,  day: 6,  label: 'Sveriges nationaldag' },
+    { month: 7,  day: 14, label: 'Kronprinsessan Victorias födelsedag' },
+    { month: 8,  day: 8,  label: 'Drottning Silvias namnsdag' },
+    { month: 10, day: 24, label: 'FN-dagen' },
+    { month: 11, day: 6,  label: 'Gustav Adolfsdagen' },
+    { month: 12, day: 10, label: 'Nobeldagen' },
+    { month: 12, day: 23, label: 'Drottning Silvias födelsedag' },
+    { month: 12, day: 25, label: 'Juldagen' },
+];
+
+function getEaster(year) {
+    const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+    const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31);
+    const day   = ((h + l - 7 * m + 114) % 31) + 1;
+    return { month, day };
+}
+
+function getFlagDayLabel(date) {
+    const year = date.getFullYear(), month = date.getMonth() + 1, day = date.getDate();
+    const fixed = FIXED_FLAG_DAYS.find(f => f.month === month && f.day === day);
+    if (fixed) return fixed.label;
+
+    // Påskdagen
+    const easter = getEaster(year);
+    if (month === easter.month && day === easter.day) return 'Påskdagen';
+
+    // Pingstdagen (49 dagar efter påsk)
+    const pentecost = new Date(year, easter.month - 1, easter.day + 49);
+    if (month === pentecost.getMonth() + 1 && day === pentecost.getDate()) return 'Pingstdagen';
+
+    // Midsommardagen (lördagen 20–26 juni)
+    if (month === 6 && day >= 20 && day <= 26 && date.getDay() === 6) return 'Midsommardagen';
+
+    // Riksdagsvalsdagen (2:a söndagen i september, valår)
+    if (month === 9 && date.getDay() === 0 && (year - 2022) % 4 === 0) {
+        let sundays = 0;
+        for (let d2 = 1; d2 < day; d2++) if (new Date(year, 8, d2).getDay() === 0) sundays++;
+        if (sundays === 1) return 'Riksdagsvalsdagen';
+    }
+
+    return null;
+}
+
+function renderFlagDay(date) {
+    const label = getFlagDayLabel(date);
+    const card = document.getElementById('flag-card');
+    if (!label) { card.style.display = 'none'; return; }
+
+    const flag = `<svg class="flag-svg" viewBox="0 0 16 10" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="10" fill="#006AA7"/>
+        <rect x="5" width="2" height="10" fill="#FECC02"/>
+        <rect y="4" width="16" height="2" fill="#FECC02"/>
+    </svg>`;
+
+    document.getElementById('flag-content').innerHTML =
+        `${flag}<div class="flag-day-label">🇸🇪 Flaggdag</div><div class="flag-day-name">${label}</div>`;
+    card.style.display = '';
+}
+
 // Polyfill för Promise.any (saknas i webbläsare äldre än 2020)
 if (typeof Promise.any !== 'function') {
     Promise.any = promises =>
@@ -642,20 +716,26 @@ async function fetchCalendar() {
     }
 
     try {
-        const proxy = CONFIG.calendarProxy || CONFIG.corsProxy;
-        const url = `${proxy}${CONFIG.calendar.icalUrl}`;
+        const calProxies = [
+            'https://corsproxy.io/?',
+            'https://api.allorigins.win/raw?url='
+        ];
         let icalText = '';
-        for (let attempt = 0; attempt < 3; attempt++) {
-            try {
-                if (attempt > 0) await new Promise(r => setTimeout(r, 1500));
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(response.status);
-                icalText = await response.text();
-                if (icalText.includes('BEGIN:VCALENDAR')) break;
-            } catch (e) {
-                if (attempt === 2) throw e;
+        let fetched = false;
+        for (const proxy of calProxies) {
+            const url = `${proxy}${encodeURIComponent(CONFIG.calendar.icalUrl)}`;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    if (attempt > 0) await new Promise(r => setTimeout(r, 1000));
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(response.status);
+                    icalText = await response.text();
+                    if (icalText.includes('BEGIN:VCALENDAR')) { fetched = true; break; }
+                } catch (e) { /* prova nästa proxy */ }
             }
+            if (fetched) break;
         }
+        if (!fetched) throw new Error('Ingen proxy svarade med giltig kalenderdata');
 
         // Parsa iCal-data
         const events = [];
@@ -1747,6 +1827,7 @@ async function fetchHemnet() {
 async function init() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
+    renderFlagDay(new Date());
 
     // Hämta all data parallellt (kalender separat efter aktier pga cors.lol rate-limit)
     await Promise.all([

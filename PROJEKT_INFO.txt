@@ -132,6 +132,12 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-04-30 (v43)
+  - Flaggdag: ny kortvisning näst högst upp med SVG-flagga och anledning (SFS 1982:270)
+    Inkl. rörliga datum: Påsk, Pingst, Midsommar, Riksdagsvalsdagen
+  - Kalender: URL-encodas nu korrekt med encodeURIComponent; corsproxy.io primär, allorigins.win fallback
+  - dashboard.js → v43
+
   2026-04-30 (v36)
   - fetchIsabelleLunch: localStorage-cache per dag (isabelle_lunch_{datum})
     RSS-svaret sparar hela veckans dagar; vid nätverksfel visas cachad data
