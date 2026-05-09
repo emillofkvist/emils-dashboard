@@ -67,6 +67,28 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-09
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; API bekräftat via MagicMirror-issue #4081 och SMHI OpenData-portal.
+       timeSeries[0].data.{air_temperature, wind_speed, relative_humidity, symbol_code (int 1–27)} korrekt.
+       pmp3g/v2 nedlagd 31 mars 2026 – koden använder korrekt snow1g/v1.
+    ✅ elprisetjustnu.se SE4: API aktivt; SE4-pris 8 maj 2026 = 1.35 kr/kWh bekräftat via websök.
+       96 poster/dag (kvartstaxor) bekräftat; koden matchar rätt kvart med Math.floor(min/15)*15.
+    ✅ api.allorigins.win: Operativt; inga rapporterade avbrott i maj 2026.
+       Används korrekt med /raw?url=encodeURIComponent(url) för RSS/kalender/börs.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt, listat i "Top 40 Sweden News RSS Feeds" 2026.
+    ✅ DN RSS (dn.se/rss/): Aktivt, listat i "Top 20 Dagens Nyheter RSS Feeds" 2026.
+    ✅ TechCrunch AI RSS: Aktivt; full-text utan paywall, listat i "10 Best Tech & AI RSS Feeds (2026)".
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt, listat i
+       Feeder.co och Daigest 2026; Atom 1.0-parsning i koden fungerar (<entry>/<link href="">/<published>).
+    ✅ Macworld.se RSS: Sajten aktiv med artiklar 8 maj 2026 (Mac OS 27, Apple TV-premiärer).
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting bekräftat);
+       ingen gratis no-auth-alternativ tillgänglig; graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: lokal master låg 5 commits bakom HEAD (detached mode, commits 2026-05-04 t.o.m. 2026-05-08
+    orphaned) – återhämtade alla via git checkout master + git reset --hard e4c2008.
+  - Inga kodändringar nödvändiga
+
   2026-05-08
   - Övervakningskontroll: Kodgranskning + webbsökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; platt datastruktur bekräftad via MagicMirror-issue #4081 och Home Assistant #166935.
