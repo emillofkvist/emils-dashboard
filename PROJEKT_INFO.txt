@@ -67,6 +67,29 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-11
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; lanserades som ersättare för pmp3g/v2 (nedlagd 31 mars 2026).
+       timeSeries[0].data.{air_temperature, wind_speed, relative_humidity, symbol_code (int 1–27)} korrekt.
+       Bekräftat via SMHI Open Data Portal och MagicMirror-issue #4081.
+    ✅ elprisetjustnu.se SE4: API aktivt; 96 poster/dag (kvartstaxor) bekräftat via dataportal.se och Shelly-projekt.
+       Koden matchar rätt kvart med Math.floor(min/15)*15 korrekt.
+    ✅ api.allorigins.win: Operativt; senaste GitHub-issue #135 (sept 2024, intermittent CORS-header-miss).
+       Inga 2026-issues rapporterade. /raw-endpoint fungerar korrekt för RSS/kalender/börs.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt, listat i "Top 40 Sweden News RSS Feeds" 2026.
+    ✅ DN RSS (dn.se/rss/): Aktivt, listat i FeedSpot och Feeder.co 2026; inga avslutningsrapporter.
+    ✅ TechCrunch AI RSS: Aktivt; listat i "10 Best Tech & AI RSS Feeds (2026)" och daige.st 2026.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt, listat i
+       Feeder.co, readless.app och best-ai-blogs.hushflowai.com 2026; Atom-parsning i koden korrekt.
+    ✅ Macworld.se RSS: Sajten aktiv med artiklar om MacBook Air M5-test (mars 2026), Apple-event mars 2026,
+       köpguide 2026; /feed (WordPress) aktiv.
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting bekräftat
+       via MarketXLS, Medium "Why yfinance Keeps Getting Blocked" 2026, yfinance-issue #2422);
+       ingen gratis no-auth-alternativ tillgänglig; graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: master i synk med origin/master (commit 5ea29fb). Inga orphaned commits.
+  - Inga kodändringar nödvändiga
+
   2026-05-10
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; timeSeries[0].data.{air_temperature, wind_speed, relative_humidity,
