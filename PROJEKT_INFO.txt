@@ -67,6 +67,30 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-12
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; symbol_code bekräftat som heltal 1–27 (identiskt med Wsymb2 i pmp3g/v2)
+       via SMHI Open Data Portal (opendata.smhi.se/metfcst/snow1gv1/parameters) och MagicMirror-issue #4081.
+       Parameternamn {air_temperature, wind_speed, relative_humidity, symbol_code} korrekt i koden.
+    ✅ elprisetjustnu.se SE4: API aktivt; 96 poster/dag (kvartstaxor) bekräftat via elprisetjustnu.se och
+       dataportal.se. Koden matchar rätt kvart med Math.floor(min/15)*15.
+    ✅ api.allorigins.win: Operativt; inga nya kritiska avbrott i maj 2026. GitHub-issues senast sept 2024.
+       Intermittent CORS-header-miss (issue #135) kvarstår men ej kritiskt för /raw-endpoint.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt, listat i Feedspot och Feeder.co 2026 (Top 40 Sweden News).
+    ✅ DN RSS (dn.se/rss/): Aktivt, listat i Feedspot och Feeder.co 2026.
+    ✅ TechCrunch AI RSS: Aktivt; listat i "10 Best Tech & AI RSS Feeds (2026)" och daige.st; full-text utan paywall.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt, listat i
+       Feeder.co, Readless.app och daige.st 2026; Atom 1.0-parsning i koden korrekt.
+    ✅ Macworld.se RSS (/feed): Sajten aktiv med artiklar om M5 Ultra Mac Studio och Apple-lanseringar 2026;
+       bekräftat via websökning (site:macworld.se 2026).
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting bekräftat
+       via MarketXLS och Medium "Why yfinance Keeps Getting Blocked" 2026); ingen gratis no-auth-alternativ;
+       graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: Lokal master låg 1 commit bakom HEAD (detached mode, commit 0893c9f 2026-05-11 orphaned) –
+    återsynkroniserat med git checkout master + git reset --hard 0893c9f; pushat via GitHub MCP API.
+  - Inga kodändringar nödvändiga
+
   2026-05-11
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; lanserades som ersättare för pmp3g/v2 (nedlagd 31 mars 2026).
