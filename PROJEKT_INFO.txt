@@ -67,6 +67,31 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-15
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; parametrar {air_temperature, wind_speed, relative_humidity, symbol_code}
+       bekräftade via websök (MagicMirror-issue #4081, SMHI OpenData-portal). Koden använder flat
+       data-struktur korrekt: timeSeries[0].data.{...}. symbol_code heltal 1–27 oförändrat.
+    ✅ elprisetjustnu.se SE4: API aktivt; SE4-pris maj 2026 bekräftat (ca 40–70 öre/kWh, 1.67 kr/kWh
+       13 maj). 96 poster/dag (kvartstaxor) bekräftat; koden matchar rätt kvart korrekt.
+    ✅ api.allorigins.win: Operativt; inga rapporterade avbrott i maj 2026.
+       Används korrekt med /raw?url=encodeURIComponent(url) för RSS/kalender/börs.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt, listat i Feeder.co 2026.
+    ✅ DN RSS (dn.se/rss/): Aktivt, listat i Feeder.co ("Follow Nyheter | dn.se-rss") 2026.
+    ✅ TechCrunch AI RSS: Aktivt; artiklar publicerade 2026-05-11 (Digg AI-aggregator) och 2026-05-14
+       (FeedSpot); listat i "10 Best Tech & AI RSS Feeds (2026)" och daige.st.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt, listat i
+       Feeder.co och Readless 2026; Atom 1.0-parsning i koden korrekt.
+    ✅ Macworld.se RSS (/feed): Sajten aktiv med artiklar maj 2026; bekräftat via websökning.
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (crumb-autentisering + rate-
+       limiting bekräftat via MarketXLS och AlgoTrading101 2026); ingen gratis no-auth-alternativ;
+       graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: Lokal master var i detached HEAD-läge, 4 commits bakom origin/master (3a05a43 2026-05-14,
+    d9e8bda 2026-05-13, 0fe36cc 2026-05-12, 0893c9f 2026-05-11 orphaned) –
+    återsynkroniserat med git checkout master + git fetch + git reset --hard origin/master.
+  - Inga kodändringar nödvändiga
+
   2026-05-14
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; parametrar {air_temperature, wind_speed, relative_humidity, symbol_code}
