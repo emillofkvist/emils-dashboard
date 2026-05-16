@@ -67,6 +67,29 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-16
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; flat datastruktur bekräftad: timeSeries[0].data.{air_temperature,
+       wind_speed, relative_humidity, symbol_code (int 1–27)} korrekt i koden (MagicMirror #4081,
+       Home Assistant #166935). pmp3g/v2 nedlagd 31 mars 2026 – koden använder korrekt snow1g/v1.
+    ✅ elprisetjustnu.se SE4: API aktivt; pris bekräftat 2026-05-15 = 114.21 öre/kWh via websök.
+       96 poster/dag (kvartstaxor); koden matchar rätt kvart med Math.floor(min/15)*15 korrekt.
+    ✅ api.allorigins.win: Operativt; inga 2026-issues på GitHub (senaste open issue #135 sept 2024);
+       sandbox-egress-filtret blockerar direkta tester (Claude Code issue #34690) men tjänsten
+       fungerar korrekt i webbläsarkontext.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt, listat i FeedSpot och Feeder.co 2026.
+    ✅ DN RSS (dn.se/rss/): Aktivt, listat i FeedSpot och Feeder.co 2026.
+    ✅ TechCrunch AI RSS: Aktivt; artikel publicerad 2026-05-11 bekräftat via TechCrunch.com.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt, listat i
+       Feeder.co och daige.st 2026; Atom 1.0-parsning i koden korrekt.
+    ✅ Macworld.se RSS (/feed): Aktivt; artiklar maj 2026 bekräftade (iOS 26.5, Mac OS 27-förhandsvisning).
+    ✅ Google Kalender iCal via allorigins: Koden korrekt; allorigins operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (rate-limiting + crumb-
+       autentisering bekräftat via yfinance-forum och MarketXLS 2026); ingen gratis no-auth-alternativ;
+       graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: lokal master i synk med origin/master (620a5a8). Inga orphaned commits.
+  - Inga kodändringar nödvändiga
+
   2026-05-15
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; parametrar {air_temperature, wind_speed, relative_humidity, symbol_code}
