@@ -67,6 +67,31 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-19
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; bekräftat via SMHI Open Data Portal och MagicMirror-forum 2026.
+       timeSeries[0].data.{air_temperature, wind_speed, relative_humidity, symbol_code (int 1–27)} korrekt.
+       pmp3g/v2 nedlagd 31 mars 2026 – koden använder korrekt snow1g/v1.
+    ✅ elprisetjustnu.se SE4: API aktivt; 2026-05-18: min 0.98 kr/kWh, snitt 1.43 kr/kWh, max 2.14 kr/kWh.
+       96 poster/dag (kvartstaxor) bekräftat; koden matchar rätt kvart korrekt.
+    ✅ api.allorigins.win: Operativt; inga rapporterade avbrott i maj 2026.
+       Används korrekt med /raw?url=encodeURIComponent(url) för RSS/kalender/börs.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt; listat i "Top 40 Sweden News RSS Feeds" 2026.
+    ✅ DN RSS (dn.se/rss/): Aktivt; listat i "Top 20 Dagens Nyheter RSS Feeds" och Feeder.co 2026.
+    ✅ TechCrunch AI RSS: Aktivt; full-text utan paywall; listat i "10 Best Tech & AI RSS Feeds (2026)".
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt; listat i
+       Feeder.co, Daigest och daige.st 2026; Atom 1.0-parsning i koden korrekt.
+    ✅ Macworld.se RSS (/feed): Sajten aktiv med artiklar maj 2026 (MacBook Neo, WWDC 2026,
+       iPhone 18, Apple-event mars 2026 bekräftade via site:macworld.se-sökning).
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (CORS + rate-limiting bekräftat
+       via Medium och GitHub-issues 2026); ingen gratis no-auth-alternativ tillgänglig;
+       graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: Lokal master låg 3 commits bakom HEAD (detached mode, commits 0b13e01 2026-05-16,
+    0b3ce66 2026-05-17 och a5ef371 2026-05-18 orphaned) – återsynkroniserat med
+    git checkout master + git reset --hard a5ef371.
+  - Inga kodändringar nödvändiga
+
   2026-05-18
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; API bekräftat via SMHI Open Data Portal och MagicMirror-forum 2026.
