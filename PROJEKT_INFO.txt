@@ -67,6 +67,31 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-23
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; API bekräftat via SMHI Open Data Portal, MagicMirror #4081 och
+       Home Assistant #166935 maj 2026. timeSeries[0].data.{air_temperature, wind_speed,
+       relative_humidity, symbol_code (int 1–27)} korrekt i koden. pmp3g/v2 nedlagd 31 mars 2026.
+    ✅ elprisetjustnu.se SE4: API aktivt; 96 poster/dag (kvartstaxor) bekräftat via elprisetjustnu.se
+       och dataportal.se. Koden matchar rätt kvart med Math.floor(min/15)*15 korrekt.
+    ✅ api.allorigins.win: Operativt; inga nya kritiska avbrott i maj 2026. Känd intermittent
+       CORS-header-miss (issue #135, sept 2024) kvarstår men ej kritiskt för /raw-endpoint.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt; listat i "Top 40 Sweden News RSS Feeds"
+       och "Top 40 SVT RSS Feeds" 2026 (FeedSpot, Feeder.co).
+    ✅ DN RSS (dn.se/rss/): Aktivt; listat i "Top 20 Dagens Nyheter RSS Feeds" och Feeder.co 2026.
+    ✅ TechCrunch AI RSS: Aktivt; full-text utan paywall; listat i "10 Best Tech & AI RSS Feeds (2026)"
+       och daige.st; artiklar publicerade löpande maj 2026.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt; listat i
+       Feeder.co, Daigest och daige.st 2026; Atom 1.0-parsning i koden korrekt.
+    ✅ Macworld.se RSS (/feed): Sajten aktiv med artiklar maj 2026 (Apple TV+, Age of Empires för Mac,
+       iOS 26.5, Macbook Neo) bekräftat via websökning (site:macworld.se maj 2026).
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting + crumb-
+       autentisering bekräftat via MarketXLS och Medium "Why yfinance Keeps Getting Blocked" 2026);
+       ingen gratis no-auth-alternativ tillgänglig; graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: Lokal master i synk med origin/master (40d0206). Inga orphaned commits.
+  - Inga kodändringar nödvändiga
+
   2026-05-22
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; API-format bekräftat via MagicMirror #4081 och SMHI OpenData maj 2026.
