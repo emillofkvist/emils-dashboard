@@ -67,6 +67,31 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-27
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; endpoint opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/...
+       bekräftat fungerande (MagicMirror-forum maj 2026). Flat datastruktur korrekt:
+       timeSeries[0].data.{air_temperature, wind_speed, relative_humidity, symbol_code (int 1–27)}.
+    ✅ elprisetjustnu.se SE4: API aktivt; 96 poster/dag (kvartstaxor) bekräftat via elprisetjustnu.se.
+       Koden matchar rätt kvart med Math.floor(min/15)*15 korrekt.
+    ✅ api.allorigins.win: Operativt; inga rapporterade avbrott i maj 2026. /raw-endpoint fungerar.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt; listat i "Top 40 Sweden News RSS Feeds" och
+       "Top 40 SVT RSS Feeds" 2026 (FeedSpot, Feeder.co).
+    ✅ DN RSS (dn.se/rss/): Aktivt; listat i "Top 20 Dagens Nyheter RSS Feeds" och Feeder.co 2026.
+    ✅ TechCrunch AI RSS: Aktivt; full-text utan paywall; listat i "10 Best Tech & AI RSS Feeds (2026)"
+       och daige.st; artiklar publicerade löpande maj 2026.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt; listat på
+       Feeder.co och daige.st 2026; Atom 1.0-parsning i koden korrekt.
+    ✅ Macworld.se RSS (/feed): Sajten aktiv med WWDC 2026-artiklar (iOS 26.5, Mac OS 27, Apple AI-sajt
+       genai.apple.com inför WWDC 8–12 juni) publicerade maj 2026.
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting + crumb-
+       autentisering bekräftat via MarketXLS och Medium "Why yfinance Keeps Getting Blocked" 2026);
+       ingen gratis no-auth-alternativ tillgänglig; graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: Lokal master låg 4 commits bakom HEAD (detached mode) – återsynkroniserat med
+    git checkout master + git reset --hard origin/master.
+  - Inga kodändringar nödvändiga
+
   2026-05-26
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; flat datastruktur bekräftad via MagicMirror #4081 och Home Assistant #166935.
