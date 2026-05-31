@@ -67,6 +67,32 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-05-31
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; endpoint bekräftad via MagicMirror-forum och SMHI OpenData-portal maj 2026.
+       timeSeries[0].data.{air_temperature, wind_speed, relative_humidity, symbol_code (int 1–27)} korrekt.
+       pmp3g/v2 nedlagd 31 mars 2026 – koden använder korrekt snow1g/v1.
+    ✅ elprisetjustnu.se SE4: API aktivt; 2026-05-30: 0.92 kr/kWh bekräftat via websök.
+       96 poster/dag (kvartstaxor); koden matchar rätt kvart med Math.floor(min/15)*15 korrekt.
+    ✅ api.allorigins.win: Operativt; GitHub-repot arkiverat (ej aktivt underhållet) men tjänsten körs.
+       Inga nya kritiska avbrott i maj 2026. Känd intermittent CORS-header-miss (issue #135, sept 2024)
+       kvarstår men ej kritiskt för /raw-endpoint.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt; listat i "Top 40 Sweden News RSS Feeds" och
+       "Top 40 SVT RSS Feeds" 2026 (FeedSpot, Feeder.co).
+    ✅ DN RSS (dn.se/rss/): Aktivt; listat i "Top 20 Dagens Nyheter RSS Feeds" och Feeder.co 2026.
+    ✅ TechCrunch AI RSS: Aktivt; listat i "10 Best Tech & AI RSS Feeds (2026)" och daige.st;
+       full-text utan paywall; artiklar publicerade löpande maj 2026.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt; listat i
+       Feeder.co, readless.app och daige.st 2026 (re-verifierat 2026-05-24); Atom 1.0-parsning korrekt.
+    ✅ Macworld.se RSS (/feed): Sajten aktiv med artiklar t.o.m. maj 2026 (macOS 26.6 beta-artikel
+       bekräftad via websökning site:macworld.se maj 2026); WordPress /feed-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting + crumb-
+       autentisering bekräftat via MarketXLS, Medium och yfinance-issues 2026); ingen gratis no-auth-
+       alternativ tillgänglig; graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: Lokal master i detached HEAD-läge – återsynkroniserat med git checkout master +
+    git reset --hard origin/master (f2ba40f).
+  - Inga kodändringar nödvändiga
+
   2026-05-30
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; endpoint bekräftad via SMHI OpenData-portal och MagicMirror-forum maj 2026.
