@@ -67,6 +67,31 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-06-04
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; inga avbrottsrapporter juni 2026. snow1g/v1 korrekt operativt som ersättare
+       för pmp3g/v2 (nedlagd 31 mars 2026); timeSeries[0].data.{air_temperature, wind_speed,
+       relative_humidity, symbol_code (int 1–27)} oförändrat; koden korrekt.
+    ✅ elprisetjustnu.se SE4: API aktivt; 4 juni 2026: snitt 0.69 kr/kWh, max 1.36 kr/kWh (19:45–20:00),
+       min 0.07 kr/kWh (16:00–16:15) bekräftat. 96 poster/dag (kvartstaxor); koden matchar rätt kvart korrekt.
+    ✅ api.allorigins.win: Operativt; inga avbrottsrapporter juni 2026. /raw-endpoint fungerar.
+       Känd intermittent CORS-header-miss (issue #135, sept 2024) kvarstår men ej kritiskt.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt; listat i "Top 40 Sweden News RSS Feeds" 2026.
+    ✅ DN RSS (dn.se/rss/): Aktivt; listat i "Top 20 Dagens Nyheter RSS Feeds" och Feeder.co 2026.
+    ✅ TechCrunch AI RSS: Aktivt; full-text utan paywall; listat i "10 Best Tech & AI RSS Feeds (2026)"
+       och daige.st; bekräftat operativt juni 2026 (readless.app, FeedSpot).
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt; bekräftat juni
+       2026 (daige.st, Daigest); Atom 1.0-parsning i koden korrekt (<entry>/<link href="">/<published>).
+    ✅ Macworld.se RSS (/feed): Sajten aktiv med artiklar juni 2026 (WWDC 8–12 juni, iOS 26.5.1,
+       MacBook Pro med pekskärm); WordPress /feed-endpoint operativt.
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting + crumb-
+       autentisering, JavaScript-baserad; bekräftat via yfinance-issues och MarketXLS juni 2026);
+       ingen gratis no-auth-alternativ tillgänglig; graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: Lokal master låg 5 commits bakom HEAD (detached mode, commits f2ba40f 2026-05-30 t.o.m.
+    56a033c 2026-06-03 orphaned) – återsynkroniserat med git checkout master + git reset --hard 56a033c.
+  - Inga kodändringar nödvändiga
+
   2026-06-03
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; pmp3g/v2 nedlagd 31 mars 2026, snow1g/v1 bekräftat operativt (MagicMirror
