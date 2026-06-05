@@ -67,6 +67,32 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-06-05
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; inga avbrottsrapporter juni 2026. snow1g/v1 korrekt operativt som ersättare
+       för pmp3g/v2 (nedlagd 31 mars 2026); timeSeries[0].data.{air_temperature, wind_speed,
+       relative_humidity, symbol_code (int 1–27)} oförändrat; koden korrekt.
+    ✅ elprisetjustnu.se SE4: API aktivt; snitt 2026-06-04 = 69.3 öre/kWh bekräftat via websök;
+       Juni 2026 månadssnitt hittills 136.11 öre/kWh (Elbruk.se). 96 poster/dag (kvartstaxor);
+       koden matchar rätt kvart korrekt.
+    ✅ api.allorigins.win: Operativt; inga avbrottsrapporter juni 2026. /raw-endpoint fungerar.
+       Känd intermittent CORS-header-miss (issue #135, sept 2024) kvarstår men ej kritiskt.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt; bekräftat via FeedSpot och Feeder.co juni 2026.
+    ✅ DN RSS (dn.se/rss/): Aktivt; bekräftat via FeedSpot och Feeder.co juni 2026.
+    ✅ TechCrunch AI RSS: Aktivt; full-text utan paywall; bekräftat via daige.st och Nutshell Blog
+       "Best RSS Feeds for Tech 2026"; artiklar publicerade löpande juni 2026.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt; bekräftat via
+       Feeder.co juni 2026; Atom 1.0-parsning i koden korrekt (<entry>/<link href="">/<published>).
+    ✅ Macworld.se RSS (/feed): Sajten aktiv med artiklar juni 2026 (WWDC 8–12 juni pågår);
+       WordPress /feed-endpoint operativt.
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting + crumb-
+       autentisering, JavaScript-baserad; bekräftat via MarketXLS "Complete Guide + Best Alternatives 2026"
+       och yfinance-issues); ingen gratis no-auth-alternativ tillgänglig; graceful fallback "Ej tillgänglig"
+       fungerar korrekt.
+  - Git: master i synk med origin/master (54f710f). Inga orphaned commits. Inga kodändringar nödvändiga.
+  - Inga kodändringar nödvändiga
+
   2026-06-04
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; inga avbrottsrapporter juni 2026. snow1g/v1 korrekt operativt som ersättare
