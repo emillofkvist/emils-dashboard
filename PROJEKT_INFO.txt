@@ -67,6 +67,35 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-06-06
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; bekräftat operativt juni 2026 via SMHI Open Data Portal och MagicMirror-forum.
+       Flat datastruktur korrekt: timeSeries[0].data.{air_temperature, wind_speed, relative_humidity,
+       symbol_code (int 1–27)}. pmp3g/v2 nedlagd 31 mars 2026 – koden använder korrekt snow1g/v1.
+    ✅ elprisetjustnu.se SE4: API aktivt; 2026-06-05: 1.25 kr/kWh aktuellt, max 2.13 kr/kWh (21:00–21:15),
+       min 0.18 kr/kWh (15:00–15:15), snitt 1.08 kr/kWh bekräftat. 96 poster/dag (kvartstaxor); koden korrekt.
+    ✅ api.allorigins.win: Operativt; inga avbrottsrapporter juni 2026. /raw-endpoint fungerar.
+       Rate limit 20/min bekräftat men ej kritiskt för dashboardanvändning.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt; listat i "Top 40 Sweden News RSS Feeds" och
+       "Top 40 SVT RSS Feeds" 2026 (FeedSpot, Feeder.co); bekräftat uppdaterat juni 2026.
+    ✅ DN RSS (dn.se/rss/): Aktivt; listat i "Top 20 Dagens Nyheter RSS Feeds" och Feeder.co 2026;
+       bekräftat uppdaterat nyligen (feeder.co-källa visar "5 min sedan").
+    ✅ TechCrunch AI RSS: Aktivt; listat i "10 Best Tech & AI RSS Feeds (2026)" och daige.st;
+       full-text utan paywall; artiklar publicerade löpande juni 2026.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt; listat i
+       Feeder.co, daige.st och Readless juni 2026; Atom 1.0-parsning i koden korrekt
+       (<entry>/<link href="">/<published>); levererar excerpts (2–3 stycken).
+    ✅ Macworld.se RSS (/feed): Sajten aktiv; IDG Sverige/macworld.se operativt juni 2026 med WWDC-artiklar
+       (WWDC keynote 8 juni 2026, iOS 27, macOS 27); WordPress /feed-endpoint operativt.
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting + crumb-
+       autentisering; bekräftat via Medium "Why yfinance Keeps Getting Blocked" 2026 och github.com/gadicc/
+       yahoo-finance2/issues/936); ingen gratis no-auth-alternativ tillgänglig; graceful fallback
+       "Ej tillgänglig" fungerar korrekt.
+  - Git: Lokal master var i detached HEAD-läge, 1 commit bakom origin/master (f3750ac) –
+    återsynkroniserat med git checkout master + git pull origin master.
+  - Inga kodändringar nödvändiga
+
   2026-06-05
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; inga avbrottsrapporter juni 2026. snow1g/v1 korrekt operativt som ersättare
