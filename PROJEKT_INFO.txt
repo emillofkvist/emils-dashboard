@@ -67,6 +67,33 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-06-08
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; timeSeries[0].data.{air_temperature, wind_speed, relative_humidity,
+       symbol_code (int 1–27)} bekräftat av MagicMirror-issue #4081 och SMHI OpenData-portal juni 2026.
+       pmp3g/v2 nedlagd 31 mars 2026 – koden använder korrekt snow1g/v1. Kod korrekt.
+    ✅ elprisetjustnu.se SE4: API aktivt; 96 poster/dag (kvartstaxor) bekräftat via elprisetjustnu.se
+       och Shelly-projekt juni 2026; koden matchar rätt kvart med Math.floor(min/15)*15 korrekt.
+    ✅ api.allorigins.win: Inga avbrottsrapporter juni 2026; /raw-endpoint operativt. WebFetch
+       returnerar 403 (sandbox-egress-filter), ej ett riktigt tjänstefel. Bekräftat via websökning.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt; listat i FeedSpot "Top 40 Sweden News RSS
+       Feeds" och Feeder.co juni 2026.
+    ✅ DN RSS (dn.se/rss/): Aktivt; listat i FeedSpot "Top 20 Dagens Nyheter RSS Feeds" och Feeder.co
+       juni 2026.
+    ✅ TechCrunch AI RSS: Aktivt; listat i daige.st "10 Best Tech & AI RSS Feeds (2026)" och
+       readless.app "Best RSS Feeds for AI News in 2026"; artiklar publicerade löpande juni 2026.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt; listat i
+       daige.st och Daigest juni 2026; Atom 1.0-parsning i koden korrekt (<entry>/<link href="">/<published>).
+    ✅ Macworld.se RSS (/feed): Sajten aktiv med artiklar juni 2026 (MacBook, AirPods Pro 2026,
+       iPhone 18-rykten, WWDC-täckning bekräftat via site:macworld.se-sökning).
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting + crumb-
+       autentisering bekräftat via yfinance-issues #2729 och gadicc/yahoo-finance2 #936 juni 2026);
+       ingen gratis no-auth-alternativ tillgänglig; graceful fallback "Ej tillgänglig" fungerar korrekt.
+  - Git: Lokal master var i detached HEAD-läge och 3 commits bakom origin/master –
+    återsynkroniserat med git checkout master + git pull origin master.
+  - Inga kodändringar nödvändiga
+
   2026-06-07
   - Övervakningskontroll: Kodgranskning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; koden korrekt med snow1g/v1 (pmp3g/v2 nedlagd 31 mars 2026).
