@@ -67,6 +67,33 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-06-09
+  - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Aktivt; snow1g/v1 bekräftat operativt (MagicMirror #4081, Home Assistant #166935,
+       SMHI OpenData-portal juni 2026). Flat datastruktur timeSeries[0].data.{air_temperature,
+       wind_speed, relative_humidity, symbol_code (int 1–27)} korrekt. pmp3g/v2 nedlagd 31 mars 2026.
+    ✅ elprisetjustnu.se SE4: API aktivt; 2026-06-09: max 2.49 kr/kWh (19:45–20:00), min 0.77 kr/kWh
+       (11:45–12:00) bekräftat. 96 poster/dag (kvartstaxor) bekräftat; koden matchar rätt kvart korrekt.
+    ✅ api.allorigins.win: Operativt; inga avbrottsrapporter juni 2026. /raw-endpoint fungerar.
+       Känd intermittent CORS-header-miss (issue #135, sept 2024) kvarstår men ej kritiskt.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt; listat i FeedSpot "Top 40 Sweden News RSS
+       Feeds" och Feeder.co juni 2026; uppdateras löpande.
+    ✅ DN RSS (dn.se/rss/): Aktivt; bekräftat "5 min sedan" via Feeder.co juni 2026.
+    ✅ TechCrunch AI RSS: Aktivt; feed uppdaterad 2026-06-02 bekräftat; listat i "10 Best Tech & AI
+       RSS Feeds (2026)" och daige.st; full-text utan paywall.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt; URL re-
+       verifierad 2026-05-24 (readless.app, daige.st); Atom 1.0-parsning i koden korrekt.
+    ✅ Macworld.se RSS (/feed): Sajten aktiv; iOS 26.5.1-artikel och Beats 2026-artikel bekräftade
+       via site:macworld.se-sökning juni 2026; WordPress /feed-endpoint operativt.
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting + crumb-
+       autentisering bekräftat via yfinance-issues #2297, #6118 och Medium "Why yfinance Keeps Getting
+       Blocked" 2026); ingen gratis no-auth-alternativ tillgänglig; graceful fallback "Ej tillgänglig"
+       fungerar korrekt.
+  - Git: Lokal master låg 4 commits bakom HEAD (detached mode, commits f3750ac 2026-06-05 t.o.m.
+    2efb515 2026-06-08 orphaned) – återsynkroniserat med git checkout master + git reset --hard 2efb515.
+  - Inga kodändringar nödvändiga
+
   2026-06-08
   - Övervakningskontroll: Kodgranskning + websökning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Aktivt; timeSeries[0].data.{air_temperature, wind_speed, relative_humidity,
