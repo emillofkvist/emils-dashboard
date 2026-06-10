@@ -132,6 +132,14 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-06-10 (v44)
+  - Fix fetchBonnieLunch: corsproxy.io returnerar HTTP 200 med error-JSON (betalvägg sedan apr 2026),
+    vilket gör att resp.ok=true och cors.lol-fallbacken aldrig nåddes → ingen frisk data hämtades.
+    Lösning: cors.lol som primärproxy, allorigins.win/raw som fallback.
+  - Fix fetchCalendar: corsproxy.io borttagen ur calProxies-listan (returnerar 200+error, orsakade
+    2 onödiga retries + 1s fördröjning innan allorigins.win-fallbacken provades).
+  - dashboard.js → v44
+
   2026-04-30 (v43)
   - Flaggdag: ny kortvisning näst högst upp med SVG-flagga och anledning (SFS 1982:270)
     Inkl. rörliga datum: Påsk, Pingst, Midsommar, Riksdagsvalsdagen
