@@ -717,7 +717,6 @@ async function fetchCalendar() {
 
     try {
         const calProxies = [
-            'https://corsproxy.io/?',
             'https://api.allorigins.win/raw?url='
         ];
         let icalText = '';
@@ -1621,12 +1620,12 @@ async function fetchBonnieLunch(target, isToday) {
     const enc = encodeURIComponent(targetUrl);
     let html = '';
     try {
-        const resp = await fetch(`https://corsproxy.io/?${enc}`, { signal: AbortSignal.timeout(8000) });
+        const resp = await fetch(`https://api.cors.lol/?url=${enc}`, { signal: AbortSignal.timeout(8000) });
         if (!resp.ok) throw new Error(resp.status);
         html = await resp.text();
     } catch {
         try {
-            const resp = await fetch(`https://api.cors.lol/?url=${enc}`, { signal: AbortSignal.timeout(8000) });
+            const resp = await fetch(`https://api.allorigins.win/raw?url=${enc}`, { signal: AbortSignal.timeout(8000) });
             if (!resp.ok) throw new Error(resp.status);
             html = await resp.text();
         } catch { html = ''; }
