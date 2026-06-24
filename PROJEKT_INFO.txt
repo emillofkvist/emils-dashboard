@@ -73,18 +73,18 @@ MODULER & DATAKÄLLOR
 
 CORS-PROXYER
 ------------
-  RSS/nyheter (alla):  https://api.rss2json.com/v1/api.json?rss_url={encoded_url}
-  Kalender + Bonnie:   https://cors.eu.org/{url}  (URL direkt utan encodeURIComponent)
-  Apple Release Notes: https://cors.eu.org/{url}
-  Börs (primär):       https://api.cors.lol/?url={encoded_url}
-  Börs (fallback 1):   https://api.allorigins.win/raw?url={encoded_url}
-  Börs (fallback 2-3): https://api.allorigins.win/get?url={encoded_url}
-  Reader (primär):     https://api.cors.lol/?url={encoded_url}
-  Reader (fallback):   https://api.allorigins.win/raw?url={encoded_url}
-  Kalender + Bonnie:   https://api.allorigins.win/raw?url={encoded_url}  (CONFIG.corsProxy/calendarProxy)
-  Apple Release Notes: https://api.allorigins.win/raw?url={encoded_url}
+  RSS/nyheter (alla):   https://api.rss2json.com/v1/api.json?rss_url={encoded_url}
+  Börs (primär):        https://api.cors.lol/?url={encoded_url}
+  Börs (fallback 1):    https://api.allorigins.win/raw?url={encoded_url}
+  Börs (fallback 2-3):  https://api.allorigins.win/get?url={encoded_url}
+  Kalender:             https://api.allorigins.win/raw?url={encoded_url}  (CONFIG.calendarProxy)
+  Bonnie lunch (prim):  https://api.cors.lol/?url={encoded_url}
+  Bonnie lunch (fall):  https://api.allorigins.win/raw?url={encoded_url}
+  Apple Release Notes:  https://api.allorigins.win/raw?url={encoded_url}  (CONFIG.corsProxy)
+  Reader (primär):      https://api.cors.lol/?url={encoded_url}
+  Reader (fallback):    https://api.allorigins.win/raw?url={encoded_url}
   OBS: corsproxy.io kräver betalplan sedan apr 2026 – returnerar 200+error-JSON, använd INTE.
-  OBS: cors.eu.org returnerar 403 (nere) sedan 2026-04-30 – ersatt med allorigins.win/raw.
+  OBS: cors.eu.org returnerar 403 (nere) sedan 2026-04-30 – använd INTE.
 
 
 TEKNISKT
@@ -132,6 +132,45 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-06-24 (övervakningskontroll)
+  - Kodgranskning + websökning (direkta HTTP-anrop och WebFetch blockerade av sandbox-egress).
+  - Git: master-grenen låg 19 commits bakom HEAD (detached mode, 2026-06-05 t.o.m. 2026-06-23
+    orphaned) – återsynkroniserat; origin/master bekräftat i synk.
+    Lärdom: Denna övervakningsrutin ska köras på main-grenen (den levande branchen), inte master.
+  - PROJEKT_INFO.txt: rensade inaktuella cors.eu.org-poster i CORS-PROXYER-sektionen (nere sedan
+    2026-04-30, koden använder cors.lol + allorigins.win/raw sedan v44).
+  - API-status (alla via kodgranskning + websökning):
+    ✅ SMHI snow1g/v1: Aktivt; bekräftat operativt juni 2026 (MagicMirror #4081, Home Assistant
+       #166935, SMHI OpenData-portal). Parametrar {air_temperature, wind_speed, relative_humidity,
+       symbol_code (1–27)} och min/max-logik (ts.time) korrekt.
+    ✅ elprisetjustnu.se SE4: Aktivt; SE4-pris 2026-06-23: 1.34 kr/kWh bekräftat. 96 poster/dag
+       (kvartstaxor sedan okt 2025); time_start≤now<time_end-logik korrekt.
+    ✅ api.cors.lol: Operativt; inga ned-rapporter 2026; GET-only är tillräckligt för dashboard.
+    ✅ api.allorigins.win/raw: Operativt; inga kritiska avbrott juni 2026.
+    ✅ api.rss2json.com: Operativt; populära feeds cacheade – rate-limit (429) drabbar bara nya
+       okända feeds.
+    ✅ SVT Nyheter RSS: Aktivt; bekräftat via FeedSpot/Feeder.co juni 2026.
+    ✅ DN RSS: Aktivt; bekräftat via FeedSpot/Feeder.co juni 2026.
+    ✅ TechCrunch AI RSS: Aktivt; listat i "10 Best Tech & AI RSS Feeds (2026)".
+    ✅ The Verge RSS (index.xml): Aktivt; bekräftat via Inoreader och feeder.co juni 2026.
+    ✅ Macworld.se + Macworld.com RSS: Aktiva; bekräftade via feeder.co juni 2026.
+    ✅ Feber RSS: Aktivt juni 2026.
+    ✅ Aftonbladet RSS: Aktivt; feeder.co bekräftar flödet aktivt juni 2026.
+    ✅ Porsche-feeds (Carscoops, Road&Track, Motor1): Aktiva via rss2json.
+    ✅ sholiday.faboul.se namnsdag v2.1: Operativt; bekräftat via ha-swedish_calendar och Homey.
+    ✅ api.sunrise-sunset.org: Generellt operativt (ett timeout-fel 2026-04-16 noterat men ej
+       kritiskt; koden döljer sun-info utan att krascha).
+    ✅ api.pollenrapporten.se/v1/forecasts (Malmö): Aktivt; data för april–juni 2026 bekräftad.
+    ✅ astorp.se Hyllinge skola (Bonnie): Sajten aktiv; matsedel tillgänglig via kalender.se och
+       direktsida. cors.lol primär (v44), allorigins.win/raw fallback.
+    ✅ skolmaten.se/elinebergsskolan (Isabelle): RSS-integration bekräftad via skolmaten.se/about/
+       rss/elinebergsskolan/; rss2json fungerar för RSS-flödet.
+    ✅ Google Kalender iCal via allorigins.win/raw: Kod korrekt.
+    ✅ Apple Release Notes via allorigins.win + DocC JSON: Kod korrekt.
+    ⚠️ Yahoo Finance via cors.lol/allorigins.win: Server-side-blockering kvarstår (rate-limiting +
+       crumb-autentisering bekräftat löpande 2026); graceful fallback "Ej tillgänglig" fungerar.
+  - Inga kodändringar nödvändiga
+
   2026-06-10 (v44)
   - Fix fetchBonnieLunch: corsproxy.io returnerar HTTP 200 med error-JSON (betalvägg sedan apr 2026),
     vilket gör att resp.ok=true och cors.lol-fallbacken aldrig nåddes → ingen frisk data hämtades.
