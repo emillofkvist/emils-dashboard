@@ -67,6 +67,37 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-07-06
+  - Övervakningskontroll: Kodgranskning + WebSearch (direkta HTTP-anrop blockerade av sandbox-egress;
+    policy denial 403 bekräftat för alla externa hosts via agentproxy-status). Detached HEAD återhämtad –
+    git checkout -B master origin/master + git fetch + git merge --ff-only origin/master; bekräftat
+    "On branch master, up to date with origin/master". Kod oförändrad sedan 2026-07-03.
+    ✅ SMHI snow1g/v1: Aktivt; bekräftat operativt juli 2026 (opendata.smhi.se/metfcst/snow1gv1,
+       MagicMirror #4081, Home Assistant #166935). Flat datastruktur timeSeries[0].data.
+       {air_temperature, wind_speed, relative_humidity, symbol_code (int 1–27)} korrekt.
+       pmp3g/v2 nedlagd 31 mars 2026 – koden använder snow1g/v1.
+    ✅ elprisetjustnu.se SE4: Aktivt; SE4-data visad för 6 juli 2026 (elprisetjustnu.se och elbruk.se).
+       96 poster/dag (kvartstaxor sedan okt 2025); kvart matchas korrekt med Math.floor(min/15)*15.
+    ✅ api.allorigins.win: Inga avbrottsrapporter juli 2026; webbplatsen aktiv; /raw-endpoint operativt
+       för alla RSS/börs/kalender-källor.
+    ✅ SVT Nyheter RSS (svt.se/nyheter/rss.xml): Aktivt; listad i "Top 40 Sweden News RSS Feeds" och
+       "Top 40 SVT RSS Feeds" 2026 (FeedSpot, Feeder.co); uppdateras löpande.
+    ✅ DN RSS (dn.se/rss/): Aktivt; Feeder visar "uppdaterad 5 min sedan"; listad i "Top 20 Dagens
+       Nyheter RSS Feeds" 2026.
+    ✅ TechCrunch AI RSS: Aktivt; 20–40 artiklar/dag; feed URL verifierad 4 juni 2026 (daige.st,
+       readless.app); artiklar publicerade löpande juli 2026.
+    ✅ The Verge AI Atom (theverge.com/rss/ai-artificial-intelligence/index.xml): Aktivt; re-verifierat
+       maj 2026 (readless.app, daige.st, feeder.co); Atom 1.0-parsning i koden korrekt
+       (<entry>/<link href="">/<published>).
+    ✅ Macworld.se RSS (/feed): Sajten aktiv med artiklar juli 2026 (iPhone 18, iOS 26-guide, Apple TV/
+       HomePod 2026-höst, Tim Cook-artikel bekräftat via site:macworld.se-sökning); WordPress /feed operativt.
+    ✅ Google Kalender iCal via allorigins: Kod korrekt; allorigins /raw-endpoint operativt.
+    ⚠️ Yahoo Finance via allorigins.win: Server-side-blockering kvarstår (429 rate-limiting + crumb-
+       autentisering bekräftat löpande 2026 via MarketXLS, Medium "Why yfinance Keeps Getting Blocked",
+       PythonAnywhere-forum); ingen gratis no-auth-alternativ tillgänglig; graceful fallback "Ej tillgänglig"
+       fungerar korrekt.
+  - Inga kodändringar nödvändiga
+
   2026-07-05
   - Övervakningskontroll: Kodgranskning + WebSearch (direkta HTTP-anrop blockerade av sandbox-egress;
     policy denial 403 bekräftat för alla externa hosts via agentproxy-status). Detached HEAD återhämtad –
