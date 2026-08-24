@@ -261,6 +261,25 @@
             border-left: 4px solid #0071e3;
         }
 
+        /* Matsedel */
+        .lunch-card {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .lunch-week {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .lunch-meal {
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.5;
+            color: #1a1a2e;
+        }
+
         /* Elpris */
         .electricity-main {
             display: flex;
@@ -433,11 +452,19 @@
                 <div class="loading">Hämtar från Macworld...</div>
             </div>
         </div>
+
+        <!-- Bonnies matsedel -->
+        <div class="card lunch-card">
+            <div class="card-header">Bonnies lunch – Hyllinge skola</div>
+            <div id="bonnie-lunch">
+                <div class="loading">Hämtar matsedel...</div>
+            </div>
+        </div>
     </div>
 
     <button class="refresh-btn" onclick="location.reload()">↻</button>
 
-    <script src="config.js?v=5"></script>
-    <script src="dashboard.js?v=6"></script>
+    <script src="config.js?v=6"></script>
+    <script src="dashboard.js?v=7"></script>
 </body>
 </html>

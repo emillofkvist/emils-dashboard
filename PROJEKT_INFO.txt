@@ -60,6 +60,10 @@ API-ENDPOINTS (vad koden faktiskt använder)
 9. Macworld Sverige (RSS via api.allorigins.win):
    https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.macworld.se%2Ffeed
 
+10. Bonnies matsedel – Hyllinge skola (Skolmaten RSS via api.allorigins.win):
+    https://api.allorigins.win/raw?url=https%3A%2F%2Fskolmaten.se%2Fhyllinge-skola%2Frss%2Fweeks%2F
+    Förväntar: RSS XML med veckans matsedel, parsar dagens rätt ur description-HTML
+
 CORS-PROXYER
 ------------
   Allt RSS/börs/kalender: https://api.allorigins.win/raw?url={encoded_full_url}
@@ -69,6 +73,11 @@ CORS-PROXYER
 SENASTE ÄNDRINGAR
 -----------------
   2026-08-24
+  - Ny funktion: Bonnies matsedel (Hyllinge skola) tillagd.
+    Hyllinge skola bekräftad på Skolmaten.se via WebSearch (slug: hyllinge-skola).
+    RSS-feed https://skolmaten.se/hyllinge-skola/rss/weeks/ via api.allorigins.win.
+    Parsar veckans RSS-item och extraherar dagens rätt ur description-HTML.
+    Ny kortlayout med amber vänsterbård. config.js→v6, dashboard.js→v7.
   - Övervakningskontroll: Kodgranskning (direkta HTTP-anrop blockerade av sandbox-egress;
     policy denial 403 bekräftat via curl-test). Git: on branch master, up to date with
     origin/master. Kod oförändrad sedan fix 2026-08-15.

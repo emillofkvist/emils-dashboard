@@ -515,6 +515,63 @@ function getTimeAgo(date) {
     }
 }
 
+// Hämta matsedel för Bonnie (Hyllinge skola via Skolmaten RSS)
+async function fetchBonnieLunch() {
+    try {
+        const url = `${CONFIG.corsProxy}${encodeURIComponent(CONFIG.bonnieLunch.feedUrl)}`;
+        const response = await fetch(url);
+        const text = await response.text();
+
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const items = xml.querySelectorAll('item');
+
+        if (items.length === 0) {
+            document.getElementById('bonnie-lunch').innerHTML = '<div class="loading">Ingen matsedel publicerad</div>';
+            return;
+        }
+
+        const item = items[0];
+        const weekTitle = item.querySelector('title')?.textContent || '';
+        const rawDesc = item.querySelector('description')?.textContent || '';
+
+        // Avkoda HTML-entiteter och extrahera text
+        const tmp = document.createElement('div');
+        tmp.innerHTML = rawDesc;
+        const lines = (tmp.textContent || '').split('\n').map(l => l.trim()).filter(l => l);
+
+        // Hitta dagens rätt
+        const dayNames = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'];
+        const weekdaysSv = ['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag'];
+        const todayName = dayNames[new Date().getDay()];
+
+        let todayMeal = '';
+        let capturing = false;
+        for (const line of lines) {
+            const lower = line.toLowerCase();
+            if (lower.startsWith(todayName)) {
+                capturing = true;
+                continue;
+            }
+            if (capturing) {
+                if (weekdaysSv.some(d => lower.startsWith(d))) break;
+                todayMeal += (todayMeal ? ' · ' : '') + line;
+            }
+        }
+
+        const mealText = todayMeal || 'Ingen rätt publicerad idag';
+        const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
+
+        document.getElementById('bonnie-lunch').innerHTML = `
+            <div class="lunch-week">${weekTitle}</div>
+            <div class="lunch-meal">${isWeekend ? 'Ingen skola idag' : mealText}</div>
+        `;
+    } catch (error) {
+        console.error('Bonnies matsedel:', error);
+        document.getElementById('bonnie-lunch').innerHTML = '<div class="loading">Kunde inte hämta matsedel</div>';
+    }
+}
+
 // Starta dashboard
 async function init() {
     updateDateTime();
@@ -528,7 +585,8 @@ async function init() {
         fetchCalendar(),
         fetchNews(),
         fetchAiNews(),
-        fetchMacworld()
+        fetchMacworld(),
+        fetchBonnieLunch()
     ]);
 }
 
