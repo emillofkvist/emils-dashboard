@@ -627,10 +627,8 @@ async function fetchStocks() {
         const enc1 = encodeURIComponent(yahooUrl1);
 
         const stockProxies = [
-            // cors.lol primär (corsproxy.io kräver betalplan sedan apr 2026)
-            () => fetch(`https://api.cors.lol/?url=${enc}`, {
-                headers: { 'x-cors-headers': JSON.stringify({ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' }) }
-            }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+            // cors.lol primär (utan custom headers – undviker CORS preflight-fel på iOS)
+            () => fetch(`https://api.cors.lol/?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
             // allorigins raw returnerar rådata direkt (undviker JSON-wrapping)
             () => fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
             () => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => r.json()).then(j => { if (!j.contents) throw new Error('tom'); return JSON.parse(j.contents); }),
@@ -717,18 +715,24 @@ async function fetchCalendar() {
 
     try {
         const calProxies = [
-            'https://api.allorigins.win/raw?url='
+            { url: 'https://api.allorigins.win/raw?url=', json: false },
+            { url: 'https://api.allorigins.win/get?url=',  json: true  }
         ];
         let icalText = '';
         let fetched = false;
         for (const proxy of calProxies) {
-            const url = `${proxy}${encodeURIComponent(CONFIG.calendar.icalUrl)}`;
+            const url = `${proxy.url}${encodeURIComponent(CONFIG.calendar.icalUrl)}`;
             for (let attempt = 0; attempt < 2; attempt++) {
                 try {
                     if (attempt > 0) await new Promise(r => setTimeout(r, 1000));
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(response.status);
-                    icalText = await response.text();
+                    if (proxy.json) {
+                        const j = await response.json();
+                        icalText = j.contents || '';
+                    } else {
+                        icalText = await response.text();
+                    }
                     if (icalText.includes('BEGIN:VCALENDAR')) { fetched = true; break; }
                 } catch (e) { /* prova nästa proxy */ }
             }
@@ -1159,7 +1163,7 @@ async function fetchAppleRelease() {
 
     try {
         const apiUrl = 'https://developer.apple.com/tutorials/data/documentation/ios-ipados-release-notes.json';
-        const res = await fetch(`${CONFIG.corsProxy}${apiUrl}`);
+        const res = await fetch(`${CONFIG.corsProxy}${encodeURIComponent(apiUrl)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
@@ -1184,7 +1188,7 @@ async function fetchAppleRelease() {
         // Försök hämta faktiskt releasedatum från Apple Releases-sidan
         let releaseDate = null;
         try {
-            const releasesHtml = await fetch(`${CONFIG.corsProxy}https://developer.apple.com/news/releases/`)
+            const releasesHtml = await fetch(`${CONFIG.corsProxy}${encodeURIComponent('https://developer.apple.com/news/releases/')}`)
                 .then(r => r.text());
             const doc = new DOMParser().parseFromString(releasesHtml, 'text/html');
             // Extrahera versionsnummer ur titeln, t.ex. "26.4" från "iOS & iPadOS 26.4 Release Notes"

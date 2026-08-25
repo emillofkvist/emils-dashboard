@@ -132,6 +132,16 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25
+  - Fix: Kalender – lade till allorigins.win/get som andra proxy-alternativ (med JSON-parsning
+    av .contents). Löser "Ingen proxy svarade med giltig kalenderdata" när /raw returnerar
+    ogiltigt iCal.
+  - Fix: Apple Release – lade till encodeURIComponent() på Apple DocC JSON-URL och
+    developer.apple.com/news/releases/. Utan encoding tolkade allorigins.win URL:en felaktigt.
+  - Fix: Börs – tog bort x-cors-headers från cors.lol-anropet. Anpassade headers triggrar
+    CORS preflight (OPTIONS) som misslyckas på iOS Safari med "Load failed".
+  - dashboard.js→v45.
+
   2026-06-24 (övervakningskontroll)
   - Kodgranskning + websökning (direkta HTTP-anrop och WebFetch blockerade av sandbox-egress).
   - Git: master-grenen låg 19 commits bakom HEAD (detached mode, 2026-06-05 t.o.m. 2026-06-23
