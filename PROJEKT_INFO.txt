@@ -144,6 +144,19 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (v51)
+  - Fix: Apple Release Notes visade "Kunde inte hämta innehållet." i läsarläget, och kortet
+    kunde försvinna helt (HTTP 408 sågs i konsollen). Rotorsak: fetchAppleRelease() och
+    openAppleDocReader() använde bara CONFIG.corsProxy (allorigins.win) — samma
+    enproxy-SPOF som orsakat dagens övriga buggar.
+  - Ny delad hjälpfunktion fetchViaProxyChain(url) (cors.lol → allorigins.win → r.jina.ai)
+    används nu av alla tre Apple-anrop (release-JSON, releases-sidan, doc-JSON). Verifierat
+    live: cors.lol och allorigins.win misslyckades båda, jina-fallbacken hämtade korrekt
+    "iOS & iPadOS 27 Beta 7 Release Notes". Jina passerar ren JSON oförändrad (ingen HTML
+    att göra om till markdown), så JSON.parse() fungerar direkt på svaret.
+  - dashboard.js → v51
+
+
   2026-08-25 (v50)
   - Fix: Läsarläge fungerade bara ibland (SVT/DN, AI-nyheter, Porsche, Koenigsegg drabbade,
     Macworld/Feber/Aftonbladet klarade sig av slump). Rotorsak: fetchHtmlViaProxy() hade bara

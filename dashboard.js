@@ -943,6 +943,32 @@ async function fetchHtmlViaProxy(articleUrl) {
     }
 }
 
+// Hämta rå text via cors.lol → allorigins.win → r.jina.ai — för JSON/HTML-endpoints där
+// CONFIG.corsProxy ensam blir en SPOF (samma proxy-par gav 408/nere-fel för Apple Release)
+async function fetchViaProxyChain(url) {
+    const enc = encodeURIComponent(url);
+    try {
+        const r = await fetch(`https://api.cors.lol/?url=${enc}`, { signal: AbortSignal.timeout(8000) });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return await r.text();
+    } catch {
+        try {
+            const r = await fetch(`https://api.allorigins.win/raw?url=${enc}`, { signal: AbortSignal.timeout(8000) });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return await r.text();
+        } catch {
+            // jina lägger på en textrad framför — för rena JSON-endpoints passerar innehållet
+            // igenom oförändrat efter markören (ingen HTML att göra om till markdown)
+            const r = await fetch(`https://r.jina.ai/${url}`, { signal: AbortSignal.timeout(10000) });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const text = await r.text();
+            const m = text.match(/Markdown Content:\n([\s\S]*)/);
+            if (!m) throw new Error('not a jina article response');
+            return m[1];
+        }
+    }
+}
+
 // Hämta och extrahera artikel — returnerar article-objekt eller null
 async function fetchAndExtract(url) {
     if (articleCache.has(url)) return articleCache.get(url);
@@ -1268,9 +1294,7 @@ async function fetchAppleRelease() {
 
     try {
         const apiUrl = 'https://developer.apple.com/tutorials/data/documentation/ios-ipados-release-notes.json';
-        const res = await fetch(`${CONFIG.corsProxy}${encodeURIComponent(apiUrl)}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const data = JSON.parse(await fetchViaProxyChain(apiUrl));
 
         const latestId = data.topicSections?.[0]?.identifiers?.[0];
         if (!latestId) throw new Error('Ingen release hittades');
@@ -1293,8 +1317,7 @@ async function fetchAppleRelease() {
         // Försök hämta faktiskt releasedatum från Apple Releases-sidan
         let releaseDate = null;
         try {
-            const releasesHtml = await fetch(`${CONFIG.corsProxy}${encodeURIComponent('https://developer.apple.com/news/releases/')}`)
-                .then(r => r.text());
+            const releasesHtml = await fetchViaProxyChain('https://developer.apple.com/news/releases/');
             const doc = new DOMParser().parseFromString(releasesHtml, 'text/html');
             // Extrahera versionsnummer ur titeln, t.ex. "26.4" från "iOS & iPadOS 26.4 Release Notes"
             const versionMatch = title.match(/(\d+\.\d+(?:\.\d+)?)/);
@@ -1547,9 +1570,7 @@ async function openAppleDocReader(pageUrl) {
             'https://developer.apple.com/tutorials/data/documentation/'
         ) + '.json';
 
-        const res = await fetch(`${CONFIG.corsProxy}${encodeURIComponent(jsonUrl)}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const data = JSON.parse(await fetchViaProxyChain(jsonUrl));
         const refs = data.references || {};
 
         function renderInline(items) {
