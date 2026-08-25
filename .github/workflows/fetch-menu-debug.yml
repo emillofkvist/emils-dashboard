@@ -1,0 +1,39 @@
+name: Debug fetch menu sources
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch sources
+        run: |
+          mkdir -p debug
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+          set +e
+          fetch() {
+            url="$1"; out="$2"; shift 2
+            code=$(curl -sSL --max-time 30 -A "$UA" "$@" "$url" -o "debug/$out" -w "%{http_code}")
+            size=$(wc -c < "debug/$out" 2>/dev/null || echo 0)
+            echo "$out: HTTP $code, $size bytes ($url)" >> debug/SUMMARY.txt
+          }
+          : > debug/SUMMARY.txt
+          fetch "https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html" astorp-hyllinge.html
+          fetch "https://mpi.mashie.com/public/menu/%C3%A5storp+kommun/43d6d123?country=se" mashie-astorp.html -H "Cookie: cookieLanguage=sv-SE"
+          fetch "https://skolmaten.se/api/4/menu/school/hyllinge-skola?year=2026&week=35" skolmaten-api-w35.json -H "Accept: application/json" -H "client-token: web-eaa12e50-c84c-4b4a-9cfe-4e3fcbcd9165"
+          fetch "https://skolmaten.se/api/4/menu/school/hyllinge-skola?year=2026&week=35" skolmaten-api-notoken.json -H "Accept: application/json"
+          fetch "https://skolmaten.se/hyllinge-skola/rss/" skolmaten-rss.txt
+          fetch "https://skolmaten.se/hyllinge-skola/rss/weeks/" skolmaten-rss-weeks.txt
+          fetch "https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fskolmaten.se%2Fhyllinge-skola%2Frss%2F" rss2json.json
+          fetch "https://api.allorigins.win/raw?url=https%3A%2F%2Fskolmaten.se%2Fapi%2F4%2Fmenu%2Fschool%2Fhyllinge-skola%3Fyear%3D2026%26week%3D35" allorigins-skolmaten-api.json
+          fetch "https://api.allorigins.win/raw?url=https%3A%2F%2Fmpi.mashie.com%2Fpublic%2Fmenu%2F%25C3%25A5storp%2Bkommun%2F43d6d123%3Fcountry%3Dse" allorigins-mashie.html
+          cat debug/SUMMARY.txt
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B debug-fetch
+          git add -f debug
+          git commit -m "Debug fetch results"
+          git push -f origin debug-fetch
