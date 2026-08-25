@@ -14,20 +14,45 @@ jobs:
           set +e
           fetch() {
             url="$1"; out="$2"; shift 2
-            code=$(curl -sSL --max-time 30 -A "$UA" "$@" "$url" -o "debug/$out" -w "%{http_code}")
+            code=$(curl -sSL --max-time 25 -A "$UA" "$@" "$url" -o "debug/$out" -w "%{http_code}" 2>"debug/$out.err")
             size=$(wc -c < "debug/$out" 2>/dev/null || echo 0)
             echo "$out: HTTP $code, $size bytes ($url)" >> debug/SUMMARY.txt
           }
           : > debug/SUMMARY.txt
-          fetch "https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html" astorp-hyllinge.html
-          fetch "https://mpi.mashie.com/public/menu/%C3%A5storp+kommun/43d6d123?country=se" mashie-astorp.html -H "Cookie: cookieLanguage=sv-SE"
-          fetch "https://skolmaten.se/api/4/menu/school/hyllinge-skola?year=2026&week=35" skolmaten-api-w35.json -H "Accept: application/json" -H "client-token: web-eaa12e50-c84c-4b4a-9cfe-4e3fcbcd9165"
-          fetch "https://skolmaten.se/api/4/menu/school/hyllinge-skola?year=2026&week=35" skolmaten-api-notoken.json -H "Accept: application/json"
-          fetch "https://skolmaten.se/hyllinge-skola/rss/" skolmaten-rss.txt
-          fetch "https://skolmaten.se/hyllinge-skola/rss/weeks/" skolmaten-rss-weeks.txt
-          fetch "https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fskolmaten.se%2Fhyllinge-skola%2Frss%2F" rss2json.json
-          fetch "https://api.allorigins.win/raw?url=https%3A%2F%2Fskolmaten.se%2Fapi%2F4%2Fmenu%2Fschool%2Fhyllinge-skola%3Fyear%3D2026%26week%3D35" allorigins-skolmaten-api.json
-          fetch "https://api.allorigins.win/raw?url=https%3A%2F%2Fmpi.mashie.com%2Fpublic%2Fmenu%2F%25C3%25A5storp%2Bkommun%2F43d6d123%3Fcountry%3Dse" allorigins-mashie.html
+
+          # 1) astorp.se-diagnostik (verbose, ipv4, varianter)
+          curl -v -4 --max-time 25 -A "$UA" "https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html" -o debug/astorp-v4.html > debug/astorp-v4.verbose 2>&1
+          echo "astorp-v4: exit $?, $(wc -c < debug/astorp-v4.html 2>/dev/null || echo 0) bytes" >> debug/SUMMARY.txt
+          fetch "https://www.astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html" astorp-www.html
+
+          # 2) skolmaten: fler veckor + skolsida + sök-endpoints
+          TOK='client-token: web-eaa12e50-c84c-4b4a-9cfe-4e3fcbcd9165'
+          fetch "https://skolmaten.se/api/4/menu/school/hyllinge-skola?year=2026&week=34" skolmaten-w34.json -H "$TOK"
+          fetch "https://skolmaten.se/api/4/menu/school/hyllinge-skola?year=2026&week=36" skolmaten-w36.json -H "$TOK"
+          fetch "https://skolmaten.se/api/4/school/hyllinge-skola" skolmaten-school.json -H "$TOK"
+          fetch "https://skolmaten.se/api/4/schools?searchText=hyllinge" skolmaten-search1.json -H "$TOK"
+          fetch "https://skolmaten.se/api/4/schools/search?query=hyllinge" skolmaten-search2.json -H "$TOK"
+
+          # 3) CORS-proxyer: allorigins-status + alternativ (test mot SVT RSS som referens)
+          SVT="https%3A%2F%2Fwww.svt.se%2Fnyheter%2Frss.xml"
+          fetch "https://api.allorigins.win/raw?url=$SVT" proxy-allorigins-svt.xml
+          fetch "https://api.codetabs.com/v1/proxy/?quest=https://www.svt.se/nyheter/rss.xml" proxy-codetabs-svt.xml
+          fetch "https://corsproxy.io/?url=$SVT" proxy-corsproxy-svt.xml
+          fetch "https://cors.eu.org/https://www.svt.se/nyheter/rss.xml" proxy-corseu-svt.xml
+          fetch "https://api.rss2json.com/v1/api.json?rss_url=$SVT" proxy-rss2json-svt.json
+
+          # 4) Mashie: org-lista + matildaplatform-varianter
+          fetch "https://mpi.mashie.com/public/app/%C3%A5storp+kommun?country=se" mashie-orglist.html -H "Cookie: cookieLanguage=sv-SE"
+          fetch "https://mpi.mashie.matildaplatform.com/public/menu/%C3%A5storp+kommun/43d6d123?country=se" mashie-matilda.html -H "Cookie: cookieLanguage=sv-SE"
+
+          # 5) Aggregatorer: var får de sin Hyllinge-data ifrån?
+          fetch "https://kalender.se/hyllinge-skola/matsedel" kalender-hyllinge.html
+          fetch "https://skolkollen.se/hyllingeskola/matsedel" skolkollen-hyllinge.html
+
+          # 6) Koenigsegg-feed (för nytt kort) + via codetabs som proxytest
+          fetch "https://news.google.com/rss/search?q=koenigsegg&hl=sv&gl=SE&ceid=SE:sv" koenigsegg-gnews.xml
+          fetch "https://api.codetabs.com/v1/proxy/?quest=https%3A%2F%2Fnews.google.com%2Frss%2Fsearch%3Fq%3Dkoenigsegg%26hl%3Dsv%26gl%3DSE%26ceid%3DSE%3Asv" koenigsegg-via-codetabs.xml
+
           cat debug/SUMMARY.txt
       - name: Commit results
         run: |
@@ -35,5 +60,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B debug-fetch
           git add -f debug
-          git commit -m "Debug fetch results"
+          git commit -m "Debug fetch results round 2"
           git push -f origin debug-fetch
