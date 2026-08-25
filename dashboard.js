@@ -619,33 +619,27 @@ async function fetchStocks() {
     ];
 
     const fetchStockData = async (symbol) => {
-        const yahooUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`;
-        const enc = encodeURIComponent(yahooUrl);
-
         const extractMeta = (data) => {
             const meta = data.chart?.result?.[0]?.meta;
             if (!meta?.regularMarketPrice) throw new Error('no price');
             return meta;
         };
 
-        const yahooUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`;
-        const enc1 = encodeURIComponent(yahooUrl1);
-
-        const stockProxies = [
-            // cors.lol primär (utan custom headers – undviker CORS preflight-fel på iOS)
-            () => fetch(`https://api.cors.lol/?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
-            // allorigins raw returnerar rådata direkt (undviker JSON-wrapping)
-            () => fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
-            () => fetch(`https://api.allorigins.win/get?url=${enc}`).then(r => r.json()).then(j => { if (!j.contents) throw new Error('tom'); return JSON.parse(j.contents); }),
-            () => fetch(`https://api.allorigins.win/get?url=${enc1}`).then(r => r.json()).then(j => { if (!j.contents) throw new Error('tom'); return JSON.parse(j.contents); }),
+        // query2 + query1 (olika Yahoo-host ifall en är blockerad), båda via cors.lol →
+        // allorigins.win → r.jina.ai (fetchViaProxyChain) — samma robusta kedja som övriga
+        // fetchar. Tidigare hade denna funktion bara cors.lol/allorigins utan timeout, vilket
+        // gjorde att en nere proxy kunde hänga anropet i flera tiotals sekunder per symbol.
+        const urls = [
+            `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`,
+            `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`
         ];
 
-        for (const proxy of stockProxies) {
+        for (const url of urls) {
             try {
-                const data = await proxy();
+                const data = JSON.parse(await fetchViaProxyChain(url));
                 return extractMeta(data);
             } catch (e) {
-                console.warn(`Börs-proxy misslyckades för ${symbol}:`, e.message);
+                console.warn(`Börs-hämtning misslyckades för ${symbol}:`, e.message);
             }
         }
         throw new Error('Alla proxies misslyckades');

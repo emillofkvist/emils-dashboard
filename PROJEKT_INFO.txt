@@ -75,9 +75,8 @@ MODULER & DATAKÄLLOR
 CORS-PROXYER
 ------------
   RSS/nyheter (alla):   https://api.rss2json.com/v1/api.json?rss_url={encoded_url}
-  Börs (primär):        https://api.cors.lol/?url={encoded_url}
-  Börs (fallback 1):    https://api.allorigins.win/raw?url={encoded_url}
-  Börs (fallback 2-3):  https://api.allorigins.win/get?url={encoded_url}
+  Börs:                 fetchViaProxyChain() — cors.lol → allorigins.win/raw → r.jina.ai
+                        (query2.finance.yahoo.com, sedan query1 om query2 helt misslyckas)
   Kalender (prim):      https://api.allorigins.win/raw?url={encoded_url}
   Kalender (fall1):     https://api.allorigins.win/get?url={encoded_url}
   Kalender (fall2):     https://r.jina.ai/{url}
@@ -144,6 +143,17 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (v52)
+  - Fix: Börskortet visade "Ej tillgänglig" ("Börsfel för NASDAQ: Alla proxies misslyckades"
+    i konsollen) och var extremt långsamt — inga timeouts på proxyanropen gjorde att en nere
+    proxy kunde hänga i tiotals sekunder per symbol × 4 proxyvarianter × 4 symboler.
+  - fetchStockData förenklad till att använda samma delade fetchViaProxyChain() (cors.lol →
+    allorigins.win → r.jina.ai, alla med timeout) som redan används av Apple Release, för
+    query2- och query1-Yahoo-hosten. Ersätter den gamla bespoke 4-grens proxylistan (som ändå
+    bara var cors.lol + tre varianter av allorigins — ingen riktig redundans). Verifierat live:
+    hämtade OMXS30-pris korrekt via jina-fallbacken på 15s.
+  - dashboard.js → v52
+
   2026-08-25 (v51)
   - Fix: Apple Release Notes visade "Kunde inte hämta innehållet." i läsarläget, och kortet
     kunde försvinna helt (HTTP 408 sågs i konsollen). Rotorsak: fetchAppleRelease() och
