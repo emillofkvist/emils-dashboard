@@ -70,5 +70,9 @@ const CONFIG = {
         feedUrl: "https://skolmaten.se/hyllinge-skola/rss/weeks/",
         feedUrlAlt: "https://skolmaten.se/hyllinge-skola/rss/",
         rss2jsonBase: "https://api.rss2json.com/v1/api.json?rss_url="
-    }
+    },
+
+    // Koenigsegg-nyheter via Google News RSS (ingen officiell RSS finns på koenigsegg.com)
+    koenigseggFeed: "https://news.google.com/rss/search?q=koenigsegg&hl=sv&gl=SE&ceid=SE:sv",
+    maxKoenigseggNews: 3
 };

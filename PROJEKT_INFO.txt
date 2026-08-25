@@ -71,6 +71,11 @@ API-ENDPOINTS (vad koden faktiskt använder)
       2) API via api.allorigins.win/raw (utan client-token), 3) RSS /rss/weeks/ via rss2json,
       4) RSS /rss/ via rss2json. Varje steg innehållsvaliderar svaret innan det accepteras.
 
+11. Koenigsegg-nyheter (Google News RSS via api.allorigins.win):
+    https://api.allorigins.win/raw?url=https%3A%2F%2Fnews.google.com%2Frss%2Fsearch%3Fq%3Dkoenigsegg%26hl%3Dsv%26gl%3DSE%26ceid%3DSE%3Asv
+    OBS: Koenigsegg har ingen egen RSS/nyhetsflöde – Google News RSS-sök används istället.
+    Titel trimmas från Google News " - Källa"-suffix; källnamn hämtas ur <source>-taggen.
+
 CORS-PROXYER
 ------------
   Allt RSS/börs/kalender: https://api.allorigins.win/raw?url={encoded_full_url}
@@ -79,6 +84,14 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (ny funktion – på användarens begäran)
+  - Ny kategori: Koenigsegg-nyheter. Ingen officiell RSS finns på koenigsegg.com, så Google
+    News RSS-sök (news.google.com/rss/search?q=koenigsegg) används via samma allorigins-proxy
+    som övriga RSS-källor. fetchKoenigsegg() i dashboard.js, nytt kort #koenigsegg i index.html
+    med guld-vänsterbård (.koenigsegg-card). Parsning + titel-trimning (Google News suffix
+    " - Källa") verifierad offline med mockad RSS (3 testfall OK).
+    config.js→v8, dashboard.js→v10.
+
   2026-08-25 (fix 2 – på användarens begäran: "Bonnie matsedel fungerar fortfarande inte")
   - Grundorsak identifierad: skolmaten.se:s RSS-feeds (/rss/ och /rss/weeks/) är nedlagda –
     därför fungerade varken allorigins+XML (2026-08-24) eller rss2json (2026-08-25 fix 1).

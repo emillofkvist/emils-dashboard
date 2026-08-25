@@ -498,6 +498,62 @@ async function fetchMacworld() {
     }
 }
 
+// Hämta Koenigsegg-nyheter (Google News RSS)
+async function fetchKoenigsegg() {
+    try {
+        const url = `${CONFIG.corsProxy}${encodeURIComponent(CONFIG.koenigseggFeed)}`;
+        const response = await fetch(url);
+        const text = await response.text();
+
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        const items = xml.querySelectorAll('item');
+
+        const news = [];
+        items.forEach((item, index) => {
+            if (index < CONFIG.maxKoenigseggNews) {
+                // Google News-titlar slutar med " - Källa"; källan finns även i <source>
+                let title = item.querySelector('title')?.textContent || '';
+                const source = item.querySelector('source')?.textContent || '';
+                if (source && title.endsWith(` - ${source}`)) {
+                    title = title.slice(0, -(source.length + 3));
+                }
+                const link = item.querySelector('link')?.textContent || '';
+                const pubDate = item.querySelector('pubDate')?.textContent || '';
+
+                news.push({
+                    title: title,
+                    source: source,
+                    link: link,
+                    date: new Date(pubDate)
+                });
+            }
+        });
+
+        if (news.length === 0) {
+            document.getElementById('koenigsegg').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
+            return;
+        }
+
+        const html = news.map(item => {
+            const timeAgo = getTimeAgo(item.date);
+            return `
+                <div class="news-item">
+                    ${item.source ? `<div class="news-source">${item.source}</div>` : ''}
+                    <div class="news-title"><a href="${item.link}" target="_blank">${item.title}</a></div>
+                    <div class="news-time">${timeAgo}</div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('koenigsegg').innerHTML = html;
+
+    } catch (error) {
+        console.error('Koenigsegg-fel:', error);
+        document.getElementById('koenigsegg').innerHTML = '<div class="loading">Kunde inte hämta Koenigsegg-nyheter</div>';
+    }
+}
+
 // Hjälpfunktion: Tid sedan
 function getTimeAgo(date) {
     const now = new Date();
@@ -643,7 +699,8 @@ async function init() {
         fetchNews(),
         fetchAiNews(),
         fetchMacworld(),
-        fetchBonnieLunch()
+        fetchBonnieLunch(),
+        fetchKoenigsegg()
     ]);
 }
 
