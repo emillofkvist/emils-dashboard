@@ -56,5 +56,10 @@ const CONFIG = {
 
     // Hur många nyheter att visa
     maxNews: 5,
-    maxMacworldNews: 2
+    maxMacworldNews: 2,
+
+    // Matsedel Bonnie (Hyllinge skola via Skolmaten RSS)
+    bonnieLunch: {
+        feedUrl: "https://skolmaten.se/hyllinge-skola/rss/weeks/"
+    }
 };

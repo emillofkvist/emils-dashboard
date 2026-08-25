@@ -60,6 +60,10 @@ API-ENDPOINTS (vad koden faktiskt använder)
 9. Macworld Sverige (RSS via api.allorigins.win):
    https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.macworld.se%2Ffeed
 
+10. Bonnies matsedel – Hyllinge skola (Skolmaten RSS via api.allorigins.win):
+    https://api.allorigins.win/raw?url=https%3A%2F%2Fskolmaten.se%2Fhyllinge-skola%2Frss%2Fweeks%2F
+    Förväntar: RSS XML med veckans matsedel, parsar dagens rätt ur description-HTML
+
 CORS-PROXYER
 ------------
   Allt RSS/börs/kalender: https://api.allorigins.win/raw?url={encoded_full_url}
