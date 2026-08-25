@@ -1632,13 +1632,31 @@ function bonnieParseTable(table) {
     return meals;
 }
 
+function bonnieParseMarkdown(md, year) {
+    const dayNames = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag'];
+    const weekBlocks = md.split(/(?=Matsedel vecka \d+)/i);
+    for (const block of weekBlocks) {
+        const wm = block.match(/Matsedel vecka (\d+)/i);
+        if (!wm) continue;
+        const meals = {};
+        for (const day of dayNames) {
+            const dm = block.match(new RegExp(`\\|\\s*${day}\\s*\\|([^|]*)\\|`, 'i'));
+            const meal = dm ? dm[1].trim() : '';
+            if (meal) meals[day] = meal;
+        }
+        if (Object.keys(meals).length) bonnieSaveToCache(year, parseInt(wm[1]), meals);
+    }
+}
+
 async function fetchBonnieLunch(target, isToday) {
     const dayNames = ['', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', ''];
 
     // Hämta HTML via proxy och cacha alla veckor
     const targetUrl = 'https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html';
     const enc = encodeURIComponent(targetUrl);
+    const { year } = getISOYearWeek(target);
     let html = '';
+    let fetchFailed = true;
     try {
         const resp = await fetch(`https://api.cors.lol/?url=${enc}`, { signal: AbortSignal.timeout(8000) });
         if (!resp.ok) throw new Error(resp.status);
@@ -1652,8 +1670,8 @@ async function fetchBonnieLunch(target, isToday) {
     }
 
     if (html) {
+        fetchFailed = false;
         const doc = new DOMParser().parseFromString(html, 'text/html');
-        const { year } = getISOYearWeek(target);
         for (const t of doc.querySelectorAll('table')) {
             const caption = t.querySelector('caption');
             if (!caption) continue;
@@ -1662,6 +1680,16 @@ async function fetchBonnieLunch(target, isToday) {
             const meals = bonnieParseTable(t);
             if (Object.keys(meals).length) bonnieSaveToCache(year, parseInt(m[1]), meals);
         }
+    } else {
+        // Båda CORS-proxyerna nere/rate-limitade — försök r.jina.ai (annan väg, markdown-läsare)
+        try {
+            const resp = await fetch(`https://r.jina.ai/${targetUrl}`, { signal: AbortSignal.timeout(8000) });
+            if (resp.ok) {
+                const md = await resp.text();
+                fetchFailed = false;
+                bonnieParseMarkdown(md, year);
+            }
+        } catch { /* alla vägar nere */ }
     }
 
     // Försök target-datum, sedan nästa skoldag(ar) upp till 7 dagar
@@ -1676,7 +1704,7 @@ async function fetchBonnieLunch(target, isToday) {
         if (cached && cached[dayName]) return prefix + cached[dayName];
     }
 
-    throw new Error('ingen meny tillgänglig');
+    throw new Error(fetchFailed ? 'kunde inte hämta matsedel' : 'ingen meny tillgänglig');
 }
 
 async function fetchIsabelleLunch(target, isToday) {
