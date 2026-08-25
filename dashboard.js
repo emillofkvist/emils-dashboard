@@ -515,25 +515,21 @@ function getTimeAgo(date) {
     }
 }
 
-// Hämta matsedel för Bonnie (Hyllinge skola via Skolmaten RSS)
+// Hämta matsedel för Bonnie (Hyllinge skola via rss2json)
 async function fetchBonnieLunch() {
     try {
-        const url = `${CONFIG.corsProxy}${encodeURIComponent(CONFIG.bonnieLunch.feedUrl)}`;
+        const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(CONFIG.bonnieLunch.feedUrl)}`;
         const response = await fetch(url);
-        const text = await response.text();
+        const data = await response.json();
 
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const items = xml.querySelectorAll('item');
-
-        if (items.length === 0) {
+        if (data.status !== 'ok' || !data.items || data.items.length === 0) {
             document.getElementById('bonnie-lunch').innerHTML = '<div class="loading">Ingen matsedel publicerad</div>';
             return;
         }
 
-        const item = items[0];
-        const weekTitle = item.querySelector('title')?.textContent || '';
-        const rawDesc = item.querySelector('description')?.textContent || '';
+        const item = data.items[0];
+        const weekTitle = item.title || '';
+        const rawDesc = item.description || '';
 
         // Avkoda HTML-entiteter och extrahera text
         const tmp = document.createElement('div');

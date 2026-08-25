@@ -72,6 +72,13 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (fix)
+  - Fix: Bonnies matsedel visade "Ingen matsedel publicerad" trots att meny finns.
+    Grundorsak: allorigins.win/raw + DOMParser kunde inte parsa Skolmaten-RSS (troligen
+    encoding-/redirect-problem). Lösning: byt till rss2json.com som returnerar JSON direkt
+    (samma proxy som används för övriga RSS-flöden). Parsning ändrad från XML till JSON.
+    dashboard.js→v8.
+
   2026-08-25
   - Övervakningskontroll: Kodgranskning (direkta HTTP-anrop blockerade av sandbox-egress;
     policy denial 403 bekräftat via curl). Git: on branch master, up to date med origin/master.
