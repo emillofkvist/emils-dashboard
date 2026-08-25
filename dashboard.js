@@ -429,6 +429,11 @@ async function fetchElectricity() {
     }
 }
 
+// Lokalt datum som YYYY-MM-DD (toISOString ger UTC = fel datum 00:00–02:00 svensk tid)
+function localDateStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // Hämta och visa AI-dagsbriefing baserad på SVT + DN-rubriker
 async function fetchBriefing() {
     const card = document.getElementById('briefing');
@@ -439,7 +444,7 @@ async function fetchBriefing() {
     if (!apiKey) { card.style.display = 'none'; return; }
 
     // Kolla om dagens briefing redan är cachad
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr(new Date());
     const cacheKey = `briefing_${today}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -538,7 +543,7 @@ async function fetchPollen() {
         const forecast = data.items?.[0];
         if (!forecast) throw new Error('Ingen prognos tillgänglig');
 
-        const today = new Date().toISOString().slice(0, 10);
+        const today = localDateStr(new Date());
 
         // Summera max-nivå per pollentyp för idag
         const todayLevels = {};
@@ -921,6 +926,15 @@ function prefetchArticle(url) {
     }).catch(() => {});
 }
 
+// rss2json normaliserar pubDate till UTC "YYYY-MM-DD HH:MM:SS" – tolka som UTC, inte lokal tid
+function parseRss2jsonDate(pubDate) {
+    if (!pubDate) return new Date('');
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(pubDate)) {
+        return new Date(pubDate.replace(' ', 'T') + 'Z');
+    }
+    return new Date(pubDate);
+}
+
 // Hämta RSS via rss2json.com — returnerar array [{title, link, date, description, content}]
 async function fetchRSS(feedUrl) {
     const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
@@ -931,7 +945,7 @@ async function fetchRSS(feedUrl) {
     return data.items.map(item => ({
         title: item.title || '',
         link: item.link || '',
-        date: new Date(item.pubDate ? item.pubDate.replace(' ', 'T') : ''),
+        date: parseRss2jsonDate(item.pubDate),
         description: item.description || '',
         content: item.content || ''
     }));
@@ -1287,8 +1301,8 @@ async function fetchAftonbladet() {
             const items = await fetchRSS(CONFIG.aftonbladetFeed);
             news = items.slice(0, CONFIG.maxAftonbladetNews).map(i => ({ title: i.title, link: i.link, date: i.date }));
         } catch {
-            // Fallback: cors.eu.org + manuell XML-parsing (samma approach som fungerade med corsproxy.io)
-            const resp = await fetch(`${CONFIG.corsProxy}${CONFIG.aftonbladetFeed}`);
+            // Fallback: corsProxy (allorigins) + manuell XML-parsing
+            const resp = await fetch(`${CONFIG.corsProxy}${encodeURIComponent(CONFIG.aftonbladetFeed)}`);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const xml = new DOMParser().parseFromString(await resp.text(), 'text/xml');
             xml.querySelectorAll('item').forEach((item, index) => {
@@ -1342,7 +1356,7 @@ async function translateHeadlines(containerId) {
 // Hjälpfunktion: Tid sedan
 function getTimeAgo(date) {
     const now = new Date();
-    const diff = now - date;
+    const diff = Math.max(0, now - date);
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
 
@@ -1442,7 +1456,7 @@ async function openAppleDocReader(pageUrl) {
             'https://developer.apple.com/tutorials/data/documentation/'
         ) + '.json';
 
-        const res = await fetch(`${CONFIG.corsProxy}${jsonUrl}`);
+        const res = await fetch(`${CONFIG.corsProxy}${encodeURIComponent(jsonUrl)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const refs = data.references || {};
@@ -1574,6 +1588,8 @@ document.addEventListener('keydown', (e) => {
 // Dark mode
 function toggleDarkMode() {
     const dark = document.body.classList.toggle('dark');
+    // html-elementet har egen dark-regel (sätts i <head> mot FOUC) – håll i synk
+    document.documentElement.classList.toggle('dark', dark);
     localStorage.setItem('darkMode', dark);
     document.getElementById('darkmode-btn').textContent = dark ? '☀️' : '🌙';
 }
@@ -1688,7 +1704,7 @@ async function fetchIsabelleLunch(target, isToday) {
         const d = new Date(target);
         d.setDate(d.getDate() + offset);
         if (d.getDay() === 0 || d.getDay() === 6) continue;
-        const dateStr = d.toISOString().slice(0, 10);
+        const dateStr = localDateStr(d);
         const prefix = (!isToday || offset > 0) ? `${dayNames[d.getDay()]}: ` : '';
 
         const item = items.find(i => i.pubDate?.startsWith(dateStr));
@@ -1827,10 +1843,37 @@ async function fetchHemnet() {
     card.style.display = '';
 }
 
+// Rensa gamla cachenycklar så localStorage inte växer obegränsat
+function cleanupOldCache() {
+    try {
+        const today = localDateStr(new Date());
+        const twoWeeksAgo = localDateStr(new Date(Date.now() - 14 * 86400000));
+        const { year, week } = getISOYearWeek(new Date());
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+        keys.forEach(key => {
+            // briefing_YYYY-MM-DD – behåll bara dagens
+            if (key.startsWith('briefing_') && key !== `briefing_${today}`) {
+                localStorage.removeItem(key);
+            }
+            // isabelle_lunch_YYYY-MM-DD – behåll 14 dagar
+            if (key.startsWith('isabelle_lunch_') && key.slice(15) < twoWeeksAgo) {
+                localStorage.removeItem(key);
+            }
+            // bonnie_lunch_YYYY_vNN – behåll innevarande vecka och framåt
+            const m = key.match(/^bonnie_lunch_(\d{4})_v(\d+)$/);
+            if (m && parseInt(m[1]) * 100 + parseInt(m[2]) < year * 100 + week) {
+                localStorage.removeItem(key);
+            }
+        });
+    } catch {}
+}
+
 async function init() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
     renderFlagDay(new Date());
+    cleanupOldCache();
 
     // Hämta all data parallellt (kalender separat efter aktier pga cors.lol rate-limit)
     await Promise.all([

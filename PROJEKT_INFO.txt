@@ -132,6 +132,21 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (buggenomgång av hela kodbasen)
+  - Fix: Dark mode gick inte att stänga av utan omladdning – toggleDarkMode togglade bara
+    body.dark medan head-skriptet satte html.dark (med egen CSS-regel för bakgrunden).
+    Nu hålls båda i synk.
+  - Fix: Alla nyhetstider visades ~2 h fel – rss2json returnerar pubDate i UTC men koden
+    parsade den som lokal tid. Ny parseRss2jsonDate() tolkar formatet korrekt som UTC.
+  - Fix: Saknad encodeURIComponent på två ställen till (Apple DocC-läsaren och Aftonbladets
+    XML-fallback) – samma felklass som gav "Load failed" på Apple Release.
+  - Fix: UTC-datumfel 00:00–02:00 svensk tid – briefing-cache, pollenfilter och Isabelles
+    matsedel använde toISOString() som ger gårdagens datum. Ny localDateStr()-hjälpare.
+  - Fix: getTimeAgo kunde visa negativ tid vid klockskev – klampas nu till 0.
+  - Fix: localStorage växte obegränsat – briefing_/isabelle_lunch_/bonnie_lunch_-nycklar
+    rensas nu automatiskt vid start (cleanupOldCache i init).
+  - dashboard.js→v46.
+
   2026-08-25
   - Fix: Kalender – lade till allorigins.win/get som andra proxy-alternativ (med JSON-parsning
     av .contents). Löser "Ingen proxy svarade med giltig kalenderdata" när /raw returnerar
