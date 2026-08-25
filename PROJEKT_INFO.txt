@@ -60,16 +60,24 @@ API-ENDPOINTS (vad koden faktiskt använder)
 9. Macworld Sverige (RSS via api.allorigins.win):
    https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.macworld.se%2Ffeed
 
-10. Bonnies matsedel – Hyllinge skola (skolmaten.se API v4):
-    Primär: https://skolmaten.se/api/4/menu/school/hyllinge-skola?year={Y}&week={W}
-      Header: client-token: web-eaa12e50-c84c-4b4a-9cfe-4e3fcbcd9165 (publik token från skolmaten.se:s webb)
-      Förväntar: { WeekState: { Days: [ { date, Meals: [ { name } ] } ] } }
-    OBS: skolmaten.se:s RSS-feeds är NEDLAGDA (grundorsak till att RSS-lösningarna 2026-08-24/25
-      aldrig fungerade). Home Assistant-komponenten Kaptensanders/skolmat bytte från RSS till
-      API v4 i v3.0.0 (feb 2025), verifierat aktivt feb 2026 (issue #36 löst).
-    Fallback-kedja i fetchBonnieLunch(): 1) API direkt (kräver CORS hos skolmaten),
-      2) API via api.allorigins.win/raw (utan client-token), 3) RSS /rss/weeks/ via rss2json,
-      4) RSS /rss/ via rss2json. Varje steg innehållsvaliderar svaret innan det accepteras.
+10. Bonnies matsedel – Hyllinge skola (astorp.se, HTML-tabeller):
+    Primär: https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html
+      Matsedeln är inbäddad direkt som HTML-tabeller på sidan (flera veckor visas samtidigt,
+      t.ex. "Matsedel vecka 34/35/36/37"), kolumner Dag/Lunch/Vegetariskt. Ingen extern
+      matsedelstjänst inblandad – kommunen publicerar texten själva i Sitevision-CMS:et.
+    OBS: astorp.se blockerar TCP-anslutningar från datacenter-IP:er (bekräftat både från denna
+      sandbox och från GitHub Actions-runners – connection timeout efter TLS-handskakning
+      aldrig startar). Fungerar dock utmärkt via CORS-proxy (bekräftat 200 OK, 97 KB via
+      cors.eu.org kört från GitHub Actions 2026-08-25) – troligen ett bot-/WAF-skydd riktat
+      mot rena datacenter-anrop, inte mot proxy-IP:er eller vanliga webbläsare.
+    Fallback-kedja i fetchBonnieLunch(): 1) astorp.se via api.allorigins.win/raw,
+      2) astorp.se via cors.eu.org (bekräftat fungerande – se ovan), 3) skolmaten.se API v4
+      (reserv – bekräftat NERE/404 för Hyllinge skola aug 2026, skolmaten.se:s RSS är också
+      nedlagd; Home Assistant-komponenten Kaptensanders/skolmat bytte RSS→API v4 i sin v3.0.0
+      men även deras API-anrop mot hyllinge-skola gav "Menu not found" vid test).
+    Datum beräknas från "Matsedel vecka N"-rubriken + veckodagsnamn via ISO 8601-veckologik
+    (isoWeekMonday/resolveLunchDate i dashboard.js); tomma/opublicerade dagar (t.ex. första
+    dagarna i en ny vecka) hoppas över automatiskt.
 
 11. Koenigsegg-nyheter (Google News RSS via api.allorigins.win):
     https://api.allorigins.win/raw?url=https%3A%2F%2Fnews.google.com%2Frss%2Fsearch%3Fq%3Dkoenigsegg%26hl%3Dsv%26gl%3DSE%26ceid%3DSE%3Asv
@@ -80,10 +88,44 @@ CORS-PROXYER
 ------------
   Allt RSS/börs/kalender: https://api.allorigins.win/raw?url={encoded_full_url}
   OBS: corsproxy.io kräver betalplan (returnerar 200 med error-JSON) – använd INTE
-  OBS: cors.eu.org kräver nu allowlist (returnerar 403 host_not_allowed för allt) – använd INTE
+  OBS 2026-08-25: cors.eu.org fungerar igen (bekräftat 200 OK för svt.se-RSS och astorp.se
+    via GitHub Actions) – tidigare notering om 403/allowlist stämde inte längre vid omtest.
+    Format: https://cors.eu.org/{full_url} (utan URL-encoding). Används som fallback för
+    Bonnies matsedel (se punkt 10 ovan); inte bytt till global default då den inte testats
+    mot samtliga övriga källor (Yahoo Finance, iCal m.fl.).
+    Även codetabs.com och corsproxy.io testades 2026-08-25: båda gav fel/nere (522 resp 403).
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (fix 3 – på användarens begäran: "Matsedeln finns här: astorp.se/.../hyllinge-skola.html")
+  - Grundorsak till varför skolmaten.se-lösningarna (24/25 aug) aldrig fungerade: skolmaten.se
+    har helt slutat lista Hyllinge skola (API v4 → 404 "Menu not found" för alla testade veckor,
+    school-lookup → 404, RSS-endpoints → bara SPA-skalet utan data). Fel källa hela tiden.
+    Verifierat med ett tillfälligt GitHub Actions-workflow (körning från extern nätverksmiljö,
+    eftersom denna sandbox har blockerad utgående trafik till nästan alla externa domäner).
+  - Riktig källa: matsedeln ligger inbäddad som vanliga HTML-tabeller direkt på astorp.se:s
+    sida för Hyllinge skola (bekräftat via GitHub Actions-hämtning, 97 KB, flera veckor synliga
+    samtidigt). Denna sida kan dock INTE nås med direkta anrop från datacenter-IP:er – varken
+    från sandboxen eller från GitHub Actions (TCP connect timeout, troligen bot-/WAF-skydd) –
+    men fungerar fint via CORS-proxy (bekräftat cors.eu.org, 200 OK).
+  - fetchBonnieLunch() omskriven helt: ny bonnieLunchFromAstorp() parsar HTML-tabellerna
+    (caption "Matsedel vecka N" → veckonummer, tbody-rader → veckodag/lunch/vegetariskt),
+    ny isoWeekMonday()/resolveLunchDate() beräknar rätt kalenderdatum från veckonummer +
+    veckodagsnamn (sidan anger inget årtal – väljer det år som ger datum närmast idag, hanterar
+    årsskiften korrekt). Tomma/opublicerade dagar hoppas över. skolmaten.se API v4 behålls som
+    sista reserv ifall skolan skulle dyka upp där igen; alla RSS-varianter (bekräftat döda) togs
+    bort. Fallback: allorigins → cors.eu.org → skolmaten API.
+  - Testat offline mot den FAKTISKA HTML:n från astorp.se (hämtad via Actions) med jsdom –
+    alla 18 matsedelrader (vecka 35–37) parsades korrekt, "Idag" (tisdag 25 aug) matchade
+    verklig data ("Fiskburgare med potatismos samt kall dillsås"). br-tagg-hantering fixad
+    (mellanslag saknades vid radbrytningar i cellerna, t.ex. "samtkokt" → "samt kokt").
+  - config.js: bonnieLunch fick astorpUrl, tog bort feedUrl/feedUrlAlt/rss2jsonBase (obsoleta).
+  - Uppdaterade felaktig notering om cors.eu.org (var markerad "använd INTE" sedan tidigare,
+    men fungerar nu igen – se CORS-PROXYER ovan).
+  - Cache-bust: config.js→v9, dashboard.js→v11.
+  - Tillfälligt debug-workflow (.github/workflows/fetch-menu-debug.yml) och debug-fetch-grenen
+    användes för research och är borttaget/kan tas bort efter denna commit.
+
   2026-08-25 (ny funktion – på användarens begäran)
   - Ny kategori: Koenigsegg-nyheter. Ingen officiell RSS finns på koenigsegg.com, så Google
     News RSS-sök (news.google.com/rss/search?q=koenigsegg) används via samma allorigins-proxy

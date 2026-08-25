@@ -571,31 +571,95 @@ function getTimeAgo(date) {
     }
 }
 
-// ISO-veckonummer (skolmaten.se:s API kräver korrekt ISO 8601-vecka)
-function getISOWeek(d) {
-    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    const dayNum = date.getUTCDay() || 7;
-    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-    const week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-    return { year: date.getUTCFullYear(), week: week };
+// Måndagen (UTC-midnatt) i en given ISO-vecka och år
+function isoWeekMonday(year, week) {
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const jan4Day = jan4.getUTCDay() || 7;
+    const monday = new Date(jan4);
+    monday.setUTCDate(jan4.getUTCDate() - jan4Day + 1 + (week - 1) * 7);
+    return monday;
 }
 
-// Matsedel källa 1+2: skolmaten.se API v4 (direkt eller via CORS-proxy)
-// Svar: { WeekState: { Days: [ { date, Meals: [ { name } ] } ] } }
-async function bonnieLunchFromApi(useProxy) {
+// astorp.se anger bara "vecka N" utan år – välj det årtal som ger ett datum
+// närmast dagens datum (hanterar årsskiften runt vecka 1/52/53 korrekt)
+function resolveLunchDate(week, dayOffset) {
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    let best = null;
+    let bestDiff = Infinity;
+    for (const year of [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1]) {
+        const date = isoWeekMonday(year, week);
+        date.setUTCDate(date.getUTCDate() + dayOffset);
+        const diff = Math.abs(date - todayUTC);
+        if (diff < bestDiff) { bestDiff = diff; best = date; }
+    }
+    return new Date(best.getUTCFullYear(), best.getUTCMonth(), best.getUTCDate());
+}
+
+// Matsedel källa 1+2: astorp.se – matsedeln är inbäddad som HTML-tabeller
+// direkt på skolans sida (flera veckor: "Matsedel vecka N", Dag/Lunch/Vegetariskt).
+// OBS: astorp.se blockerar direkta anrop från datacenter-IP:er (bekräftat både
+// från denna sandbox och GitHub Actions – TCP connect timeout), men går fint
+// via CORS-proxy (bekräftat fungerande via cors.eu.org från GitHub Actions).
+async function bonnieLunchFromAstorp(proxyPrefix) {
+    const { astorpUrl } = CONFIG.bonnieLunch;
+    const url = proxyPrefix.includes('url=')
+        ? `${proxyPrefix}${encodeURIComponent(astorpUrl)}`
+        : `${proxyPrefix}${astorpUrl}`;
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const html = await response.text();
+    if (!/matsedel\s+vecka/i.test(html)) throw new Error('Ingen matsedel hittad på sidan');
+
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const dayOffsets = { 'måndag': 0, 'tisdag': 1, 'onsdag': 2, 'torsdag': 3, 'fredag': 4 };
+    const days = [];
+
+    doc.querySelectorAll('table').forEach(table => {
+        const caption = table.querySelector('caption')?.textContent || '';
+        const weekMatch = caption.match(/vecka\s+(\d+)/i);
+        if (!weekMatch) return;
+        const week = parseInt(weekMatch[1], 10);
+
+        // <br> ger ingen textContent-mellanrumsseparation ("samt"+"kokt" blir
+        // "samtkokt") – ersätt med mellanslag innan text extraheras
+        const cellText = (cell) => {
+            if (!cell) return '';
+            const tmp = doc.createElement('div');
+            tmp.innerHTML = cell.innerHTML.replace(/<br\s*\/?>/gi, ' ');
+            return (tmp.textContent || '').replace(/\s+/g, ' ').trim();
+        };
+
+        table.querySelectorAll('tbody tr').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 2) return;
+            const dayOffset = dayOffsets[cells[0].textContent.trim().toLowerCase()];
+            if (dayOffset === undefined) return;
+
+            const lunch = cellText(cells[1]);
+            const veg = cellText(cells[2]);
+            const meals = [lunch, veg ? `Veg: ${veg}` : ''].filter(Boolean);
+            if (meals.length === 0) return; // ej publicerad ännu
+
+            days.push({ date: resolveLunchDate(week, dayOffset), meals });
+        });
+    });
+
+    if (days.length === 0) throw new Error('Inga matsedelrader hittades');
+    return days;
+}
+
+// Matsedel källa 3: skolmaten.se API v4 (reservlösning – bekräftat nere/404
+// för Hyllinge skola aug 2026, behålls ifall det återuppstår)
+async function bonnieLunchFromApi() {
     const { apiBase, school, clientToken } = CONFIG.bonnieLunch;
     const now = new Date();
-    // Helg → hämta nästa vecka istället
     const isWeekend = now.getDay() === 0 || now.getDay() === 6;
     const ref = isWeekend ? new Date(now.getTime() + 7 * 86400000) : now;
-    const { year, week } = getISOWeek(ref);
-    const target = `${apiBase}${school}?year=${year}&week=${week}`;
+    const target = `${apiBase}${school}?year=${ref.getFullYear()}&week=${Math.ceil((((ref - new Date(ref.getFullYear(), 0, 1)) / 86400000) + new Date(ref.getFullYear(), 0, 1).getDay() + 1) / 7)}`;
 
-    const response = useProxy
-        ? await fetch(`${CONFIG.corsProxy}${encodeURIComponent(target)}`)
-        : await fetch(target, { headers: { 'Accept': 'application/json', 'client-token': clientToken } });
-
+    const response = await fetch(target, { headers: { 'Accept': 'application/json', 'client-token': clientToken } });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     if (!text.trim().startsWith('{')) throw new Error('Ej JSON-svar');
@@ -608,33 +672,15 @@ async function bonnieLunchFromApi(useProxy) {
     })).filter(d => !isNaN(d.date) && d.meals.length > 0);
 }
 
-// Matsedel källa 3+4: skolmaten.se RSS via rss2json (om RSS:en återuppstår)
-async function bonnieLunchFromRss(feedUrl) {
-    const { rss2jsonBase } = CONFIG.bonnieLunch;
-    const response = await fetch(`${rss2jsonBase}${encodeURIComponent(feedUrl)}`);
-    const data = await response.json();
-    if (!data || data.status !== 'ok' || !Array.isArray(data.items) || data.items.length === 0) {
-        throw new Error('rss2json gav inget giltigt svar');
-    }
-    return data.items.map(item => ({
-        date: new Date(item.pubDate),
-        meals: (item.description || '')
-            .split(/<br\s*\/?>|\n/i)
-            .map(s => s.replace(/<[^>]*>/g, '').trim())
-            .filter(Boolean)
-    })).filter(d => !isNaN(d.date) && d.meals.length > 0);
-}
-
 // Hämta matsedel för Bonnie (Hyllinge skola)
 async function fetchBonnieLunch() {
     const el = document.getElementById('bonnie-lunch');
     if (!el) return;
 
     const sources = [
-        () => bonnieLunchFromApi(false),                        // API direkt (kräver CORS hos skolmaten)
-        () => bonnieLunchFromApi(true),                         // API via allorigins
-        () => bonnieLunchFromRss(CONFIG.bonnieLunch.feedUrl),   // RSS /rss/weeks/ via rss2json
-        () => bonnieLunchFromRss(CONFIG.bonnieLunch.feedUrlAlt) // RSS /rss/ via rss2json
+        () => bonnieLunchFromAstorp(CONFIG.corsProxy),      // astorp.se via allorigins
+        () => bonnieLunchFromAstorp('https://cors.eu.org/'), // astorp.se via cors.eu.org (bekräftat fungerande)
+        () => bonnieLunchFromApi()                          // skolmaten.se API v4 (reserv)
     ];
 
     let days = null;

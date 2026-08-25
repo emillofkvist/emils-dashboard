@@ -58,18 +58,15 @@ const CONFIG = {
     maxNews: 5,
     maxMacworldNews: 2,
 
-    // Matsedel Bonnie (Hyllinge skola via skolmaten.se)
-    // Primär: API v4 (skolmaten.se lade ned RSS – Home Assistant-komponenten
-    // Kaptensanders/skolmat bytte till API v4, verifierat aktivt feb 2026).
-    // client-token är den publika token som skolmaten.se:s egen webb använder.
-    // RSS-URL:erna behålls som fallback ifall RSS återuppstår.
+    // Matsedel Bonnie (Hyllinge skola)
+    // Primär källa: astorp.se – matsedeln är inbäddad som HTML-tabeller direkt
+    // på skolans sida (bekräftat aug 2026). skolmaten.se (tidigare källa) är
+    // nedlagt/404 för Hyllinge skola och behålls bara som sista reserv.
     bonnieLunch: {
+        astorpUrl: "https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html",
         school: "hyllinge-skola",
         apiBase: "https://skolmaten.se/api/4/menu/school/",
-        clientToken: "web-eaa12e50-c84c-4b4a-9cfe-4e3fcbcd9165",
-        feedUrl: "https://skolmaten.se/hyllinge-skola/rss/weeks/",
-        feedUrlAlt: "https://skolmaten.se/hyllinge-skola/rss/",
-        rss2jsonBase: "https://api.rss2json.com/v1/api.json?rss_url="
+        clientToken: "web-eaa12e50-c84c-4b4a-9cfe-4e3fcbcd9165"
     },
 
     // Koenigsegg-nyheter via Google News RSS (ingen officiell RSS finns på koenigsegg.com)
