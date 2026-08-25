@@ -60,9 +60,16 @@ API-ENDPOINTS (vad koden faktiskt använder)
 9. Macworld Sverige (RSS via api.allorigins.win):
    https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.macworld.se%2Ffeed
 
-10. Bonnies matsedel – Hyllinge skola (Skolmaten RSS via api.allorigins.win):
-    https://api.allorigins.win/raw?url=https%3A%2F%2Fskolmaten.se%2Fhyllinge-skola%2Frss%2Fweeks%2F
-    Förväntar: RSS XML med veckans matsedel, parsar dagens rätt ur description-HTML
+10. Bonnies matsedel – Hyllinge skola (skolmaten.se API v4):
+    Primär: https://skolmaten.se/api/4/menu/school/hyllinge-skola?year={Y}&week={W}
+      Header: client-token: web-eaa12e50-c84c-4b4a-9cfe-4e3fcbcd9165 (publik token från skolmaten.se:s webb)
+      Förväntar: { WeekState: { Days: [ { date, Meals: [ { name } ] } ] } }
+    OBS: skolmaten.se:s RSS-feeds är NEDLAGDA (grundorsak till att RSS-lösningarna 2026-08-24/25
+      aldrig fungerade). Home Assistant-komponenten Kaptensanders/skolmat bytte från RSS till
+      API v4 i v3.0.0 (feb 2025), verifierat aktivt feb 2026 (issue #36 löst).
+    Fallback-kedja i fetchBonnieLunch(): 1) API direkt (kräver CORS hos skolmaten),
+      2) API via api.allorigins.win/raw (utan client-token), 3) RSS /rss/weeks/ via rss2json,
+      4) RSS /rss/ via rss2json. Varje steg innehållsvaliderar svaret innan det accepteras.
 
 CORS-PROXYER
 ------------
@@ -72,6 +79,24 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (fix 2 – på användarens begäran: "Bonnie matsedel fungerar fortfarande inte")
+  - Grundorsak identifierad: skolmaten.se:s RSS-feeds (/rss/ och /rss/weeks/) är nedlagda –
+    därför fungerade varken allorigins+XML (2026-08-24) eller rss2json (2026-08-25 fix 1).
+    Belägg: Home Assistant-komponenten Kaptensanders/skolmat övergav RSS för API v4 i v3.0.0
+    (feb 2025); API:et verifierat aktivt feb 2026. Skolkollen bekräftar att Hyllinge skolas
+    matsedel visas i samarbete med Skolmaten.se (slug hyllinge-skola bekräftad via
+    skolmaten.se/about/calendar/hyllinge-skola/).
+  - Lösning: fetchBonnieLunch() omskriven till 4-stegs fallback-kedja:
+    1) skolmaten.se API v4 direkt med client-token, 2) API v4 via api.allorigins.win/raw,
+    3) RSS /rss/weeks/ via rss2json, 4) RSS /rss/ via rss2json. Varje steg innehålls-
+    validerar svaret (JSON/WeekState resp. status:ok) så tysta fel faller vidare till nästa.
+    Ny getISOWeek() (API:et kräver korrekt ISO 8601-vecka). Helg → nästa veckas matsedel.
+    Visar idag + nästa skoldag med matsedel. Kort och CSS oförändrade.
+  - config.js: bonnieLunch utökad med apiBase/school/clientToken/feedUrlAlt/rss2jsonBase.
+  - Cache-bust: config.js→v7, dashboard.js→v9.
+  - OBS: Kunde ej live-testas från sandboxen (all extern egress blockerad, policy denial 403).
+    Hela fallback-kedjan + parsning verifierad offline med mockade svar (4 scenarier OK).
+
   2026-08-25 (fix)
   - Fix: Bonnies matsedel visade "Ingen matsedel publicerad" trots att meny finns.
     Grundorsak: allorigins.win/raw + DOMParser kunde inte parsa Skolmaten-RSS (troligen

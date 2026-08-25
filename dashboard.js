@@ -515,57 +515,118 @@ function getTimeAgo(date) {
     }
 }
 
-// Hämta matsedel för Bonnie (Hyllinge skola via rss2json)
-async function fetchBonnieLunch() {
-    try {
-        const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(CONFIG.bonnieLunch.feedUrl)}`;
-        const response = await fetch(url);
-        const data = await response.json();
+// ISO-veckonummer (skolmaten.se:s API kräver korrekt ISO 8601-vecka)
+function getISOWeek(d) {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    return { year: date.getUTCFullYear(), week: week };
+}
 
-        if (data.status !== 'ok' || !data.items || data.items.length === 0) {
-            document.getElementById('bonnie-lunch').innerHTML = '<div class="loading">Ingen matsedel publicerad</div>';
-            return;
-        }
+// Matsedel källa 1+2: skolmaten.se API v4 (direkt eller via CORS-proxy)
+// Svar: { WeekState: { Days: [ { date, Meals: [ { name } ] } ] } }
+async function bonnieLunchFromApi(useProxy) {
+    const { apiBase, school, clientToken } = CONFIG.bonnieLunch;
+    const now = new Date();
+    // Helg → hämta nästa vecka istället
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+    const ref = isWeekend ? new Date(now.getTime() + 7 * 86400000) : now;
+    const { year, week } = getISOWeek(ref);
+    const target = `${apiBase}${school}?year=${year}&week=${week}`;
 
-        const item = data.items[0];
-        const weekTitle = item.title || '';
-        const rawDesc = item.description || '';
+    const response = useProxy
+        ? await fetch(`${CONFIG.corsProxy}${encodeURIComponent(target)}`)
+        : await fetch(target, { headers: { 'Accept': 'application/json', 'client-token': clientToken } });
 
-        // Avkoda HTML-entiteter och extrahera text
-        const tmp = document.createElement('div');
-        tmp.innerHTML = rawDesc;
-        const lines = (tmp.textContent || '').split('\n').map(l => l.trim()).filter(l => l);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const text = await response.text();
+    if (!text.trim().startsWith('{')) throw new Error('Ej JSON-svar');
+    const data = JSON.parse(text);
+    if (!data.WeekState || !Array.isArray(data.WeekState.Days)) throw new Error('Oväntat API-format');
 
-        // Hitta dagens rätt
-        const dayNames = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'];
-        const weekdaysSv = ['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag'];
-        const todayName = dayNames[new Date().getDay()];
+    return data.WeekState.Days.map(day => ({
+        date: new Date(day.date),
+        meals: (day.Meals || []).map(m => m && m.name).filter(Boolean)
+    })).filter(d => !isNaN(d.date) && d.meals.length > 0);
+}
 
-        let todayMeal = '';
-        let capturing = false;
-        for (const line of lines) {
-            const lower = line.toLowerCase();
-            if (lower.startsWith(todayName)) {
-                capturing = true;
-                continue;
-            }
-            if (capturing) {
-                if (weekdaysSv.some(d => lower.startsWith(d))) break;
-                todayMeal += (todayMeal ? ' · ' : '') + line;
-            }
-        }
-
-        const mealText = todayMeal || 'Ingen rätt publicerad idag';
-        const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
-
-        document.getElementById('bonnie-lunch').innerHTML = `
-            <div class="lunch-week">${weekTitle}</div>
-            <div class="lunch-meal">${isWeekend ? 'Ingen skola idag' : mealText}</div>
-        `;
-    } catch (error) {
-        console.error('Bonnies matsedel:', error);
-        document.getElementById('bonnie-lunch').innerHTML = '<div class="loading">Kunde inte hämta matsedel</div>';
+// Matsedel källa 3+4: skolmaten.se RSS via rss2json (om RSS:en återuppstår)
+async function bonnieLunchFromRss(feedUrl) {
+    const { rss2jsonBase } = CONFIG.bonnieLunch;
+    const response = await fetch(`${rss2jsonBase}${encodeURIComponent(feedUrl)}`);
+    const data = await response.json();
+    if (!data || data.status !== 'ok' || !Array.isArray(data.items) || data.items.length === 0) {
+        throw new Error('rss2json gav inget giltigt svar');
     }
+    return data.items.map(item => ({
+        date: new Date(item.pubDate),
+        meals: (item.description || '')
+            .split(/<br\s*\/?>|\n/i)
+            .map(s => s.replace(/<[^>]*>/g, '').trim())
+            .filter(Boolean)
+    })).filter(d => !isNaN(d.date) && d.meals.length > 0);
+}
+
+// Hämta matsedel för Bonnie (Hyllinge skola)
+async function fetchBonnieLunch() {
+    const el = document.getElementById('bonnie-lunch');
+    if (!el) return;
+
+    const sources = [
+        () => bonnieLunchFromApi(false),                        // API direkt (kräver CORS hos skolmaten)
+        () => bonnieLunchFromApi(true),                         // API via allorigins
+        () => bonnieLunchFromRss(CONFIG.bonnieLunch.feedUrl),   // RSS /rss/weeks/ via rss2json
+        () => bonnieLunchFromRss(CONFIG.bonnieLunch.feedUrlAlt) // RSS /rss/ via rss2json
+    ];
+
+    let days = null;
+    for (const source of sources) {
+        try {
+            days = await source();
+            if (days) break;
+        } catch (error) {
+            console.warn('Matsedelkälla misslyckades, provar nästa:', error.message);
+        }
+    }
+
+    if (!days) {
+        el.innerHTML = '<div class="loading">Kunde inte hämta matsedel</div>';
+        return;
+    }
+
+    // Visa idag (eller nästa skoldag med matsedel) + dagen efter
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const upcoming = days
+        .filter(d => d.date >= todayStart)
+        .sort((a, b) => a.date - b.date)
+        .slice(0, 2);
+
+    if (upcoming.length === 0) {
+        el.innerHTML = '<div class="loading">Ingen matsedel publicerad</div>';
+        return;
+    }
+
+    const today = new Date();
+    const tomorrow = new Date(today.getTime() + 86400000);
+
+    const html = upcoming.map(day => {
+        let label;
+        if (day.date.toDateString() === today.toDateString()) {
+            label = 'Idag';
+        } else if (day.date.toDateString() === tomorrow.toDateString()) {
+            label = 'Imorgon';
+        } else {
+            label = day.date.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'short' });
+            label = label.charAt(0).toUpperCase() + label.slice(1);
+        }
+        const meals = day.meals.map(m => `<div class="lunch-meal">${m}</div>`).join('');
+        return `<div class="lunch-week">${label}</div>${meals}`;
+    }).join('<div style="height:10px"></div>');
+
+    el.innerHTML = html;
 }
 
 // Starta dashboard
