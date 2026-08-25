@@ -80,6 +80,7 @@ CORS-PROXYER
   Kalender:             https://api.allorigins.win/raw?url={encoded_url}  (CONFIG.calendarProxy)
   Bonnie lunch (prim):  https://api.cors.lol/?url={encoded_url}
   Bonnie lunch (fall):  https://api.allorigins.win/raw?url={encoded_url}
+  Bonnie lunch (fall2): https://r.jina.ai/{url}  (markdown-läsare, ej HTML — bonnieParseMarkdown())
   Apple Release Notes:  https://api.allorigins.win/raw?url={encoded_url}  (CONFIG.corsProxy)
   Reader (primär):      https://api.cors.lol/?url={encoded_url}
   Reader (fallback):    https://api.allorigins.win/raw?url={encoded_url}
@@ -132,6 +133,19 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (v45)
+  - Fix: "Meny ej publicerad" visades felaktigt för Bonnie trots att astorp.se hade matsedeln
+    publicerad (veckor 34–37 bekräftade live). Rotorsak: cors.lol (rate-limited) och
+    allorigins.win (522, nere) var båda otillgängliga samtidigt vid testtillfället, så HTML-
+    hämtningen misslyckades helt och funktionen kastade samma fel som vid en genuint saknad dag.
+  - Lade till r.jina.ai (markdown-läsare) som tredje fallback när båda CORS-proxyerna är nere —
+    annan infrastruktur, fungerade när cors.lol/allorigins/corsproxy.io/thingproxy/codetabs
+    samtliga testades nere. Ny funktion bonnieParseMarkdown() extraherar dagsrätter ur
+    "| Dag | Lunch | Vegetariskt |"-tabellerna i markdown-svaret.
+  - Skiljer nu på "hämtning misslyckades" (visar "Kunde inte hämta") och "dag saknas i hämtad
+    data" (visar "Meny ej publicerad") så statusen inte längre är missvisande vid proxy-bortfall.
+  - dashboard.js → v45
+
   2026-06-24 (övervakningskontroll)
   - Kodgranskning + websökning (direkta HTTP-anrop och WebFetch blockerade av sandbox-egress).
   - Git: master-grenen låg 19 commits bakom HEAD (detached mode, 2026-06-05 t.o.m. 2026-06-23
