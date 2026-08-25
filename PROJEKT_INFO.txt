@@ -88,9 +88,13 @@ CORS-PROXYER
   Bonnie lunch (fall2): https://r.jina.ai/{url}  (markdown-läsare, ej HTML — bonnieParseMarkdown())
   Apple Release Notes:  https://api.allorigins.win/raw?url={encoded_url}  (CONFIG.corsProxy)
   Reader (primär):      https://api.cors.lol/?url={encoded_url}
-  Reader (fallback):    https://api.allorigins.win/raw?url={encoded_url}
+  Reader (fallback1):   https://api.allorigins.win/raw?url={encoded_url}
+  Reader (fallback2):   https://r.jina.ai/{url}  (markdown-läsare, ej HTML — parseJinaMarkdown())
   OBS: corsproxy.io kräver betalplan sedan apr 2026 – returnerar 200+error-JSON, använd INTE.
   OBS: cors.eu.org returnerar 403 (nere) sedan 2026-04-30 – använd INTE.
+  OBS: r.jina.ai kan svara 200 OK med JSON-felkropp om måldomänen är tillfälligt rate-limitad
+       (t.ex. "AbuseAlleviationError") – kontrollera alltid att svaret innehåller
+       "Markdown Content:"-markören innan det tolkas som en artikel.
 
 
 TEKNISKT
@@ -140,6 +144,21 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (v50)
+  - Fix: Läsarläge fungerade bara ibland (SVT/DN, AI-nyheter, Porsche, Koenigsegg drabbade,
+    Macworld/Feber/Aftonbladet klarade sig av slump). Rotorsak: fetchHtmlViaProxy() hade bara
+    cors.lol + allorigins.win, samma sviktande proxy-par som orsakat de andra buggarna idag.
+    Verifierat live: ~4 av 7 nyhetskort visade "blockerar läsarläge" vid test.
+  - Lade till r.jina.ai som tredje fallback. Jina returnerar redan utläst text (markdown) i
+    stället för rå HTML, så en egen parseJinaMarkdown() används i stället för Readability för
+    den vägen (strippar bilder/länk-URL:er, filtrerar bort korta rader/rubriker).
+  - OBS: jina kan svara 200 OK med en JSON-felkropp när en domän är tillfälligt rate-limitad
+    (upptäckt på carscoops.com under test) — parseJinaMarkdown kräver "Markdown Content:"-
+    markören i svaret, annars kastas fel och nästa lager (readerFallback) visas som vanligt.
+  - Utökade även koenigseggFeeds med supercars.net/blog/tag/koenigsegg/feed/ som andra
+    dedikerade källa (10 träffar verifierade), inte bara Carscoops.
+  - dashboard.js → v50
+
   2026-08-25 (v49)
   - Nytt: Koenigsegg Nyheter-kort, samma mönster som Porsche-kortet. Källor: Carscoops
     Koenigsegg-taggflöde (primär, verifierad live med 10 träffar), Road & Track och Motor1

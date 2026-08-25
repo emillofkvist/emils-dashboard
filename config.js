@@ -57,9 +57,10 @@ const CONFIG = {
 
     // Koenigsegg nyheter — dedikerad taggflöde + filtrerade generella källor
     koenigseggFeeds: [
-        { url: "https://carscoops.com/tag/koenigsegg/feed/", filter: false }, // Koenigsegg-specifik
-        { url: "https://www.roadandtrack.com/rss/all.xml",   filter: true  }, // filtrera på "koenigsegg"
-        { url: "https://www.motor1.com/rss/news/all/",       filter: true  }  // filtrera på "koenigsegg"
+        { url: "https://carscoops.com/tag/koenigsegg/feed/",              filter: false }, // Koenigsegg-specifik
+        { url: "https://www.supercars.net/blog/tag/koenigsegg/feed/",     filter: false }, // Koenigsegg-specifik
+        { url: "https://www.roadandtrack.com/rss/all.xml",                filter: true  }, // filtrera på "koenigsegg"
+        { url: "https://www.motor1.com/rss/news/all/",                    filter: true  }  // filtrera på "koenigsegg"
     ],
     maxKoenigseggNews: 5,
 

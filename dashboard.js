@@ -899,7 +899,30 @@ async function fetchHtmlViaProxy(articleUrl) {
         throw new Error('readability failed');
     };
 
-    // cors.lol primärt, allorigins.win/raw som fallback
+    // r.jina.ai returnerar redan utläst text som markdown, ej rå HTML — egen enklare parsning
+    const parseJinaMarkdown = (md) => {
+        if (!md || md.length < 300) throw new Error('too short');
+        // jina svarar ibland 200 OK med en JSON-felkropp (t.ex. domän tillfälligt rate-limitad) —
+        // riktiga svar har alltid denna markör, annars är det inte en artikel
+        const bodyMatch = md.match(/Markdown Content:\n([\s\S]*)/);
+        if (!bodyMatch) throw new Error('not a jina article response');
+        const titleMatch = md.match(/^Title:\s*(.+)$/m);
+        const title = (titleMatch ? titleMatch[1] : '').trim();
+        const body = bodyMatch[1].trim();
+        const escape = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const clean = s => s.replace(/!\[[^\]]*\]\([^)]*\)/g, '')     // bilder bort
+                            .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')  // länkar → ren text
+                            .trim();
+        const content = body.split(/\n{2,}/)
+            .map(clean)
+            .filter(p => p.length > 60 && !/^[#*>-]/.test(p))
+            .map(p => `<p>${escape(p)}</p>`)
+            .join('');
+        if (content.length < 300) throw new Error('too short');
+        return { title, content };
+    };
+
+    // cors.lol primärt, allorigins.win/raw sekundärt, r.jina.ai sista utväg (annan infrastruktur)
     const enc = encodeURIComponent(articleUrl);
     try {
         const r = await fetch(`https://api.cors.lol/?url=${enc}`);
@@ -909,7 +932,13 @@ async function fetchHtmlViaProxy(articleUrl) {
         try {
             return await fetch(`https://api.allorigins.win/raw?url=${enc}`).then(r => r.text()).then(parseHtml);
         } catch {
-            return null;
+            try {
+                const r = await fetch(`https://r.jina.ai/${articleUrl}`, { signal: AbortSignal.timeout(10000) });
+                if (!r.ok) throw new Error(r.status);
+                return await r.text().then(parseJinaMarkdown);
+            } catch {
+                return null;
+            }
         }
     }
 }
@@ -1106,6 +1135,7 @@ async function fetchPorsche() {
 async function fetchKoenigsegg() {
     const sourceNames = {
         'carscoops.com':    'Carscoops',
+        'supercars.net':    'Supercars.net',
         'roadandtrack.com': 'Road & Track',
         'motor1.com':       'Motor1'
     };
