@@ -143,6 +143,17 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (v53)
+  - Fix: Efter v52 sågs fortfarande "HTTP 429" i konsollen för NASDAQ/S&P 500 — r.jina.ai
+    (sista fallbacken) kan själv bli kortvarigt rate-limitad vid hög trafik (bekräftat: en
+    isolerad omtestning direkt efter gav 200 OK igen, så det är övergående, inte en trasig
+    proxy). Tre fallbacknivåer är redan rimligt för en privat dashboard — istället för en
+    fjärde proxy läggs nu ett litet cache-lager till.
+  - fetchStocks sparar senaste lyckade {change, isPositive} per symbol i localStorage
+    (stock_cache_{symbol}). Vid totalt hämtningsfel visas "Senast kända" med cachad procent
+    istället för "Ej tillgänglig". Ingen cleanup behövs (4 st, självöverskrivande nycklar).
+  - dashboard.js → v53
+
   2026-08-25 (v52)
   - Fix: Börskortet visade "Ej tillgänglig" ("Börsfel för NASDAQ: Alla proxies misslyckades"
     i konsollen) och var extremt långsamt — inga timeouts på proxyanropen gjorde att en nere

@@ -646,6 +646,7 @@ async function fetchStocks() {
     };
 
     // Sekventiellt med 1200ms fördröjning för att undvika Yahoo rate limit
+    const cacheKey = symbol => `stock_cache_${symbol}`;
     for (let i = 0; i < stocks.length; i++) {
         if (i > 0) await new Promise(r => setTimeout(r, 1200));
         const stock = stocks[i];
@@ -657,6 +658,8 @@ async function fetchStocks() {
             const change = ((current - previous) / previous * 100).toFixed(2);
             const isPositive = change >= 0;
             const open = isMarketOpen(stock.market);
+
+            try { localStorage.setItem(cacheKey(stock.symbol), JSON.stringify({ change, isPositive })); } catch {}
 
             stockItems[stock.id].innerHTML = `
                 <div class="stock-name">${stock.name}</div>
@@ -670,7 +673,18 @@ async function fetchStocks() {
             `;
         } catch (error) {
             console.error(`Börsfel för ${stock.name}:`, error);
-            stockItems[stock.id].innerHTML = `
+            // Alla proxyer (inkl. r.jina.ai) kan nås av kortvarig rate-limit vid hög trafik —
+            // visa senast kända förändring hellre än "Ej tillgänglig" när det finns cache
+            let cached = null;
+            try { cached = JSON.parse(localStorage.getItem(cacheKey(stock.symbol))); } catch {}
+
+            stockItems[stock.id].innerHTML = cached ? `
+                <div class="stock-name">${stock.name}</div>
+                <div class="stock-change ${cached.isPositive ? 'positive' : 'negative'}">
+                    ${cached.isPositive ? '▲' : '▼'} ${Math.abs(cached.change)}%
+                </div>
+                <div class="market-status">Senast kända</div>
+            ` : `
                 <div class="stock-name">${stock.name}</div>
                 <div class="loading">Ej tillgänglig</div>
             `;
