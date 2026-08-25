@@ -53,6 +53,7 @@ MODULER & DATAKÄLLOR
   Nyheter (SVT + DN)  – RSS via api.rss2json.com, max 5 totalt (3 per källa)
   AI-nyheter          – TechCrunch AI + The Verge via api.rss2json.com, max 5
   Porsche-nyheter     – Carscoops, Road & Track, Motor1 via api.rss2json.com, max 5
+  Koenigsegg-nyheter  – Carscoops (taggflöde), Road & Track, Motor1 via api.rss2json.com, max 5
   Pollenprognos       – https://api.pollenrapporten.se/v1/forecasts (Naturhistoriska riksmuseet)
                         Region: Malmö (UUID-baserad), 7-gradig skala, visar bara nivå > 0
   Apple Release Notes – Apple DocC JSON API via allorigins.win/raw
@@ -117,6 +118,8 @@ INSTÄLLNINGAR I config.js
   CONFIG.aftonbladetFeed         – Aftonbladet RSS
   CONFIG.aiNewsFeeds             – Array med AI-nyhetskällor
   CONFIG.porscheFeeds            – Array med {url, filter} för Porsche-källor
+  CONFIG.koenigseggFeeds         – Array med {url, filter} för Koenigsegg-källor
+  CONFIG.maxKoenigseggNews       – Max Koenigsegg-nyheter (default 5)
   CONFIG.maxNews                 – Max antal SVT+DN-nyheter (default 5)
   CONFIG.maxAiNews               – Max AI-nyheter (default 5)
   CONFIG.maxPorscheNews          – Max Porsche-nyheter (default 5)
@@ -137,6 +140,15 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (v49)
+  - Nytt: Koenigsegg Nyheter-kort, samma mönster som Porsche-kortet. Källor: Carscoops
+    Koenigsegg-taggflöde (primär, verifierad live med 10 träffar), Road & Track och Motor1
+    som filtrerade fallbacks (samma struktur som Porsche, sällan träffar för en nischad
+    tillverkare men kostar inget extra).
+  - fetchKoenigsegg() i dashboard.js, CONFIG.koenigseggFeeds/maxKoenigseggNews i config.js,
+    .koenigsegg-card (#cba135) i index.html.
+  - dashboard.js → v49
+
   2026-08-25 (v48)
   - Fix: Kalendern slutade fungera igen ("Ingen proxy svarade med giltig kalenderdata").
     Rotorsak: allorigins.win var helt nere (både /raw och /get, TypeError: Failed to fetch)

@@ -1102,6 +1102,64 @@ async function fetchPorsche() {
     translateHeadlines('porsche');
 }
 
+// Hämta Koenigsegg nyheter från flera källor
+async function fetchKoenigsegg() {
+    const sourceNames = {
+        'carscoops.com':    'Carscoops',
+        'roadandtrack.com': 'Road & Track',
+        'motor1.com':       'Motor1'
+    };
+
+    const fetchFeed = async (feed) => {
+        try {
+            const items = await fetchRSS(feed.url);
+            const sourceName = Object.entries(sourceNames).find(([k]) => feed.url.includes(k))?.[1] || 'Koenigsegg News';
+            return items
+                .map(item => ({ title: item.title, link: item.link, date: item.date, source: sourceName }))
+                .filter(item => !feed.filter || item.title.toLowerCase().includes('koenigsegg'));
+        } catch {
+            return [];
+        }
+    };
+
+    const results = await Promise.all(CONFIG.koenigseggFeeds.map(fetchFeed));
+    const news = results.flat().sort((a, b) => b.date - a.date);
+
+    // Deduplicera på titel (olika sajter kan rapportera samma nyhet)
+    const seen = new Set();
+    const unique = news.filter(item => {
+        const key = item.title.toLowerCase().slice(0, 50);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+
+    const latest = unique.slice(0, CONFIG.maxKoenigseggNews);
+
+    if (latest.length === 0) {
+        document.getElementById('koenigsegg').innerHTML = '<div class="loading">Inga nyheter hittades</div>';
+        return;
+    }
+
+    const html = latest.map(item => {
+        const timeAgo = getTimeAgo(item.date);
+        return `
+            <div class="news-item">
+                <div class="news-source">${item.source}</div>
+                <div class="news-title"><a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a></div>
+                <div class="news-time">${timeAgo}</div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('koenigsegg').innerHTML = html;
+    document.getElementById('koenigsegg').querySelectorAll('.reader-link').forEach(link => {
+        link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+    });
+    setTimeout(() => latest.forEach(item => prefetchArticle(item.link)), 1000);
+    translateHeadlines('koenigsegg');
+}
+
 // Hämta Macworld nyheter (senaste 24h, både .se och .com)
 async function fetchMacworld() {
     const fetchFeed = async (url, sourceName) => {
@@ -1917,6 +1975,7 @@ async function init() {
         fetchNews(),
         fetchAiNews(),
         fetchPorsche(),
+        fetchKoenigsegg(),
         fetchMacworld(),
         fetchAppleRelease(),
         fetchFeber(),
