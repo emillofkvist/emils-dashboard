@@ -77,7 +77,11 @@ CORS-PROXYER
   Börs (primär):        https://api.cors.lol/?url={encoded_url}
   Börs (fallback 1):    https://api.allorigins.win/raw?url={encoded_url}
   Börs (fallback 2-3):  https://api.allorigins.win/get?url={encoded_url}
-  Kalender:             https://api.allorigins.win/raw?url={encoded_url}  (CONFIG.calendarProxy)
+  Kalender (prim):      https://api.allorigins.win/raw?url={encoded_url}
+  Kalender (fall1):     https://api.allorigins.win/get?url={encoded_url}
+  Kalender (fall2):     https://r.jina.ai/{url}
+  OBS: CONFIG.calendarProxy i config.js används INTE av fetchCalendar() — proxylistan är
+       hårdkodad i funktionen (calProxies).
   Bonnie lunch (prim):  https://api.cors.lol/?url={encoded_url}
   Bonnie lunch (fall):  https://api.allorigins.win/raw?url={encoded_url}
   Bonnie lunch (fall2): https://r.jina.ai/{url}  (markdown-läsare, ej HTML — bonnieParseMarkdown())
@@ -133,6 +137,16 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-25 (v48)
+  - Fix: Kalendern slutade fungera igen ("Ingen proxy svarade med giltig kalenderdata").
+    Rotorsak: allorigins.win var helt nere (både /raw och /get, TypeError: Failed to fetch)
+    och fetchCalendar hade bara det ena tjänsten som proxy (två URL-varianter av samma
+    leverantör räknas inte som redundans).
+  - Lade till r.jina.ai som tredje proxy i calProxies. Testat live: hämtar och parsar 1663
+    kalenderhändelser korrekt (jina lägger till en textrad "Markdown Content:" före
+    BEGIN:VCALENDAR, men det stör inte VEVENT-parsningen).
+  - dashboard.js → v48
+
   2026-08-25 (v47)
   - Fix: "Meny ej publicerad" visades felaktigt för Bonnie trots att astorp.se hade matsedeln
     publicerad (veckor 34–37 bekräftade live). Rotorsak: cors.lol (rate-limited) och

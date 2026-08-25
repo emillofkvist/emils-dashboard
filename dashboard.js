@@ -720,13 +720,16 @@ async function fetchCalendar() {
 
     try {
         const calProxies = [
-            { url: 'https://api.allorigins.win/raw?url=', json: false },
-            { url: 'https://api.allorigins.win/get?url=',  json: true  }
+            { url: 'https://api.allorigins.win/raw?url=', json: false, encode: true },
+            { url: 'https://api.allorigins.win/get?url=',  json: true,  encode: true },
+            { url: 'https://r.jina.ai/',                   json: false, encode: false }
         ];
         let icalText = '';
         let fetched = false;
         for (const proxy of calProxies) {
-            const url = `${proxy.url}${encodeURIComponent(CONFIG.calendar.icalUrl)}`;
+            const url = proxy.encode
+                ? `${proxy.url}${encodeURIComponent(CONFIG.calendar.icalUrl)}`
+                : `${proxy.url}${CONFIG.calendar.icalUrl}`;
             for (let attempt = 0; attempt < 2; attempt++) {
                 try {
                     if (attempt > 0) await new Promise(r => setTimeout(r, 1000));
