@@ -49,7 +49,8 @@ MODULER & DATAKÄLLOR
                         Graf renderas med Chart.js (CDN)
   Börs                – Yahoo Finance (query1/query2) via cors.lol (primär) + allorigins.win (fallback)
                         Symboler: ^OMX, ^GSPC, ^IXIC, ^DJI
-  Kalender            – Google Kalender via iCal-länk, proxy: allorigins.win/raw
+  Kalender            – Google Kalender via iCal-länk, fetchViaProxyChain() (cors.lol →
+                        allorigins.win → r.jina.ai). Cachas ej per dag (bara matsedeln gör det).
   Nyheter (SVT + DN)  – RSS via api.rss2json.com, max 5 totalt (3 per källa)
   AI-nyheter          – TechCrunch AI + The Verge via api.rss2json.com, max 5
   Porsche-nyheter     – Carscoops, Road & Track, Motor1 via api.rss2json.com, max 5
@@ -77,11 +78,9 @@ CORS-PROXYER
   RSS/nyheter (alla):   https://api.rss2json.com/v1/api.json?rss_url={encoded_url}
   Börs:                 fetchViaProxyChain() — cors.lol → allorigins.win/raw → r.jina.ai
                         (query2.finance.yahoo.com, sedan query1 om query2 helt misslyckas)
-  Kalender (prim):      https://api.allorigins.win/raw?url={encoded_url}
-  Kalender (fall1):     https://api.allorigins.win/get?url={encoded_url}
-  Kalender (fall2):     https://r.jina.ai/{url}
-  OBS: CONFIG.calendarProxy i config.js används INTE av fetchCalendar() — proxylistan är
-       hårdkodad i funktionen (calProxies).
+  Kalender:             fetchViaProxyChain() — cors.lol → allorigins.win/raw → r.jina.ai
+                        (samma delade funktion som Apple Release/Börs, sedan v54)
+  OBS: CONFIG.calendarProxy i config.js används INTE av fetchCalendar().
   Bonnie lunch (prim):  https://api.cors.lol/?url={encoded_url}
   Bonnie lunch (fall):  https://api.allorigins.win/raw?url={encoded_url}
   Bonnie lunch (fall2): https://r.jina.ai/{url}  (markdown-läsare, ej HTML — bonnieParseMarkdown())
@@ -143,6 +142,21 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-26 (v54)
+  - Nytt: Matsedeln (Bonnie + Isabelle) gör inte längre ett nytt nätverksanrop vid varje
+    sidladdning. bonnie_lunch_last_fetch/isabelle_lunch_last_fetch (dagens datum) sparas i
+    localStorage vid lyckad hämtning — vid nästa besök samma dygn används cachen direkt om
+    dagens rätt redan finns där, annars hämtas som vanligt. Efterfrågat: flera besök på
+    dashboarden samma dag ska inte behöva ladda om matsedeln varje gång.
+  - Fix: Kalendern kändes långsam. Rotorsak 1: fetchCalendar() kördes separat EFTER hela
+    Promise.all-batchen med alla 15 andra hämtningar (gammal kommentar sa "pga cors.lol
+    rate-limit", men kalendern har inte använt cors.lol på länge) — flyttad in i samma
+    Promise.all så den körs parallellt med resten.
+    Rotorsak 2: den egna proxy-loopen hade ingen timeout och gjorde 2 försök × 1s fördröjning
+    per proxy (upp till 6 hängande anrop). Ersatt med samma fetchViaProxyChain() (cors.lol →
+    allorigins.win → r.jina.ai, alla med timeout) som redan används på andra ställen.
+  - dashboard.js → v54
+
   2026-08-25 (v53)
   - Fix: Efter v52 sågs fortfarande "HTTP 429" i konsollen för NASDAQ/S&P 500 — r.jina.ai
     (sista fallbacken) kan själv bli kortvarigt rate-limitad vid hög trafik (bekräftat: en

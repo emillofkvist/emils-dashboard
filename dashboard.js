@@ -727,34 +727,11 @@ async function fetchCalendar() {
     }
 
     try {
-        const calProxies = [
-            { url: 'https://api.allorigins.win/raw?url=', json: false, encode: true },
-            { url: 'https://api.allorigins.win/get?url=',  json: true,  encode: true },
-            { url: 'https://r.jina.ai/',                   json: false, encode: false }
-        ];
-        let icalText = '';
-        let fetched = false;
-        for (const proxy of calProxies) {
-            const url = proxy.encode
-                ? `${proxy.url}${encodeURIComponent(CONFIG.calendar.icalUrl)}`
-                : `${proxy.url}${CONFIG.calendar.icalUrl}`;
-            for (let attempt = 0; attempt < 2; attempt++) {
-                try {
-                    if (attempt > 0) await new Promise(r => setTimeout(r, 1000));
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(response.status);
-                    if (proxy.json) {
-                        const j = await response.json();
-                        icalText = j.contents || '';
-                    } else {
-                        icalText = await response.text();
-                    }
-                    if (icalText.includes('BEGIN:VCALENDAR')) { fetched = true; break; }
-                } catch (e) { /* prova nästa proxy */ }
-            }
-            if (fetched) break;
-        }
-        if (!fetched) throw new Error('Ingen proxy svarade med giltig kalenderdata');
+        // Samma delade, timeout-skyddade proxykedja (cors.lol → allorigins.win → r.jina.ai)
+        // som resten av appen — ersätter en bespoke retry-loop utan timeout som kunde hänga
+        // länge per proxy och bidrog till att kalendern kändes långsam
+        const icalText = await fetchViaProxyChain(CONFIG.calendar.icalUrl);
+        if (!icalText.includes('BEGIN:VCALENDAR')) throw new Error('Ingen proxy svarade med giltig kalenderdata');
 
         // Parsa iCal-data
         const events = [];
@@ -1770,6 +1747,28 @@ function bonnieParseMarkdown(md, year) {
 
 async function fetchBonnieLunch(target, isToday) {
     const dayNames = ['', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', ''];
+    const today = localDateStr(new Date());
+    const LAST_FETCH_KEY = 'bonnie_lunch_last_fetch';
+
+    const findInCache = () => {
+        for (let offset = 0; offset <= 7; offset++) {
+            const d = new Date(target);
+            d.setDate(d.getDate() + offset);
+            if (d.getDay() === 0 || d.getDay() === 6) continue;
+            const { year: y, week: w } = getISOYearWeek(d);
+            const dayName = dayNames[d.getDay()];
+            const prefix = (!isToday || offset > 0) ? `${dayName}: ` : '';
+            const cached = bonnieLoadFromCache(y, w);
+            if (cached && cached[dayName]) return prefix + cached[dayName];
+        }
+        return null;
+    };
+
+    // Redan hämtat idag — slipp nätverksanrop vid upprepade besök samma dygn
+    if (localStorage.getItem(LAST_FETCH_KEY) === today) {
+        const cached = findInCache();
+        if (cached) return cached;
+    }
 
     // Hämta HTML via proxy och cacha alla veckor
     const targetUrl = 'https://astorp.se/barn-och-utbildning/grundskola/hyllinge-skola.html';
@@ -1812,23 +1811,43 @@ async function fetchBonnieLunch(target, isToday) {
         } catch { /* alla vägar nere */ }
     }
 
-    // Försök target-datum, sedan nästa skoldag(ar) upp till 7 dagar
-    for (let offset = 0; offset <= 7; offset++) {
-        const d = new Date(target);
-        d.setDate(d.getDate() + offset);
-        if (d.getDay() === 0 || d.getDay() === 6) continue;
-        const { year: y, week: w } = getISOYearWeek(d);
-        const dayName = dayNames[d.getDay()];
-        const prefix = (!isToday || offset > 0) ? `${dayName}: ` : '';
-        const cached = bonnieLoadFromCache(y, w);
-        if (cached && cached[dayName]) return prefix + cached[dayName];
+    if (!fetchFailed) {
+        try { localStorage.setItem(LAST_FETCH_KEY, today); } catch {}
     }
+
+    const result = findInCache();
+    if (result) return result;
 
     throw new Error(fetchFailed ? 'kunde inte hämta matsedel' : 'ingen meny tillgänglig');
 }
 
 async function fetchIsabelleLunch(target, isToday) {
     const dayNames = ['', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', ''];
+    const today = localDateStr(new Date());
+    const LAST_FETCH_KEY = 'isabelle_lunch_last_fetch';
+
+    const findInCache = (items) => {
+        for (let offset = 0; offset <= 7; offset++) {
+            const d = new Date(target);
+            d.setDate(d.getDate() + offset);
+            if (d.getDay() === 0 || d.getDay() === 6) continue;
+            const dateStr = localDateStr(d);
+            const prefix = (!isToday || offset > 0) ? `${dayNames[d.getDay()]}: ` : '';
+
+            const item = items.find(i => i.pubDate?.startsWith(dateStr));
+            if (item && item.description?.trim()) return prefix + item.description.trim();
+
+            const cached = localStorage.getItem(`isabelle_lunch_${dateStr}`);
+            if (cached) return prefix + cached;
+        }
+        return null;
+    };
+
+    // Redan hämtat idag — slipp nätverksanrop vid upprepade besök samma dygn
+    if (localStorage.getItem(LAST_FETCH_KEY) === today) {
+        const cached = findInCache([]);
+        if (cached) return cached;
+    }
 
     // Hämta och cacha RSS
     let items = [];
@@ -1844,23 +1863,12 @@ async function fetchIsabelleLunch(target, isToday) {
                     try { localStorage.setItem(`isabelle_lunch_${dateStr}`, item.description.trim()); } catch {}
                 }
             }
+            try { localStorage.setItem(LAST_FETCH_KEY, today); } catch {}
         }
     } catch {}
 
-    // Försök target-datum, sedan nästa skoldag(ar) upp till 7 dagar
-    for (let offset = 0; offset <= 7; offset++) {
-        const d = new Date(target);
-        d.setDate(d.getDate() + offset);
-        if (d.getDay() === 0 || d.getDay() === 6) continue;
-        const dateStr = localDateStr(d);
-        const prefix = (!isToday || offset > 0) ? `${dayNames[d.getDay()]}: ` : '';
-
-        const item = items.find(i => i.pubDate?.startsWith(dateStr));
-        if (item && item.description?.trim()) return prefix + item.description.trim();
-
-        const cached = localStorage.getItem(`isabelle_lunch_${dateStr}`);
-        if (cached) return prefix + cached;
-    }
+    const result = findInCache(items);
+    if (result) return result;
 
     throw new Error('ingen meny hittad');
 }
@@ -2023,7 +2031,9 @@ async function init() {
     renderFlagDay(new Date());
     cleanupOldCache();
 
-    // Hämta all data parallellt (kalender separat efter aktier pga cors.lol rate-limit)
+    // Hämta all data parallellt. Kalendern använder inte cors.lol (bara allorigins.win/jina),
+    // så den konkurrerar inte med börsens proxy och behöver inte köras separat efter den längre
+    // (gjorde tidigare att kalendern väntade på att alla 15 andra hämtningar blev klara först).
     await Promise.all([
         fetchNameday(),
         fetchWeather(),
@@ -2040,9 +2050,9 @@ async function init() {
         fetchFeber(),
         fetchAftonbladet(),
         fetchLunch(),
-        fetchHemnet()
+        fetchHemnet(),
+        fetchCalendar()
     ]);
-    fetchCalendar();
 }
 
 // Kör när sidan laddas
