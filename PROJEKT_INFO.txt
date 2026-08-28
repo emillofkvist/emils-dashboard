@@ -97,6 +97,23 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-28 (övervakningskontroll)
+  - Direkt HTTP-anrop blockerade av sandbox-egress (policy denial 403 bekräftat via curl) – kan ej
+    live-testa API:er från denna miljö; kodgranskning utförd istället.
+  - KRITISKT FYND: 11 commits (2026-08-24 t.o.m. 2026-08-25) existerade endast i detached HEAD
+    och hade aldrig pushats till GitHub. Local master och origin/master stod kvar på 2026-08-23
+    (128f0e1). Innebar att live-sajten saknade: Bonnies matsedel (hela funktionen), Koenigsegg-
+    nyheter, och alla astorp.se-fixar. Inte synligt för användaren förrän nu.
+  - Fix: git merge --ff-only b592433 (fast-forward master till detached HEAD), push till origin/master.
+    Alla 11 commits nu på GitHub. Live-sajten uppdateras inom ~1 minut.
+  - Kodgranskning utförd: inga API-fel, felaktiga URL:er eller logikfel hittade.
+    ✅ SMHI snow1g/v1: Kod korrekt (flat datastruktur, air_temperature/wind_speed/etc.)
+    ✅ elprisetjustnu.se SE4: Kod korrekt (96 poster/dag, kvartstimspris)
+    ✅ api.allorigins.win (/raw): Används korrekt för RSS/börs/kalender
+    ✅ Bonnies matsedel: astorp.se-parser korrekt (tables, isoWeekMonday, resolveLunchDate)
+    ✅ Koenigsegg Google News RSS: Parsning + titel-trimning korrekt
+    ⚠️ Yahoo Finance: Känd begränsning, graceful fallback "Ej tillgänglig"
+
   2026-08-25 (fix 3 – på användarens begäran: "Matsedeln finns här: astorp.se/.../hyllinge-skola.html")
   - Grundorsak till varför skolmaten.se-lösningarna (24/25 aug) aldrig fungerade: skolmaten.se
     har helt slutat lista Hyllinge skola (API v4 → 404 "Menu not found" för alla testade veckor,
