@@ -97,6 +97,16 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-08-28 (fix – på användarens begäran: "nyheter fungerar inte")
+  - Grundorsak: api.allorigins.win intermittent otillgänglig → alla RSS-flöden tystnade.
+  - Lösning: ny fetchText(url)-hjälpfunktion i dashboard.js som försöker allorigins först och
+    faller tillbaka på cors.eu.org om svaret är tomt/felaktigt. cors.eu.org bekräftat
+    fungerande för SVT RSS och astorp.se via GitHub Actions (2026-08-25).
+  - fetchNews, fetchAiNews, fetchMacworld, fetchKoenigsegg använder nu fetchText() istället
+    för direkta fetch+CONFIG.corsProxy-anrop. fetchCalendar och fetchStocks oförändrade
+    (kalender/Yahoo Finance har sin egna felhantering).
+  - dashboard.js→v12.
+
   2026-08-28 (övervakningskontroll)
   - Direkt HTTP-anrop blockerade av sandbox-egress (policy denial 403 bekräftat via curl) – kan ej
     live-testa API:er från denna miljö; kodgranskning utförd istället.
