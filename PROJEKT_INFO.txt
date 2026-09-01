@@ -57,7 +57,7 @@ MODULER & DATAKÄLLOR
   Koenigsegg-nyheter  – Carscoops (taggflöde), Road & Track, Motor1 via api.rss2json.com, max 5
   Pollenprognos       – https://api.pollenrapporten.se/v1/forecasts (Naturhistoriska riksmuseet)
                         Region: Malmö (UUID-baserad), 7-gradig skala, visar bara nivå > 0
-  Apple Release Notes – Apple DocC JSON API via allorigins.win/raw
+  Apple Release Notes – Apple DocC JSON API via fetchViaProxyChain() (cors.lol → allorigins.win → r.jina.ai)
                         Visar alltid senaste iOS/iPadOS-release
                         Datum från developer.apple.com/news/releases/ (fallback: localStorage firstSeen)
                         Rubrik auto-översätts till svenska. Läsarläge renderar DocC JSON inline.
@@ -84,7 +84,7 @@ CORS-PROXYER
   Bonnie lunch (prim):  https://api.cors.lol/?url={encoded_url}
   Bonnie lunch (fall):  https://api.allorigins.win/raw?url={encoded_url}
   Bonnie lunch (fall2): https://r.jina.ai/{url}  (markdown-läsare, ej HTML — bonnieParseMarkdown())
-  Apple Release Notes:  https://api.allorigins.win/raw?url={encoded_url}  (CONFIG.corsProxy)
+  Apple Release Notes:  fetchViaProxyChain() — cors.lol → allorigins.win/raw → r.jina.ai
   Reader (primär):      https://api.cors.lol/?url={encoded_url}
   Reader (fallback1):   https://api.allorigins.win/raw?url={encoded_url}
   Reader (fallback2):   https://r.jina.ai/{url}  (markdown-läsare, ej HTML — parseJinaMarkdown())
@@ -142,6 +142,39 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-09-01
+  - Övervakningskontroll: Kodgranskning (direkta HTTP-anrop blockerade av sandbox-egress).
+    ✅ SMHI snow1g/v1: Direkthämtning, korrekt struktur (air_temperature, wind_speed, relative_humidity, symbol_code 1–27).
+       Min/max-temperatur för idag/imorgon implementerad korrekt (timeSeries-filtrering på lokala midnattstider).
+    ✅ Elpris SE4 (elprisetjustnu.se): Direkthämtning, 96 poster/dag, korrekt intervallmatchning (now >= start && now < end).
+    ✅ Soluppgång/solnedgång (sunrise-sunset.org): Direkthämtning, graceful fallback.
+    ✅ Namnsdag (sholiday.faboul.se): Direkthämtning.
+    ✅ Pollenprognos (api.pollenrapporten.se): Direkthämtning, göms om inga pollendata > 0 för idag.
+    ✅ Nyheter SVT + DN (rss2json.com): Flöden aktiva; pubDate tolkas korrekt som UTC.
+    ✅ AI-nyheter TechCrunch + The Verge (rss2json.com): Aktiva. The Verge-flöde ändrat till /rss/index.xml (generellt).
+    ✅ Porsche-nyheter (carscoops, R&T, motor1 via rss2json): Flöden aktiva, filter på "porsche" i titel.
+    ✅ Koenigsegg-nyheter (carscoops, supercars.net, R&T, motor1 via rss2json): Aktiva, filter på "koenigsegg".
+    ✅ Macworld.se + Macworld.com (rss2json, 24h-filter): Aktiva.
+    ✅ Feber RSS (rss2json): Aktivt.
+    ✅ Aftonbladet RSS (rss2json + allorigins-fallback): Aktivt.
+    ✅ Apple Release Notes (fetchViaProxyChain: cors.lol → allorigins.win → r.jina.ai): Korrekt.
+    ✅ Bonnie lunch (astorp.se via cors.lol → allorigins.win → r.jina.ai + localStorage-cache): Korrekt.
+       Ny termin vecka 36 – cachen är tom, hämtar vid första besök.
+    ✅ Isabelle lunch (skolmaten.se/elinebergsskolan via rss2json + localStorage-cache): Korrekt.
+    ✅ Kalender (Google iCal via fetchViaProxyChain, körs parallellt sedan v54): Korrekt.
+    ⚠️ Börs (Yahoo Finance via fetchViaProxyChain): Känd server-side-blockering kvarstår;
+       localStorage-cache visar senast kända värde om hämtning misslyckas.
+    ℹ️ Hemnet: Ingen Worker-URL konfigurerad – visar länkknapp som förväntat.
+    ℹ️ AI-dagsbriefing (Gemini): Valfri funktion, kräver gemini_api_key i localStorage.
+  - Fix: Dokumentationsfel i PROJEKT_INFO.txt — Apple Release Notes angavs använda
+    "allorigins.win/raw" men koden (sedan fix 3c54e3f) använder fetchViaProxyChain()
+    (cors.lol primär, allorigins.win sekundär, r.jina.ai sista utväg). Uppdaterat
+    MODULER & DATAKÄLLOR och CORS-PROXYER-avsnitten.
+  - Git: Lokalt repo var i detached HEAD på gammal `master`-branch (monitoring-commits
+    2026-04 t.o.m. 2026-08-31 som aldrig pushades till `origin/main`). Återhämtade
+    korrekt branch: `git checkout -B main origin/main`.
+    `main` är nu aktuell med origin/main (senast v54, 2026-08-26).
+
   2026-08-26 (v54)
   - Nytt: Matsedeln (Bonnie + Isabelle) gör inte längre ett nytt nätverksanrop vid varje
     sidladdning. bonnie_lunch_last_fetch/isabelle_lunch_last_fetch (dagens datum) sparas i
