@@ -97,6 +97,24 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-09-02 (övervakningskontroll)
+  - Detached HEAD fixad: git checkout master && git pull origin master (master låg 1 commit bakom origin).
+  - Direkt HTTP-anrop blockerade av sandbox-egress (policy denial 403) – kan ej live-testa
+    API:er från denna miljö; kodgranskning + websökningar utförda istället.
+  - Websökning bekräftar att alla externa tjänster är aktiva per sep 2026:
+    ✅ SMHI snow1g/v1: API aktivt och korrekt (pmp3g/v2 nedlagd 31 mars 2026; snow1g/v1 är ersättaren)
+    ✅ elprisetjustnu.se SE4: API aktivt, 96 poster/dag (kvartstaxor sedan okt 2025), kod korrekt
+    ✅ api.allorigins.win: fungerande CORS-proxy (viss rate-limiting, men allmänt tillgänglig 2026)
+    ✅ SVT Nyheter RSS / DN RSS: aktiva flöden
+    ✅ TechCrunch AI RSS: aktivt
+    ✅ The Verge AI Atom: URL bekräftad korrekt via websökning: /ai-artificial-intelligence/rss/index.xml
+    ✅ Macworld.se: sajten aktiv, publicerar Apple-nyheter 2026
+    ✅ Koenigsegg (Google News RSS): via fetchText() – korrekt konfigurerat
+    ✅ Google Kalender iCal via api.allorigins.win/raw: kod korrekt
+    ✅ Bonnies matsedel (astorp.se): sajten aktiv, HTML-tabellparser och fallback-kedja korrekt
+    ⚠️ Yahoo Finance via allorigins.win: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+  - Inga kodändringar nödvändiga.
+
   2026-08-31 (övervakningskontroll)
   - Direkt HTTP-anrop blockerade av sandbox-egress (policy denial 403) – kan ej live-testa
     API:er från denna miljö; kodgranskning + websökningar utförd istället.
