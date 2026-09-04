@@ -97,6 +97,25 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-09-04 (övervakningskontroll)
+  - Direkt HTTP-anrop blockerade av sandbox-egress (policy denial 403) – kan ej live-testa
+    API:er från denna miljö; kodgranskning utförd istället (samma begränsning sedan april 2026).
+  - Git: lokal master låg bakom origin/master (detached HEAD-mönstret, fast de 3 förlorade
+    commit:arna från aug 31/sep 2/sep 3 visade sig faktiskt finnas på origin). Åtgärd:
+    git fetch origin master && git reset --hard origin/master.
+  - Kodgranskning – inga fel hittade:
+    ✅ SMHI snow1g/v1: URL och parameternamn korrekt (air_temperature, wind_speed, relative_humidity, symbol_code)
+    ✅ elprisetjustnu.se SE4: kod korrekt, hanterar 96 poster/dag (kvartstaxor sedan okt 2025)
+    ✅ fetchText(): allorigins.win primär + cors.eu.org fallback – korrekt implementerat
+    ✅ SVT Nyheter RSS / DN RSS: via fetchText() – korrekt
+    ✅ TechCrunch AI RSS + The Verge AI Atom: URL:ar och parser (item + entry) korrekt
+    ✅ Macworld.se RSS: via fetchText() – korrekt
+    ✅ Koenigsegg (Google News RSS): via fetchText() – korrekt
+    ✅ Google Kalender iCal via api.allorigins.win/raw: korrekt
+    ✅ Bonnies matsedel (astorp.se): fallback-kedja (allorigins → cors.eu.org → skolmaten-API) korrekt
+    ⚠️ Yahoo Finance via allorigins.win: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+  - Inga kodändringar nödvändiga.
+
   2026-09-03 (övervakningskontroll)
   - Direkt HTTP-anrop blockerade av sandbox-egress (policy denial 403) – kan ej live-testa
     API:er från denna miljö; kodgranskning utförd istället (samma begränsning sedan april 2026).
