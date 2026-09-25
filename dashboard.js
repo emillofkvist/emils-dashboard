@@ -246,10 +246,8 @@ async function fetchCalendar() {
     }
 
     try {
-        const proxy = CONFIG.calendarProxy || CONFIG.corsProxy;
-        const url = `${proxy}${encodeURIComponent(CONFIG.calendar.icalUrl)}`;
-        const response = await fetch(url);
-        const icalText = await response.text();
+        // fetchText() försöker allorigins först, faller tillbaka på cors.eu.org
+        const icalText = await fetchText(CONFIG.calendar.icalUrl);
 
         // Parsa iCal-data
         const events = [];
