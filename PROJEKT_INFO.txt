@@ -142,6 +142,46 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-09-26 (övervakningskontroll)
+  - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning utförd.
+  - KRITISKT FYND: Samtliga övervakningskörningar apr–sep 2026 har kört på fel branch (master
+    istället för main). master är en gammal utdaterad kopia (dashboard.js v13 vs v54 på main)
+    med enklare proxy-logik och saknar flaggdag, pollen, soluppgång, Apple Release, Feber,
+    Aftonbladet, Hemnet, Isabelle-lunch m.m. Live-sajten serveras från gh-pages (merge av main)
+    – master påverkar aldrig den publika sidan.
+  - Git: Klonen startade i detached HEAD (400c315, sista master-commit); switchade till rätt
+    branch: git checkout -B main origin/main. main är nu synkad med origin/main (b66265a,
+    2026-09-01).
+  - Kodgranskning av main-grenen (dashboard.js v54) – inga fel hittade:
+    ✅ SMHI snow1g/v1: Direkthämtning, korrekt struktur (air_temperature, wind_speed,
+       relative_humidity, symbol_code 1–27). Min/max-temperatur korrekt implementerad.
+    ✅ Elpris SE4 (elprisetjustnu.se): 96 poster/dag, korrekt time_start≤now<time_end.
+    ✅ Soluppgång/solnedgång (sunrise-sunset.org): Direkthämtning, graceful fallback.
+    ✅ Namnsdag (sholiday.faboul.se): Direkthämtning.
+    ✅ Pollenprognos (api.pollenrapporten.se): Direkthämtning, göms om inga nivåer > 0.
+    ✅ Nyheter SVT + DN (rss2json.com): korrekt via fetchRSS().
+    ✅ AI-nyheter TechCrunch + The Verge (rss2json.com): korrekt; Verge-URL är /rss/index.xml.
+    ✅ Porsche-nyheter (carscoops, R&T, motor1 via rss2json): korrekt.
+    ✅ Koenigsegg-nyheter (carscoops, supercars.net, R&T, motor1 via rss2json): korrekt.
+    ✅ Macworld.se + Macworld.com (rss2json, 24h-filter): korrekt.
+    ✅ Feber RSS (rss2json): korrekt.
+    ✅ Aftonbladet RSS (rss2json primär + allorigins-fallback): korrekt.
+    ✅ Apple Release Notes (fetchViaProxyChain: cors.lol → allorigins.win → r.jina.ai): korrekt.
+    ✅ Bonnie lunch (astorp.se via cors.lol → allorigins.win → r.jina.ai + localStorage-cache): korrekt.
+    ✅ Isabelle lunch (skolmaten.se/elinebergsskolan via rss2json + localStorage-cache): korrekt.
+    ✅ Kalender (Google iCal via fetchViaProxyChain: cors.lol → allorigins.win → r.jina.ai): korrekt.
+    ✅ fetchViaProxyChain(): 8s timeout på cors.lol och allorigins.win, 10s på r.jina.ai.
+    ⚠️ Börs Yahoo Finance: Känd server-side-blockering; localStorage-cache visar senast kända
+       värde. fetchViaProxyChain-kedjan ger 3 chanser men Yahoo begränsar server-side-anrop.
+    ⚠️ allorigins.win: Rapporterade 500-fel sedan ~2026-09-22 (från master-branchens loggar).
+       Påverkar bara sekundär fallback – cors.lol är primär i v54 och r.jina.ai är tertiär.
+       Om cors.lol fungerar (status okänd, men senast bekräftat OK 2026-09-01) är sajten opåverkad.
+    ℹ️ Hemnet: workerUrl = "" → visar länkknapp som förväntat.
+    ℹ️ AI-dagsbriefing (Gemini): Valfri, kräver gemini_api_key i localStorage.
+  - Inaktuell kommentar på rad 2034 i dashboard.js noterad ("Kalendern använder inte cors.lol")
+    — stämmer inte sedan v54 (fetchViaProxyChain börjar med cors.lol). Påverkar inte funktion.
+  - Inga kodändringar nödvändiga; alla fel hanteras av proxykedjan.
+
   2026-09-01
   - Övervakningskontroll: Kodgranskning (direkta HTTP-anrop blockerade av sandbox-egress).
     ✅ SMHI snow1g/v1: Direkthämtning, korrekt struktur (air_temperature, wind_speed, relative_humidity, symbol_code 1–27).
