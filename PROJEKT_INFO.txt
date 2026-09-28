@@ -97,6 +97,22 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-09-28 (övervakningskontroll)
+  - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning utförd.
+  - Detached HEAD fixad: klonen startade i detached HEAD vid 29ffeca; local master stod
+    på 4834925 (3 commits bakom origin/master). git checkout master + git merge --ff-only
+    origin/master → master nu synkad med origin/master (29ffeca).
+  - Kodgranskning – inga fel hittade (ingen kod ändrad sedan 2026-09-25):
+    ✅ SMHI snow1g/v1: URL och parameternamn korrekt
+    ✅ elprisetjustnu.se SE4: 96 poster/dag korrekt hanterat
+    ✅ fetchText(): allorigins.win primär + cors.eu.org fallback korrekt
+    ✅ fetchCalendar(): använder fetchText() med cors.eu.org-fallback (fix 2026-09-25 bekräftad)
+    ✅ SVT RSS, DN RSS, TechCrunch AI RSS, The Verge AI Atom: korrekt
+    ✅ Macworld.se RSS, Koenigsegg Google News RSS: korrekt
+    ✅ Bonnies matsedel astorp.se: fallback-kedja korrekt
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+  - Inga kodändringar nödvändiga.
+
   2026-09-27 (övervakningskontroll)
   - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning utförd.
   - Detached HEAD fixad: klonen startade i detached HEAD vid 400c315; local master stod
