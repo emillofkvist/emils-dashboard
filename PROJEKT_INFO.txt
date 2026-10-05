@@ -97,6 +97,26 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-05 (övervakningskontroll + kritisk git-fix)
+  - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning utförd.
+  - KRITISKT GIT-FYND: HEAD var detached vid 05dfb59 (2026-10-04); local master och
+    origin/master stod på 3d8ffb0 (4 commits bakom). Commit 150927d (2026-10-01),
+    db9f4bb (2026-10-02), 58e35ad (2026-10-03) och 05dfb59 (2026-10-04) existerade
+    bara i detached HEAD och hade aldrig pushats. De föregående "git-fix"-körningarna
+    fixade lokalt men misslyckades med push till origin.
+  - Fix: git checkout master + git merge --ff-only 05dfb59 → master nu på 05dfb59.
+    Alla 4 orphaned commits nu på GitHub via push till origin/master.
+  - Kodgranskning – inga fel hittade (ingen kod ändrad sedan 2026-09-25):
+    ✅ SMHI snow1g/v1: URL och parameternamn korrekt
+    ✅ elprisetjustnu.se SE4: 96 poster/dag korrekt hanterat
+    ✅ fetchText(): allorigins.win primär + cors.eu.org fallback korrekt
+    ✅ fetchCalendar(): använder fetchText() med cors.eu.org-fallback korrekt
+    ✅ SVT RSS, DN RSS, TechCrunch AI RSS, The Verge AI Atom: korrekt
+    ✅ Macworld.se RSS, Koenigsegg Google News RSS: korrekt
+    ✅ Bonnies matsedel astorp.se: fallback-kedja korrekt
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+  - Inga kodändringar nödvändiga.
+
   2026-10-04 (övervakningskontroll + git-fix)
   - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning utförd.
   - GIT-FYND: HEAD var detached vid 58e35ad (2026-10-03); local master stod på 3d8ffb0
