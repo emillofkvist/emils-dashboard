@@ -97,6 +97,26 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-07 (övervakningskontroll)
+  - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning + websökning utförd.
+  - GIT-FYND: HEAD var detached vid de0bd8e (2026-10-06); local master stod på 5498ef4
+    (2026-10-05). git checkout master + git merge --ff-only de0bd8e → master nu på de0bd8e.
+    Push till origin/master.
+  - Websökning: api.allorigins.win bekräftat ha intermittenta 500-fel i sep–okt 2026
+    (känt sedan 2026-09-22, hanterat av cors.eu.org-fallback i fetchText()). Inga nya rapporter
+    om cors.eu.org-nedgång. The Verge AI RSS-URL bekräftad som /ai-artificial-intelligence/rss/
+    (matchar koden). Inga rapporter om SMHI snow1g/v1-ändringar eller elprisetjustnu.se-ändringar.
+  - Kodgranskning – inga fel hittade:
+    ✅ SMHI snow1g/v1: URL och parameternamn korrekt
+    ✅ elprisetjustnu.se SE4: 96 poster/dag korrekt hanterat
+    ✅ fetchText(): allorigins.win primär + cors.eu.org fallback korrekt
+    ✅ fetchCalendar(): använder fetchText() med cors.eu.org-fallback korrekt
+    ✅ SVT RSS, DN RSS, TechCrunch AI RSS, The Verge AI Atom: korrekt
+    ✅ Macworld.se RSS, Koenigsegg Google News RSS: korrekt
+    ✅ Bonnies matsedel astorp.se: fallback-kedja korrekt
+    ⚠️ Yahoo Finance: känd server-side-blockering + allorigins.win-instabilitet, graceful fallback "Ej tillgänglig"
+  - Inga kodändringar nödvändiga.
+
   2026-10-06 (övervakningskontroll)
   - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning + websökning utförd.
   - Git OK: master på 5498ef4 (2026-10-05), synkad med origin/master, inget detached HEAD.
