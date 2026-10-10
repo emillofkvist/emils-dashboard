@@ -97,6 +97,32 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-10 (övervakningskontroll + git-fix)
+  - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning + websökning utförd.
+  - GIT-FYND: HEAD var detached vid 866ef67 (2026-10-09); local master stod på 5498ef4
+    (2026-10-05). Fix: git checkout master + git merge --ff-only 866ef67 → master nu på 866ef67.
+    git fetch bekräftade att origin/master redan var vid 866ef67 (igårdagens push lyckades).
+    Lokal master var bara stale (typiskt kloningsbeteende i sandbox).
+  - Push: master är nu i sync med origin/master – inga nya commits behövde pushas.
+  - Websökning:
+    • SMHI snow1g/v1 API: inga ändringar rapporterade för okt 2026. Korrekt API-format bekräftat.
+    • elprisetjustnu.se API: inga ändringar eller new format-rapporter funna för 2026.
+    • The Verge AI RSS: sökning fann den gamla URL:en (/rss/ai-artificial-intelligence/) från
+      stale-sources – troligen cachad data. Kodens URL (/ai-artificial-intelligence/rss/) bekräftad
+      korrekt via okt 2026-källa (Feeder), som listar båda formaten. Lämnas oförändrad.
+    • cors.eu.org: ingen ny statusinformation funnen – antas fungera som fallback.
+    • SVT Nyheter RSS: listades som aktiv i flera kataloger (Feeder, Feedspot) för 2026.
+  - Kodgranskning – inga fel hittade:
+    ✅ SMHI snow1g/v1: URL och parameternamn korrekt
+    ✅ elprisetjustnu.se SE4: 96 poster/dag korrekt hanterat
+    ✅ fetchText(): allorigins.win primär + cors.eu.org fallback korrekt
+    ✅ fetchCalendar(): använder fetchText() med cors.eu.org-fallback korrekt
+    ✅ SVT RSS, DN RSS, TechCrunch AI RSS, The Verge AI Atom: korrekt
+    ✅ Macworld.se RSS, Koenigsegg Google News RSS: korrekt
+    ✅ Bonnies matsedel astorp.se: fallback-kedja korrekt
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+  - Inga kodändringar nödvändiga.
+
   2026-10-09 (övervakningskontroll + git-fix)
   - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning utförd.
   - GIT-FYND: HEAD var detached vid 881f716 (2026-10-08); local master och
