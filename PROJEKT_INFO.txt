@@ -97,6 +97,36 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-12 (övervakningskontroll + kritisk git-fix)
+  - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning + websökning utförd.
+  - KRITISKT GIT-FYND: HEAD var detached vid 82a2d3d (2026-10-11); local master och
+    origin/master stod på 5498ef4 (2026-10-05). 6 commits (de0bd8e 2026-10-06 t.o.m.
+    82a2d3d 2026-10-11) existerade bara i detached HEAD och hade aldrig pushats.
+    Fix: git branch -f master HEAD + git checkout master → master nu på 82a2d3d.
+    Push till origin/master.
+  - Websökning:
+    • SMHI snow1g/v1 API: bekräftad aktiv. Flat data-objekt med air_temperature, wind_speed,
+      relative_humidity, symbol_code 1-27 – korrekt format (bekräftat via MagicMirror GitHub
+      issue #4081 och forum.magicmirror.builders). Inga API-ändringar för okt 2026.
+    • elprisetjustnu.se SE4 API: inga ändringar. 96 poster/dag (kvartstaxor) bekräftat korrekt.
+    • api.allorigins.win: inga nya nedgångsrapporter för okt 2026. Antas OK.
+    • cors.eu.org: ingen ny statusinformation – antas fungera som fallback.
+    • The Verge AI RSS: sökning 2026-10-12 visar konsekvent gamla URL:en
+      (/rss/ai-artificial-intelligence/index.xml) i alla aggregatorer (feedbagel, Feeder).
+      Kodens URL (/ai-artificial-intelligence/rss/index.xml) ändrades 2026-08-15 då gamla URL:en
+      returnerade inga artiklar. Föregående körning 2026-10-10 bekräftade att Feeder listar båda
+      URL-formaten och att koden är korrekt. Lämnas oförändrad – båda URL:erna antas fungera.
+  - Kodgranskning – inga fel hittade:
+    ✅ SMHI snow1g/v1: URL och parameternamn korrekt (bekräftat via websökning)
+    ✅ elprisetjustnu.se SE4: 96 poster/dag korrekt hanterat
+    ✅ fetchText(): allorigins.win primär + cors.eu.org fallback korrekt
+    ✅ fetchCalendar(): använder fetchText() med cors.eu.org-fallback korrekt
+    ✅ SVT RSS, DN RSS, TechCrunch AI RSS, The Verge AI Atom: korrekt
+    ✅ Macworld.se RSS, Koenigsegg Google News RSS: korrekt
+    ✅ Bonnies matsedel astorp.se: fallback-kedja korrekt
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+  - Inga kodändringar nödvändiga.
+
   2026-10-11 (övervakningskontroll + git-fix)
   - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning utförd.
   - GIT-FYND: HEAD var detached vid e883dd3 (2026-10-10); local master stod på 5498ef4
