@@ -99,11 +99,12 @@ SENASTE ÄNDRINGAR
 -----------------
   2026-10-12 (övervakningskontroll + kritisk git-fix)
   - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning + websökning utförd.
-  - KRITISKT GIT-FYND: HEAD var detached vid 82a2d3d (2026-10-11); local master och
-    origin/master stod på 5498ef4 (2026-10-05). 6 commits (de0bd8e 2026-10-06 t.o.m.
-    82a2d3d 2026-10-11) existerade bara i detached HEAD och hade aldrig pushats.
+  - GIT-FYND: HEAD var detached vid 82a2d3d (2026-10-11); local master stod på 5498ef4
+    (2026-10-05) – stale ref (typiskt kloningsbeteende i sandbox). Inledningsvis såg det
+    ut som 6 orphaned commits, men git push bekräftade att origin/master redan var vid
+    82a2d3d (föregående körningars pushar lyckades). Lokal master var bara stale.
     Fix: git branch -f master HEAD + git checkout master → master nu på 82a2d3d.
-    Push till origin/master.
+    Push: endast dagens rapport (93cb65c) var ny för origin.
   - Websökning:
     • SMHI snow1g/v1 API: bekräftad aktiv. Flat data-objekt med air_temperature, wind_speed,
       relative_humidity, symbol_code 1-27 – korrekt format (bekräftat via MagicMirror GitHub
