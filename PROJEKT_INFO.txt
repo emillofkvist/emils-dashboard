@@ -97,6 +97,33 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-21 (övervakningskontroll)
+  - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning + websökning utförd.
+  - Git OK: master på 30b741e (2026-10-20), synkad med origin/master, inget detached HEAD.
+  - Websökning:
+    • SMHI snow1g/v1: bekräftat fortfarande aktivt. Korrekt format (air_temperature, wind_speed,
+      relative_humidity, symbol_code 1-27). Inga API-ändringar rapporterade för okt 2026.
+    • api.allorigins.win: inga nya nedgångsrapporter för okt 2026. cors.eu.org-fallback aktiv.
+    • elprisetjustnu.se: 96 kvartstimspriser/dag, SEK_per_kWh + time_start – korrekt format.
+    • SVT Nyheter RSS: bekräftat aktiv (Feeder visar artiklar ~13-20h gamla).
+    • The Verge AI RSS: aggregatorer (Feeder, Feedspot) listar fortfarande gamla URL-formatet
+      (/rss/ai-artificial-intelligence/index.xml) – ambiguitet noterad sedan 2026-10-10.
+      Koden använder /ai-artificial-intelligence/rss/index.xml (ändrad 2026-08-15 då gamla URL:en
+      returnerade inga artiklar). Tidigare monitoring (2026-10-10) bekräftade att Feeder listade
+      BÅDA formaten. Kan ej verifiera via direkttest – lämnas oförändrad.
+  - Kodgranskning – inga fel hittade (ingen kod ändrad sedan 2026-09-25):
+    ✅ SMHI snow1g/v1: URL och parameternamn korrekt (air_temperature, wind_speed, relative_humidity, symbol_code 1-27)
+    ✅ elprisetjustnu.se SE4: 96 poster/dag korrekt hanterat (kvartstimspriser)
+    ✅ fetchText(): allorigins.win primär + cors.eu.org fallback korrekt
+    ✅ fetchCalendar(): använder fetchText() med cors.eu.org-fallback korrekt
+    ✅ SVT RSS, DN RSS, TechCrunch AI RSS: korrekt
+    ✅ The Verge AI Atom: URL (/ai-artificial-intelligence/rss/index.xml) och Atom-parser korrekt
+    ✅ Macworld.se RSS, Koenigsegg Google News RSS: korrekt
+    ✅ Bonnies matsedel astorp.se: fallback-kedja korrekt (allorigins → cors.eu.org → skolmaten API v4)
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+    ⚠️ The Verge AI RSS URL: aggregatorer listar gammal URL, men direkttest omöjligt – antas OK
+  - Inga kodändringar nödvändiga.
+
   2026-10-20 (övervakningskontroll)
   - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning + websökning utförd.
   - Git OK: master på dea9d20 (2026-10-19), synkad med origin/master, inget detached HEAD.
