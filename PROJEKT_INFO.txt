@@ -97,6 +97,30 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-22 (övervakningskontroll + fix)
+  - Nätverket tillgängligt denna körning – direkta API-tester utförda.
+  - KRITISKT FYND: The Verge AI RSS-URL returnerar 404.
+    Koden använde /ai-artificial-intelligence/rss/index.xml (ändrat 2026-08-15).
+    Direkttest bekräftar 404. Korrekt URL (bekräftat 200 OK, 10 Atom-entries):
+    https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+    Feeder och feedbagel bekräftar den gamla URL-formaten som aktiv (okt 2026).
+  - Fix: config.js – The Verge AI URL ändrad till /rss/ai-artificial-intelligence/index.xml
+  - Cache-bust: config.js→v10.
+  - Direkt testade (utan proxy) – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON-format (air_temperature, wind_speed, etc.)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster med SEK_per_kWh + time_start
+    ✅ DN RSS: 200 OK, valid RSS XML
+    ✅ TechCrunch AI RSS: 200 OK, valid RSS XML
+    ✅ The Verge AI RSS (ny/gammal URL): 200 OK, 10 Atom-entries (AI | The Verge)
+    ✅ Macworld.se RSS: 200 OK, valid RSS XML
+    ✅ Google News Koenigsegg RSS: 200 OK, valid RSS XML
+    ✅ Google Calendar iCal: 200 OK, content-type text/calendar
+    ✅ SVT RSS (/nyheter/rss.xml → 302 → /rss.xml → 200): följs automatiskt av fetch()
+  - Ej testade direkt (proxyberoende, sandbox-IP blockerad av CORS-proxy-tjänster):
+    ⚠️ allorigins.win: timeout från sandbox-IP (antas OK från home-browser-IP)
+    ⚠️ cors.eu.org: 429 rate-limited från sandbox-IP (antas OK från home-browser-IP)
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+
   2026-10-21 (övervakningskontroll)
   - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning + websökning utförd.
   - Git OK: master på 30b741e (2026-10-20), synkad med origin/master, inget detached HEAD.
