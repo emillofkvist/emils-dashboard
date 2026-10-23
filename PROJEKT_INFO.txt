@@ -97,6 +97,29 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-23 (övervakningskontroll + git-fix)
+  - Nätverket tillgängligt denna körning – direkta API-tester utförda.
+  - GIT-FYND: HEAD var detached vid 2850d28 (2026-10-22); local master stod på 2075dca
+    (2026-10-21). origin/master var vid 2075dca – gårdagens Verge-fix (2850d28) aldrig pushad!
+    Fix: git branch -f master HEAD + git checkout master → master nu på 2850d28.
+    Alla commits (inkl. 2026-10-22 Verge-fix) nu pushade till GitHub.
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=9.1, wind_speed=2.6)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster med SEK_per_kWh + time_start
+    ✅ SVT Nyheter RSS: 200 OK, valid RSS XML
+    ✅ DN RSS: 200 OK, valid RSS XML
+    ✅ The Verge AI RSS (ny URL /rss/ai-artificial-intelligence/index.xml): 200 OK, valid Atom
+    ✅ The Verge AI gammal URL (/ai-artificial-intelligence/rss/index.xml): bekräftat 404
+    ✅ TechCrunch AI RSS: 200 OK, valid RSS XML
+    ✅ Macworld.se RSS: 200 OK, valid RSS XML
+    ✅ Google News Koenigsegg RSS: 200 OK, valid RSS XML
+    ✅ Google Calendar iCal: 200 OK, text/calendar
+    ✅ astorp.se (Bonnies matsedel): 200 OK direkt, matsedel vecka 39-43 korrekt HTML
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win: timeout/522 från sandbox (känt beteende från datacenter-IP, OK från hem-IP)
+    ⚠️ cors.eu.org: 429 rate-limited från sandbox (känt beteende, OK från hem-IP)
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+
   2026-10-22 (övervakningskontroll + fix)
   - Nätverket tillgängligt denna körning – direkta API-tester utförda.
   - KRITISKT FYND: The Verge AI RSS-URL returnerar 404.
