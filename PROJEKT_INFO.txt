@@ -97,6 +97,28 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-25 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached (samma återkommande mönster som tidigare körningar).
+    Fix: git checkout master → master synkad med origin/master vid b157589.
+  - DST-notering: idag är omställningsdagen (klockan tillbaka 1h) → elprisetjustnu.se
+    returnerade 100 poster (vanligtvis 96). Koden hanterar detta korrekt via data.find().
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=8.3, wind_speed=10.6, symbol_code=6)
+    ✅ elprisetjustnu.se SE4: 200 OK, 100 poster (DST-dag, normalt 96) med SEK_per_kWh + time_start
+    ✅ SVT Nyheter RSS: 200 OK (302-redirect följd automatiskt), 100 items
+    ✅ DN RSS: 200 OK, valid RSS XML
+    ✅ The Verge AI RSS (/rss/ai-artificial-intelligence/index.xml): 200 OK, valid Atom
+    ✅ TechCrunch AI RSS: 200 OK, valid RSS XML
+    ✅ Macworld.se RSS: 200 OK, valid RSS XML
+    ✅ Google News Koenigsegg RSS: 200 OK, valid RSS XML
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win: timeout/522 från sandbox (känt beteende från datacenter-IP, OK från hem-IP)
+    ⚠️ cors.eu.org: 429 rate-limited från sandbox (känt beteende, OK från hem-IP)
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+    ⚠️ astorp.se (Bonnies matsedel): datacenter-IP blockeras direkt (känt), fungerar via cors.eu.org
+    ⚠️ Google Calendar iCal: allorigins 500 från sandbox (känt beteende)
+  - Inga kodändringar nödvändiga.
+
   2026-10-23 (övervakningskontroll + git-fix)
   - Nätverket tillgängligt denna körning – direkta API-tester utförda.
   - GIT-FYND: HEAD var detached vid 2850d28 (2026-10-22); local master stod på 2075dca
