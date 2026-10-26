@@ -97,6 +97,27 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-26 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached vid 57559c0 (= origin/master); local master stod på b157589
+    (1 commit bakom). Fix: git branch -f master HEAD + git checkout master → master synkad
+    med origin/master vid 57559c0. Inga orphaned commits – allt redan på GitHub.
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature + wind_speed + symbol_code)
+    ✅ elprisetjustnu.se SE4: 200 OK, kvartstimsposter med SEK_per_kWh + time_start
+    ✅ SVT Nyheter RSS: 200 OK, valid RSS XML
+    ✅ DN RSS: 200 OK, valid RSS XML
+    ✅ TechCrunch AI RSS: 200 OK, valid RSS XML
+    ✅ The Verge AI RSS (/rss/ai-artificial-intelligence/index.xml): 200 OK, 10 Atom-entries
+    ✅ Macworld.se RSS: 200 OK, valid RSS XML
+    ✅ Google News Koenigsegg RSS: 200 OK, valid RSS med items (t.ex. "Koenigsegg sätter nya fartrekord")
+    ✅ Google Calendar iCal: 200 OK, content-type text/calendar
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win: timeout/000/408 från sandbox (känt beteende, OK från hem-IP)
+    ⚠️ cors.eu.org: 429 rate-limited från sandbox (känt beteende, OK från hem-IP)
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+    ⚠️ astorp.se (Bonnies matsedel): datacenter-IP blockeras direkt (känt), fungerar via cors.eu.org
+  - Inga kodändringar nödvändiga.
+
   2026-10-25 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached (samma återkommande mönster som tidigare körningar).
     Fix: git checkout master → master synkad med origin/master vid b157589.
