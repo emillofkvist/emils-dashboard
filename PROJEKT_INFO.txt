@@ -97,6 +97,24 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-27 (akutfix – proxy-kedja)
+  - KRITISKT FEL (rapporterat av användaren kl 06:16): SVT Nyheter, DN, TechCrunch AI,
+    The Verge AI returnerade "Load failed" i webbläsaren.
+  - Grundorsak:
+    1. allorigins.win returnerar HTTP 500/520 (riktig driftstopp, påverkar alla användare)
+    2. cors.eu.org returnerar 429 UTAN Access-Control-Allow-Origin-header →
+       webbläsaren kastar TypeError "Load failed" (CORS-blockering på felsvaret)
+    3. fetchText() saknade try/catch runt cors.eu.org-anropet, så felet propagerade okontrollerat
+  - Fix: fetchText() omskriven med tre nivåer, alla try/catch-skyddade:
+    1. api.allorigins.win/raw (primär, som förut)
+    2. cors.eu.org (fallback, nu i try/catch)
+    3. api.rss2json.com/v1/api.json (ny tredje fallback) – returnerar JSON,
+       rekonstrueras till minimal RSS XML (<item> med title/link/pubDate) som
+       DOMParser-koden i fetchNews/fetchAiNews/fetchMacworld/fetchKoenigsegg kan parsa normalt
+  - Cache-bust: dashboard.js→v14
+  - OBS: "Namnsdagsfel" och "Feber-fel" i användarens felmeddelanden kom från en äldre
+    webbläsar-cache – dessa funktioner finns inte i nuvarande kod. Hård reload rensar dem.
+
   2026-10-27 (övervakningskontroll)
   - Git OK: master på 0532eb3 (2026-10-26), synkad med origin/master, inget detached HEAD.
   - Direkt testade – alla sources OK:

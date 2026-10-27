@@ -30,9 +30,11 @@ function updateDateTime() {
     document.getElementById('week').textContent = `Vecka ${weekNumber}`;
 }
 
-// Hämta text via proxy – försöker allorigins först, cors.eu.org som fallback
+// Hämta text via proxy – försöker allorigins → cors.eu.org → rss2json (som RSS XML)
 async function fetchText(targetUrl) {
     const encoded = encodeURIComponent(targetUrl);
+
+    // 1. allorigins.win
     try {
         const r = await fetch(`${CONFIG.corsProxy}${encoded}`);
         if (r.ok) {
@@ -40,10 +42,25 @@ async function fetchText(targetUrl) {
             if (t && t.trim().length > 50 && !t.includes('"error"')) return t;
         }
     } catch (_) {}
-    // Fallback: cors.eu.org (bekräftat fungerande för RSS-feeds aug 2026)
-    const r2 = await fetch(`https://cors.eu.org/${targetUrl}`);
-    if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
-    return r2.text();
+
+    // 2. cors.eu.org (returnerar 429 utan CORS-headers vid rate-limit → måste vara i try/catch)
+    try {
+        const r2 = await fetch(`https://cors.eu.org/${targetUrl}`);
+        if (r2.ok) {
+            const t = await r2.text();
+            if (t && t.trim().length > 50) return t;
+        }
+    } catch (_) {}
+
+    // 3. rss2json.com – returnerar JSON, rekonstruera minimal RSS XML
+    const r3 = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encoded}`);
+    if (!r3.ok) throw new Error(`Alla proxyer misslyckades`);
+    const data = await r3.json();
+    if (data.status !== 'ok' || !data.items?.length) throw new Error('rss2json: inga items');
+    const xmlItems = data.items.map(it =>
+        `<item><title><![CDATA[${it.title || ''}]]></title><link>${it.link || ''}</link><pubDate>${it.pubDate || ''}</pubDate></item>`
+    ).join('');
+    return `<?xml version="1.0"?><rss version="2.0"><channel>${xmlItems}</channel></rss>`;
 }
 
 // Hämta väder från SMHI
