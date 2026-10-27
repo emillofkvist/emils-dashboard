@@ -143,6 +143,17 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-27 (v60)
+  - Fix: fetchNameday() steg 4 — api.dryg.net som alternativ namnsdag-källa med
+    identiskt JSON-format (dagar[0].namnsdag) som sholiday.faboul.se.
+  - Fix: fetchNews() + fetchFeber() localStorage-cache — sparar nyheter vid
+    framgång (ts + items[]), visar cachad data tyst vid fel istället för tom widget.
+    Eliminerar console.error om cache finns; fellog sparas bara vid helt tom cache.
+  - config.js: DN + Feber återställda till ursprungliga URL:er (Google News RSS hade
+    varken CORS-headers eller fungerande rss2json-stöd). Med cache är tillfällig
+    proxy-nedgång inte längre synlig för användaren.
+  - dashboard.js → v60, config.js → v7
+
   2026-10-27 (v59)
   - Fix: fetchRSS() steg 0 — direktfetch utan AbortSignal (för feeds med CORS-headers,
     t.ex. Google News RSS, SVT). Fungerar utan proxy om källan tillåter cross-origin.

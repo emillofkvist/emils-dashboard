@@ -149,6 +149,12 @@ async function fetchNameday() {
         if (m && apply(JSON.parse(m[1].trim()))) return;
     } catch {}
 
+    // 4. api.dryg.net (alternativ namnsdag-källa med identiskt format)
+    try {
+        const altUrl = `https://api.dryg.net/dagar/v2.1/${year}/${month}/${day}`;
+        if (apply(await (await fetch(altUrl)).json())) return;
+    } catch {}
+
     console.warn('Namnsdagsfel: alla källor otillgängliga');
 }
 
@@ -1100,13 +1106,28 @@ async function fetchNews() {
     const allNews = [];
 
     for (const feed of CONFIG.newsFeeds) {
+        const cKey = `news_cache_${feed.name}`;
         try {
             const items = await fetchRSS(feed.url);
+            try {
+                localStorage.setItem(cKey, JSON.stringify({
+                    items: items.slice(0, 3).map(i => ({ title: i.title, link: i.link, date: i.date.toISOString() })),
+                    ts: Date.now()
+                }));
+            } catch {}
             items.slice(0, 3).forEach(item => {
                 allNews.push({ source: feed.name, title: item.title, link: item.link, date: item.date });
             });
         } catch (error) {
-            console.error(`Nyhetsfel för ${feed.name}:`, error);
+            let cached = null;
+            try { cached = JSON.parse(localStorage.getItem(cKey)); } catch {}
+            if (cached?.items?.length) {
+                cached.items.forEach(item => {
+                    allNews.push({ source: feed.name, title: item.title, link: item.link, date: new Date(item.date) });
+                });
+            } else {
+                console.error(`Nyhetsfel för ${feed.name}:`, error);
+            }
         }
     }
 
@@ -1451,6 +1472,12 @@ async function fetchFeber() {
     try {
         const items = await fetchRSS(CONFIG.feberFeed);
         const news = items.slice(0, 5).map(item => ({ title: item.title, link: item.link, date: item.date }));
+        try {
+            localStorage.setItem('feber_news_cache', JSON.stringify({
+                items: news.map(i => ({ title: i.title, link: i.link, date: i.date.toISOString() })),
+                ts: Date.now()
+            }));
+        } catch {}
 
         // Förfyll artikelcachen med RSS-innehåll som fallback (samma mönster som Macworld)
         items.slice(0, 5).forEach(item => {
@@ -1487,8 +1514,27 @@ async function fetchFeber() {
         setTimeout(() => news.forEach(item => prefetchArticle(item.link)), 1000);
 
     } catch (error) {
-        console.error('Feber-fel:', error);
-        document.getElementById('feber').innerHTML = '<div class="loading">Kunde inte hämta från Feber</div>';
+        let cached = null;
+        try { cached = JSON.parse(localStorage.getItem('feber_news_cache')); } catch {}
+        if (cached?.items?.length) {
+            const html = cached.items.map(item => {
+                const timeAgo = getTimeAgo(new Date(item.date));
+                return `
+                <div class="news-item">
+                    <div class="news-title">
+                        <a href="${item.link}" class="reader-link" data-url="${item.link}">${item.title}</a>
+                    </div>
+                    <div class="news-time">${timeAgo}</div>
+                </div>`;
+            }).join('');
+            document.getElementById('feber').innerHTML = html;
+            document.getElementById('feber').querySelectorAll('.reader-link').forEach(link => {
+                link.addEventListener('click', e => { e.preventDefault(); openReader(link.dataset.url); });
+            });
+        } else {
+            console.error('Feber-fel:', error);
+            document.getElementById('feber').innerHTML = '<div class="loading">Kunde inte hämta från Feber</div>';
+        }
     }
 }
 
