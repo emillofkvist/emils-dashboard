@@ -97,6 +97,26 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-27 (övervakningskontroll)
+  - Git OK: master på 0532eb3 (2026-10-26), synkad med origin/master, inget detached HEAD.
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=9.7, wind_speed=4.5, symbol_code=6)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster med SEK_per_kWh + time_start
+    ✅ SVT Nyheter RSS: 200 OK (gzip-komprimerat, hanteras av browser auto), 100 items
+    ✅ DN RSS: 200 OK, valid RSS XML, 120 items
+    ✅ TechCrunch AI RSS: 200 OK, valid RSS XML, 20 items
+    ✅ The Verge AI RSS (/rss/ai-artificial-intelligence/index.xml): 200 OK, 10 Atom-entries
+    ✅ Macworld.se RSS: 200 OK, valid RSS XML, 20 items
+    ✅ Google News Koenigsegg RSS: 200 OK, valid RSS XML, 62 items
+    ✅ Google Calendar iCal: 200 OK, BEGIN:VCALENDAR (text/calendar)
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win: returnerar "error code: 520" (Cloudflare-fel) från sandbox-IP – tidigare
+       var beteendet timeout/000, nu 520; cors.eu.org-fallback i fetchText() ska kompensera
+    ⚠️ cors.eu.org: HTTP 429 rate-limited från sandbox (känt beteende, OK från hem-IP)
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+    ⚠️ astorp.se (Bonnies matsedel): datacenter-IP blockeras direkt (känt), fungerar via cors.eu.org
+  - Inga kodändringar nödvändiga.
+
   2026-10-26 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached vid 57559c0 (= origin/master); local master stod på b157589
     (1 commit bakom). Fix: git branch -f master HEAD + git checkout master → master synkad
