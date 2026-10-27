@@ -126,11 +126,19 @@ async function fetchNameday() {
         const year = now.getFullYear();
         const month = now.getMonth() + 1;
         const day = now.getDate();
-
         const url = `https://sholiday.faboul.se/dagar/v2.1/${year}/${month}/${day}`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
+
+        let data;
+        try {
+            // Direkt fetch — kan kasta "The string did not match the expected pattern" i Safari/WebKit
+            const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            data = await response.json();
+        } catch {
+            // Fallback via proxykedja (löser CORS/nätverksproblem i Safari)
+            const text = await fetchViaProxyChain(url);
+            data = JSON.parse(text);
+        }
 
         if (data.dagar && data.dagar[0] && data.dagar[0].namnsdag) {
             const names = data.dagar[0].namnsdag.join(', ');

@@ -43,6 +43,7 @@ MODULER & DATAKÄLLOR
 ---------------------
   Datum/tid/vecka     – JavaScript (inbyggt)
   Namnsdag            – https://sholiday.faboul.se/dagar/v2.1/{år}/{mån}/{dag}
+                        Primär: direkt fetch, fallback: fetchViaProxyChain() (Safari-fix)
   Väder (Hyllinge)    – https://opendata-download-metfcst.smhi.se  (SMHI opendata)
   Soluppgång/-nedgång – https://api.sunrise-sunset.org/json?lat=56.1167&lng=12.8167
   Elpris SE4 + graf   – https://www.elprisetjustnu.se/api/v1/prices/{år}/{mån-dag}_SE4.json
@@ -52,7 +53,7 @@ MODULER & DATAKÄLLOR
   Kalender            – Google Kalender via iCal-länk, fetchViaProxyChain() (cors.lol →
                         allorigins.win → r.jina.ai). Cachas ej per dag (bara matsedeln gör det).
   Nyheter (SVT + DN)  – RSS via api.rss2json.com, max 5 totalt (3 per källa)
-  AI-nyheter          – TechCrunch AI + The Verge via api.rss2json.com, max 5
+  AI-nyheter          – TechCrunch AI + The Verge (AI-kategori) via fetchRSS(), max 5
   Porsche-nyheter     – Carscoops, Road & Track, Motor1 via api.rss2json.com, max 5
   Koenigsegg-nyheter  – Carscoops (taggflöde), Road & Track, Motor1 via api.rss2json.com, max 5
   Pollenprognos       – https://api.pollenrapporten.se/v1/forecasts (Naturhistoriska riksmuseet)
@@ -142,6 +143,14 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-27 (v57)
+  - Fix: fetchNameday() proxykedja som fallback när direkt fetch() kastar i Safari/WebKit
+    ("The string did not match the expected pattern"). Ny logik: försöker direkt fetch()
+    med AbortSignal.timeout(5000), faller tillbaka på fetchViaProxyChain() + JSON.parse().
+  - config.js: The Verge RSS ändrad från /rss/index.xml till
+    /rss/ai-artificial-intelligence/index.xml (AI-kategorispecifikt flöde, mer tillförlitligt)
+  - dashboard.js → v57
+
   2026-10-27 (v56)
   - Fix: fetchRSS() 4-stegs proxykedja med korrekt jina-markdown-parsing.
     Rotorsak: fetchViaProxyChain() returnerar r.jina.ai:s markdown (inte XML).
