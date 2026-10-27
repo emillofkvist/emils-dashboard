@@ -142,6 +142,20 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-27 (v56)
+  - Fix: fetchRSS() 4-stegs proxykedja med korrekt jina-markdown-parsing.
+    Rotorsak: fetchViaProxyChain() returnerar r.jina.ai:s markdown (inte XML).
+    DOMParser misslyckades tyst (parsererror) → 0 items → tomma nyhetswidgetar.
+    Ny fetchRSS() testar i ordning:
+    1. rss2json.com (primär, 8s timeout)
+    2. cors.lol rådata + XML-parse (8s timeout)
+    3. allorigins.win/raw rådata + XML-parse (8s timeout)
+    4. r.jina.ai – försöker XML-parse, faller annars tillbaka på att tolka
+       jinas ### [rubrik](url)-markdown-format direkt (12s timeout)
+    Åtgärdar alla nyhetswidgetar (SVT, DN, TechCrunch, The Verge, Feber,
+    Porsche, Koenigsegg, Macworld) vid cors.lol 429 + allorigins.win 502.
+  - dashboard.js → v56
+
   2026-09-26 (övervakningskontroll)
   - Sandbox-egress blockerar direkta HTTPS-anrop (policy 403) – kodgranskning utförd.
   - KRITISKT FYND: Samtliga övervakningskörningar apr–sep 2026 har kört på fel branch (master

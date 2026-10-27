@@ -1,4 +1,3 @@
-// ============================================
 // EMILS DASHBOARD
 // ============================================
 
@@ -981,40 +980,83 @@ function parseRss2jsonDate(pubDate) {
 
 // Hämta RSS via rss2json.com med reserv via fetchViaProxyChain + XML-parsing
 async function fetchRSS(feedUrl) {
-    // Primär: rss2json.com
-    try {
-        const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
-        const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
-        if (!response.ok) throw new Error(`rss2json ${response.status}`);
-        const data = await response.json();
-        if (data.status !== 'ok') throw new Error(`rss2json: ${data.message || data.status}`);
-        return data.items.map(item => ({
-            title: item.title || '',
-            link: item.link || '',
-            date: parseRss2jsonDate(item.pubDate),
-            description: item.description || '',
-            content: item.content || ''
-        }));
-    } catch (_) {}
-    // Reserv: fetchViaProxyChain (cors.lol → allorigins → jina) + XML-parsing
-    const text = await fetchViaProxyChain(feedUrl);
-    const xml = new DOMParser().parseFromString(text, 'text/xml');
-    let items = [...xml.querySelectorAll('item')];
-    if (!items.length) items = [...xml.querySelectorAll('entry')];
-    return items.map(item => {
-        const link = item.querySelector('link')?.textContent?.trim() ||
-                     item.querySelector('link')?.getAttribute('href') || '';
-        return {
+    const enc = encodeURIComponent(feedUrl);
+
+    // Hjälp: parsa RSS/Atom XML → items
+    function parseXml(text) {
+        const xml = new DOMParser().parseFromString(text, 'text/xml');
+        if (xml.querySelector('parsererror')) throw new Error('XML-parse-fel');
+        let nodes = [...xml.querySelectorAll('item')];
+        if (!nodes.length) nodes = [...xml.querySelectorAll('entry')];
+        return nodes.map(item => ({
             title: item.querySelector('title')?.textContent || '',
-            link,
+            link: item.querySelector('link')?.textContent?.trim() ||
+                  item.querySelector('link')?.getAttribute('href') || '',
             date: parseRss2jsonDate(
                 item.querySelector('pubDate')?.textContent ||
                 item.querySelector('published')?.textContent || ''
             ),
             description: item.querySelector('description')?.textContent || '',
             content: ''
-        };
-    });
+        }));
+    }
+
+    // 1. rss2json.com
+    try {
+        const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${enc}`, { signal: AbortSignal.timeout(8000) });
+        if (r.ok) {
+            const data = await r.json();
+            if (data.status === 'ok' && data.items?.length) {
+                return data.items.map(item => ({
+                    title: item.title || '',
+                    link: item.link || '',
+                    date: parseRss2jsonDate(item.pubDate),
+                    description: item.description || '',
+                    content: item.content || ''
+                }));
+            }
+        }
+    } catch (_) {}
+
+    // 2. cors.lol (råa RSS/XML)
+    try {
+        const r = await fetch(`https://api.cors.lol/?url=${enc}`, { signal: AbortSignal.timeout(8000) });
+        if (r.ok) return parseXml(await r.text());
+    } catch (_) {}
+
+    // 3. allorigins.win (råa RSS/XML)
+    try {
+        const r = await fetch(`https://api.allorigins.win/raw?url=${enc}`, { signal: AbortSignal.timeout(8000) });
+        if (r.ok) return parseXml(await r.text());
+    } catch (_) {}
+
+    // 4. r.jina.ai – returnerar Markdown; prova raw XML, annars tolka markdown
+    const jinaR = await fetch(`https://r.jina.ai/${feedUrl}`, { signal: AbortSignal.timeout(12000) });
+    if (!jinaR.ok) throw new Error('Alla RSS-proxyer misslyckades');
+    const jinaText = await jinaR.text();
+
+    // jina skickar ibland raw XML för XML-endpoints
+    try { return parseXml(jinaText); } catch (_) {}
+
+    // Tolka jinas markdown: ### [rubrik](url)\n\nbeskrivning\ndatum
+    const body = (jinaText.match(/Markdown Content:\n([\s\S]*)/) || [, jinaText])[1];
+    const jinaItems = [];
+    const re = /###\s+\[([^\]]+)\]\(([^)]+)\)([\s\S]*?)(?=\n###\s+\[|\s*$)/g;
+    let match;
+    while ((match = re.exec(body)) !== null) {
+        const chunk = match[3].trim();
+        const dateStr = (chunk.match(/\w{3},\s+\d{1,2}\s+\w{3}\s+\d{4}\s+[\d:]+/) ||
+                         chunk.match(/\d{4}-\d{2}-\d{2}T[\d:Z.]+/) || [])[0] || '';
+        jinaItems.push({
+            title: match[1],
+            link: match[2],
+            date: dateStr ? new Date(dateStr) : new Date(0),
+            description: chunk.split('\n')[0] || '',
+            content: ''
+        });
+    }
+    if (jinaItems.length) return jinaItems;
+    throw new Error('Kunde inte hämta RSS-flöde');
 }
 
 // Hämta nyheter via RSS
@@ -2087,3 +2129,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     init();
 });
+
