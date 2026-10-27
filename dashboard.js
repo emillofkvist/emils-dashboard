@@ -1029,6 +1029,12 @@ async function fetchRSS(feedUrl) {
         }));
     }
 
+    // 0. Direktfetch — fungerar för feeds med CORS-headers (t.ex. Google News RSS, SVT)
+    try {
+        const r = await fetch(feedUrl);
+        if (r.ok) return parseXml(await r.text());
+    } catch (_) {}
+
     // 1. rss2json.com
     try {
         const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${enc}`, { signal: AbortSignal.timeout(8000) });
@@ -1059,31 +1065,33 @@ async function fetchRSS(feedUrl) {
     } catch (_) {}
 
     // 4. r.jina.ai – returnerar Markdown; prova raw XML, annars tolka markdown
-    const jinaR = await fetch(`https://r.jina.ai/${feedUrl}`, { signal: AbortSignal.timeout(12000) });
-    if (!jinaR.ok) throw new Error('Alla RSS-proxyer misslyckades');
-    const jinaText = await jinaR.text();
-
-    // jina skickar ibland raw XML för XML-endpoints
-    try { return parseXml(jinaText); } catch (_) {}
-
-    // Tolka jinas markdown: ### [rubrik](url)\n\nbeskrivning\ndatum
-    const body = (jinaText.match(/Markdown Content:\n([\s\S]*)/) || [, jinaText])[1];
-    const jinaItems = [];
-    const re = /###\s+\[([^\]]+)\]\(([^)]+)\)([\s\S]*?)(?=\n###\s+\[|\s*$)/g;
-    let match;
-    while ((match = re.exec(body)) !== null) {
-        const chunk = match[3].trim();
-        const dateStr = (chunk.match(/\w{3},\s+\d{1,2}\s+\w{3}\s+\d{4}\s+[\d:]+/) ||
-                         chunk.match(/\d{4}-\d{2}-\d{2}T[\d:Z.]+/) || [])[0] || '';
-        jinaItems.push({
-            title: match[1],
-            link: match[2],
-            date: dateStr ? new Date(dateStr) : new Date(0),
-            description: chunk.split('\n')[0] || '',
-            content: ''
-        });
-    }
-    if (jinaItems.length) return jinaItems;
+    // Hela blocket i try/catch: AbortSignal.timeout kastar i Safari (DOMException)
+    try {
+        const jinaR = await fetch(`https://r.jina.ai/${feedUrl}`, { signal: AbortSignal.timeout(12000) });
+        if (jinaR.ok) {
+            const jinaText = await jinaR.text();
+            // jina skickar ibland raw XML för XML-endpoints
+            try { return parseXml(jinaText); } catch (_) {}
+            // Tolka jinas markdown: ### [rubrik](url)\n\nbeskrivning\ndatum
+            const body = (jinaText.match(/Markdown Content:\n([\s\S]*)/) || [, jinaText])[1];
+            const jinaItems = [];
+            const re = /###\s+\[([^\]]+)\]\(([^)]+)\)([\s\S]*?)(?=\n###\s+\[|\s*$)/g;
+            let match;
+            while ((match = re.exec(body)) !== null) {
+                const chunk = match[3].trim();
+                const dateStr = (chunk.match(/\w{3},\s+\d{1,2}\s+\w{3}\s+\d{4}\s+[\d:]+/) ||
+                                 chunk.match(/\d{4}-\d{2}-\d{2}T[\d:Z.]+/) || [])[0] || '';
+                jinaItems.push({
+                    title: match[1],
+                    link: match[2],
+                    date: dateStr ? new Date(dateStr) : new Date(0),
+                    description: chunk.split('\n')[0] || '',
+                    content: ''
+                });
+            }
+            if (jinaItems.length) return jinaItems;
+        }
+    } catch (_) {}
     throw new Error('Kunde inte hämta RSS-flöde');
 }
 

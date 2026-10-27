@@ -143,6 +143,18 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-27 (v59)
+  - Fix: fetchRSS() steg 0 — direktfetch utan AbortSignal (för feeds med CORS-headers,
+    t.ex. Google News RSS, SVT). Fungerar utan proxy om källan tillåter cross-origin.
+  - Fix: fetchRSS() steg 4 (jina) insvept i try/catch — förhindrar att Safari-specifikt
+    AbortSignal-DOMException propagerar ut ur funktionen.
+  - config.js: DN-flödet bytt till Google News RSS (CORS-aktiverat, direktfetch):
+    https://news.google.com/rss/search?q=site:dn.se&hl=sv&gl=SE&ceid=SE:sv
+  - config.js: Feber-flödet bytt till Google News RSS (CORS-aktiverat, direktfetch):
+    https://news.google.com/rss/search?q=site:feber.se&hl=sv&gl=SE&ceid=SE:sv
+  - Google News RSS kringgår cors.lol 429 + allorigins 502 + jina-blockeringar.
+  - dashboard.js → v59, config.js → v6
+
   2026-10-27 (v58)
   - Fix: fetchNameday() omskriven utan AbortSignal — Safari/iOS kastar DOMException
     "The string did not match the expected pattern" när AbortSignal-timeouts utlöses

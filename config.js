@@ -26,7 +26,7 @@ const CONFIG = {
     // Svenska nyheter - SVT och DN
     newsFeeds: [
         { name: "SVT Nyheter", url: "https://www.svt.se/nyheter/rss.xml" },
-        { name: "DN",          url: "https://www.dn.se/rss/" }
+        { name: "DN",          url: "https://news.google.com/rss/search?q=site:dn.se&hl=sv&gl=SE&ceid=SE:sv" }
     ],
 
     // Macworld RSS (visar artiklar från senaste 24h)
@@ -34,7 +34,7 @@ const CONFIG = {
     macworldComFeed: "https://www.macworld.com/feed/",
 
     // Feber RSS (5 senaste)
-    feberFeed: "https://feber.se/rss/",
+    feberFeed: "https://news.google.com/rss/search?q=site:feber.se&hl=sv&gl=SE&ceid=SE:sv",
 
     // Aftonbladet RSS (senaste nytt)
     aftonbladetFeed: "https://rss.aftonbladet.se/rss2/small/pages/sections/senastenytt/",
