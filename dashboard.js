@@ -121,32 +121,35 @@ function updateDateTime() {
 
 // Hämta dagens namnsdag
 async function fetchNameday() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const url = `https://sholiday.faboul.se/dagar/v2.1/${year}/${month}/${day}`;
+
+    const apply = d => {
+        const names = d?.dagar?.[0]?.namnsdag;
+        if (!names?.length) return false;
+        document.getElementById('nameday').textContent = `🎂 ${names.join(', ')}`;
+        return true;
+    };
+
+    // Inga AbortSignal — Safari/WebKit kastar DOMException "The string did not match
+    // the expected pattern" när AbortSignal-timeouts avbryts i vissa iOS-versioner.
+    // Varje steg fångas tyst; om alla misslyckas loggas en warn.
+
+    // 1. Direkt
+    try { if (apply(await (await fetch(url)).json())) return; } catch {}
+    // 2. Via cors.lol
+    try { if (apply(await (await fetch(`https://api.cors.lol/?url=${encodeURIComponent(url)}`)).json())) return; } catch {}
+    // 3. Via jina (JSON passerar efter "Markdown Content:")
     try {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1;
-        const day = now.getDate();
-        const url = `https://sholiday.faboul.se/dagar/v2.1/${year}/${month}/${day}`;
+        const t = await (await fetch(`https://r.jina.ai/${url}`)).text();
+        const m = t.match(/Markdown Content:\n([\s\S]*)/);
+        if (m && apply(JSON.parse(m[1].trim()))) return;
+    } catch {}
 
-        let data;
-        try {
-            // Direkt fetch — kan kasta "The string did not match the expected pattern" i Safari/WebKit
-            const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            data = await response.json();
-        } catch {
-            // Fallback via proxykedja (löser CORS/nätverksproblem i Safari)
-            const text = await fetchViaProxyChain(url);
-            data = JSON.parse(text);
-        }
-
-        if (data.dagar && data.dagar[0] && data.dagar[0].namnsdag) {
-            const names = data.dagar[0].namnsdag.join(', ');
-            document.getElementById('nameday').textContent = `🎂 ${names}`;
-        }
-    } catch (error) {
-        console.error('Namnsdagsfel:', error);
-    }
+    console.warn('Namnsdagsfel: alla källor otillgängliga');
 }
 
 // Hämta väder från SMHI
@@ -655,10 +658,27 @@ async function fetchStocks() {
 
     // Sekventiellt med 1200ms fördröjning för att undvika Yahoo rate limit
     const cacheKey = symbol => `stock_cache_${symbol}`;
+    const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 timmar — hoppa över fetch om data är färsk
     for (let i = 0; i < stocks.length; i++) {
         if (i > 0) await new Promise(r => setTimeout(r, 1200));
         const stock = stocks[i];
         const stockItems = document.querySelectorAll('.stock-item');
+
+        let cached = null;
+        try { cached = JSON.parse(localStorage.getItem(cacheKey(stock.symbol))); } catch {}
+
+        // Om cachad data är färsk (< 6h) — visa direkt utan nätverksanrop
+        if (cached?.ts && (Date.now() - cached.ts) < CACHE_TTL) {
+            stockItems[stock.id].innerHTML = `
+                <div class="stock-name">${stock.name}</div>
+                <div class="stock-change ${cached.isPositive ? 'positive' : 'negative'}">
+                    ${cached.isPositive ? '▲' : '▼'} ${Math.abs(cached.change)}%
+                </div>
+                <div class="market-status">Senast kända</div>
+            `;
+            continue;
+        }
+
         try {
             const meta = await fetchStockData(stock.symbol);
             const current = meta.regularMarketPrice;
@@ -667,7 +687,7 @@ async function fetchStocks() {
             const isPositive = change >= 0;
             const open = isMarketOpen(stock.market);
 
-            try { localStorage.setItem(cacheKey(stock.symbol), JSON.stringify({ change, isPositive })); } catch {}
+            try { localStorage.setItem(cacheKey(stock.symbol), JSON.stringify({ change, isPositive, ts: Date.now() })); } catch {}
 
             stockItems[stock.id].innerHTML = `
                 <div class="stock-name">${stock.name}</div>
@@ -680,22 +700,22 @@ async function fetchStocks() {
                 </div>
             `;
         } catch (error) {
-            console.error(`Börsfel för ${stock.name}:`, error);
-            // Alla proxyer (inkl. r.jina.ai) kan nås av kortvarig rate-limit vid hög trafik —
-            // visa senast kända förändring hellre än "Ej tillgänglig" när det finns cache
-            let cached = null;
-            try { cached = JSON.parse(localStorage.getItem(cacheKey(stock.symbol))); } catch {}
-
-            stockItems[stock.id].innerHTML = cached ? `
-                <div class="stock-name">${stock.name}</div>
-                <div class="stock-change ${cached.isPositive ? 'positive' : 'negative'}">
-                    ${cached.isPositive ? '▲' : '▼'} ${Math.abs(cached.change)}%
-                </div>
-                <div class="market-status">Senast kända</div>
-            ` : `
-                <div class="stock-name">${stock.name}</div>
-                <div class="loading">Ej tillgänglig</div>
-            `;
+            // Visa eventuell gammal cache tyst, annars "Ej tillgänglig" med fellog
+            if (cached) {
+                stockItems[stock.id].innerHTML = `
+                    <div class="stock-name">${stock.name}</div>
+                    <div class="stock-change ${cached.isPositive ? 'positive' : 'negative'}">
+                        ${cached.isPositive ? '▲' : '▼'} ${Math.abs(cached.change)}%
+                    </div>
+                    <div class="market-status">Senast kända</div>
+                `;
+            } else {
+                console.error(`Börsfel för ${stock.name}:`, error);
+                stockItems[stock.id].innerHTML = `
+                    <div class="stock-name">${stock.name}</div>
+                    <div class="loading">Ej tillgänglig</div>
+                `;
+            }
         }
     }
 }

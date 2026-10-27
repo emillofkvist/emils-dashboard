@@ -143,6 +143,20 @@ LÄGGA TILL ETT NYTT NYHETSFLÖDE (checklista)
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-27 (v58)
+  - Fix: fetchNameday() omskriven utan AbortSignal — Safari/iOS kastar DOMException
+    "The string did not match the expected pattern" när AbortSignal-timeouts utlöses
+    (oavsett om det sker i direkt fetch eller i fetchViaProxyChain:s jina-anrop).
+    Ny logik: 3 oberoende try/catch utan timeouts (direkt → cors.lol → jina), varje
+    steg returnerar tidigt vid framgång.
+  - Fix: fetchStocks() cache-TTL (6h) — hoppar över nätverksanrop om localStorage
+    har färsk data. Lägger till ts-fält i cache för att spåra ålder. Visar gammal
+    cache tyst (inget console.error) om fetch misslyckas men cache finns.
+    Undviker upprepade 429-fel från r.jina.ai mot Yahoo Finance.
+  - config.js: The Verge borttagen från aiNewsFeeds — Cloudflare blockerar alla
+    proxyar för deras RSS-flöde; TechCrunch täcker AI-nyheter ensam.
+  - dashboard.js → v58
+
   2026-10-27 (v57)
   - Fix: fetchNameday() proxykedja som fallback när direkt fetch() kastar i Safari/WebKit
     ("The string did not match the expected pattern"). Ny logik: försöker direkt fetch()
