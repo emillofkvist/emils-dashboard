@@ -130,6 +130,7 @@ async function fetchNameday() {
 
         const url = `https://sholiday.faboul.se/dagar/v2.1/${year}/${month}/${day}`;
         const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
 
         if (data.dagar && data.dagar[0] && data.dagar[0].namnsdag) {
@@ -978,20 +979,42 @@ function parseRss2jsonDate(pubDate) {
     return new Date(pubDate);
 }
 
-// Hämta RSS via rss2json.com — returnerar array [{title, link, date, description, content}]
+// Hämta RSS via rss2json.com med reserv via fetchViaProxyChain + XML-parsing
 async function fetchRSS(feedUrl) {
-    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`rss2json ${response.status}`);
-    const data = await response.json();
-    if (data.status !== 'ok') throw new Error(`rss2json: ${data.message || data.status}`);
-    return data.items.map(item => ({
-        title: item.title || '',
-        link: item.link || '',
-        date: parseRss2jsonDate(item.pubDate),
-        description: item.description || '',
-        content: item.content || ''
-    }));
+    // Primär: rss2json.com
+    try {
+        const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
+        const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (!response.ok) throw new Error(`rss2json ${response.status}`);
+        const data = await response.json();
+        if (data.status !== 'ok') throw new Error(`rss2json: ${data.message || data.status}`);
+        return data.items.map(item => ({
+            title: item.title || '',
+            link: item.link || '',
+            date: parseRss2jsonDate(item.pubDate),
+            description: item.description || '',
+            content: item.content || ''
+        }));
+    } catch (_) {}
+    // Reserv: fetchViaProxyChain (cors.lol → allorigins → jina) + XML-parsing
+    const text = await fetchViaProxyChain(feedUrl);
+    const xml = new DOMParser().parseFromString(text, 'text/xml');
+    let items = [...xml.querySelectorAll('item')];
+    if (!items.length) items = [...xml.querySelectorAll('entry')];
+    return items.map(item => {
+        const link = item.querySelector('link')?.textContent?.trim() ||
+                     item.querySelector('link')?.getAttribute('href') || '';
+        return {
+            title: item.querySelector('title')?.textContent || '',
+            link,
+            date: parseRss2jsonDate(
+                item.querySelector('pubDate')?.textContent ||
+                item.querySelector('published')?.textContent || ''
+            ),
+            description: item.querySelector('description')?.textContent || '',
+            content: ''
+        };
+    });
 }
 
 // Hämta nyheter via RSS
