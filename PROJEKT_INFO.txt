@@ -97,6 +97,27 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-28 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached vid d264112 (2026-10-27); local master stod på 0532eb3
+    (2 commits bakom). origin/master var redan vid d264112 (gårdagens pushar lyckades).
+    Fix: git branch -f master HEAD + git checkout master → master nu på d264112. Inga orphaned commits.
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=10.5, wind_speed=1.8, symbol_code=6)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster med SEK_per_kWh + time_start
+    ✅ SVT Nyheter RSS: 200 OK, valid RSS XML
+    ✅ DN RSS: 200 OK, valid RSS XML
+    ✅ TechCrunch AI RSS: 200 OK, valid RSS XML
+    ✅ The Verge AI RSS (/rss/ai-artificial-intelligence/index.xml): 200 OK, valid Atom
+    ✅ Macworld.se RSS: 200 OK, valid RSS XML
+    ✅ Google News Koenigsegg RSS: 200 OK, valid RSS XML
+    ✅ Google Calendar iCal: 200 OK, BEGIN:VCALENDAR
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win: returnerar 520/522 (Cloudflare-fel) från sandbox-IP – känt beteende
+    ⚠️ cors.eu.org: HTTP 429 rate-limited från sandbox – känt beteende, OK från hem-IP
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+    ⚠️ astorp.se (Bonnies matsedel): datacenter-IP blockeras direkt (känt), fungerar via cors.eu.org
+  - Inga kodändringar nödvändiga.
+
   2026-10-27 (akutfix – proxy-kedja)
   - KRITISKT FEL (rapporterat av användaren kl 06:16): SVT Nyheter, DN, TechCrunch AI,
     The Verge AI returnerade "Load failed" i webbläsaren.
