@@ -97,6 +97,19 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-10-31 (övervakningskontroll)
+  - Koenigsegg-nyheter: Bytt Google News RSS locale från sv/SE till en/US.
+    Svensk locale blockeras av Google från datacenter-IP:er (rss2json returnerade
+    "Cannot download this RSS feed"). Engelsk locale fungerar via rss2json-fallback.
+    config.js v10 → v11.
+  - Kalender: Alla CORS-proxyer misslyckas för Google Calendar iCal (allorigins 522,
+    cors.eu.org 429, rss2json stödjer inte iCal). Kalenderwidgeten är trasig men
+    kan inte åtgärdas utan ny proxy-lösning.
+  - Matsedel Bonnie: astorp.se blockerar datacenter-IP:er, cors.eu.org returnerar 429,
+    skolmaten.se-API svarar 404. Kan inte åtgärdas från denna miljö.
+  - Övrigt: SMHI, elpris, aktier (Yahoo Finance), DN, SVT, TechCrunch AI, The Verge AI,
+    Macworld – alla fungerar (direktanrop eller via allorigins/rss2json-fallback).
+
   2026-10-30 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached vid d856df1 (2026-10-29); local master stod på 0532eb3
     (4 commits bakom). origin/master var vid 0532eb3 – pushar från de 4 senaste körningarna

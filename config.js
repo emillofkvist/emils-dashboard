@@ -70,6 +70,8 @@ const CONFIG = {
     },
 
     // Koenigsegg-nyheter via Google News RSS (ingen officiell RSS finns på koenigsegg.com)
-    koenigseggFeed: "https://news.google.com/rss/search?q=koenigsegg&hl=sv&gl=SE&ceid=SE:sv",
+    // OBS: svensk locale (hl=sv&gl=SE) blockeras av Google från datacenter-IP:er via rss2json.
+    // Engelsk locale (hl=en&gl=US) fungerar fint – resultaten är på engelska men innehållet är detsamma.
+    koenigseggFeed: "https://news.google.com/rss/search?q=koenigsegg&hl=en&gl=US&ceid=US:en",
     maxKoenigseggNews: 3
 };
