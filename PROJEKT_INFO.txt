@@ -97,6 +97,33 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-01 (övervakningskontroll)
+  - GIT-FYND: HEAD var detached vid 272f3f8 (2026-10-31); local master stod på 2f52b48
+    (1 commit bakom). origin/master var redan vid 272f3f8 (föregående körnings push lyckades).
+    Fix: git branch -f master HEAD + git checkout master → master nu på 272f3f8.
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=4.4, wind_speed=1.2, symbol_code=6)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster med SEK_per_kWh + time_start
+    ✅ DN RSS: 200 OK, valid RSS XML, 123870 chars
+    ✅ TechCrunch AI RSS: 200 OK, valid RSS XML, 18078 chars
+    ✅ The Verge AI Atom (/rss/ai-artificial-intelligence/index.xml): 200 OK, valid Atom 28966 chars
+    ✅ Macworld.se RSS: 200 OK, valid RSS XML, 230649 chars
+    ✅ SVT Nyheter RSS via rss2json: status=ok, 10 items (SVT skickar gzip direkt)
+    ✅ DN via rss2json: status=ok, 10 items
+    ✅ TechCrunch AI via rss2json: status=ok, 10 items
+    ✅ The Verge AI via rss2json: status=ok, 10 items
+    ✅ Macworld via rss2json: status=ok, 10 items
+    ✅ Koenigsegg Google News RSS via rss2json (en/US): status=ok, 10 items
+    ✅ astorp.se (Bonnies matsedel): 200 OK direkt (96231 chars, matsedel+vecka bekräftat)
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win: HTTP 500 / tom respons från sandbox-IP (känt beteende, OK från hem-IP)
+    ⚠️ cors.eu.org: HTTP 429 rate-limited från sandbox (känt beteende, OK från hem-IP)
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+    ⚠️ Google Calendar iCal: Google blockerar datacenter-IP:er direkt; allorigins-proxyn ska
+       hantera detta korrekt från hem-browser (bekräftat OK 2026-10-30)
+    ⚠️ Google News Koenigsegg: returnerar tom direkt från sandbox, fungerar via rss2json
+  - Inga kodändringar nödvändiga.
+
   2026-10-31 (övervakningskontroll)
   - Koenigsegg-nyheter: Bytt Google News RSS locale från sv/SE till en/US.
     Svensk locale blockeras av Google från datacenter-IP:er (rss2json returnerade
