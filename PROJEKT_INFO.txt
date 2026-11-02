@@ -97,6 +97,29 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-02 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached vid 7f5bbcb (2026-11-01); local master stod på 2f52b48
+    (2 commits bakom). origin/master var vid 2f52b48 – 2026-10-31 Koenigsegg-fix (272f3f8)
+    och 2026-11-01 rapport (7f5bbcb) hade aldrig pushats till GitHub.
+    Fix: git branch -f master HEAD + git checkout master → master nu på 7f5bbcb.
+    Alla 3 commits (272f3f8 + 7f5bbcb + dagens) pushade till origin/master.
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=8.8, wind_speed=2.7, symbol_code=18)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster med SEK_per_kWh + time_start
+    ✅ SVT Nyheter RSS via rss2json: status=ok, items
+    ✅ DN RSS via rss2json: status=ok, items
+    ✅ TechCrunch AI RSS via rss2json: status=ok, items
+    ✅ The Verge AI Atom via rss2json: status=ok, items
+    ✅ Macworld.se RSS via rss2json: status=ok, items
+    ✅ Koenigsegg Google News RSS via rss2json (en/US): status=ok, items
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win: HTTP 522 från sandbox-IP (känt beteende, OK från hem-IP)
+    ⚠️ cors.eu.org: HTTP 429 rate-limited från sandbox (känt beteende, OK från hem-IP)
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+    ⚠️ Google Calendar iCal: allorigins/cors.eu.org hanterar detta korrekt från hem-browser
+    ⚠️ astorp.se (Bonnies matsedel): datacenter-IP blockeras direkt (känt), fungerar via cors.eu.org
+  - Inga kodändringar nödvändiga.
+
   2026-11-01 (övervakningskontroll)
   - GIT-FYND: HEAD var detached vid 272f3f8 (2026-10-31); local master stod på 2f52b48
     (1 commit bakom). origin/master var redan vid 272f3f8 (föregående körnings push lyckades).
