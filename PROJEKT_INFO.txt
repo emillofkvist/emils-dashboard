@@ -97,6 +97,33 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-03 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached vid 37ad0f4 (= origin/master); local master stod på 37ad0f4
+    (ingen riktig skillnad – master och origin/master var på samma commit). Inga orphaned commits.
+    Fix: git branch -f master HEAD + git checkout master → master nu på 37ad0f4.
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=7.0, wind_speed=2.5, symbol_code=6)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster med SEK_per_kWh + time_start
+    ✅ SVT Nyheter RSS via rss2json: status=ok, 10 items (redirect /nyheter/rss.xml→/rss.xml fungerar)
+    ✅ DN RSS via rss2json: status=ok, 10 items
+    ✅ TechCrunch AI RSS via rss2json: status=ok, 10 items
+    ✅ The Verge AI Atom via rss2json: status=ok, 10 items
+    ✅ Macworld.se RSS via rss2json: status=ok, 10 items
+    ✅ Koenigsegg Google News RSS via allorigins.win: valid XML (redirect följd korrekt)
+    ✅ Google Calendar iCal (direkt): 200 OK, BEGIN:VCALENDAR korrekt
+  - Nytt fynd: rss2json kan INTE längre hämta Koenigsegg Google News RSS.
+    Felmeddelande: "Cannot download this RSS feed, make sure the Rss URL is correct."
+    Trolig orsak: Google News RSS redirectar (302) och rss2json följer inte längre redirecten,
+    alternativt Google blockerar rss2json:s IP/User-Agent. allorigins.win hanterar redirecten OK
+    och returnerar korrekt RSS. Primärflödet (allorigins) fungerar → ingen kodändring nödvändig.
+    Fallbackkedjan är nu degraderad för Koenigsegg (allorigins→cors.eu.org→rss2json-NERE).
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win: 520 för SVT, men fungerade för Koenigsegg (inkonsekvent beteende från sandbox)
+    ⚠️ cors.eu.org: returnerar Cloudflare-HTML för Google News (inte XML) – fungerar ej som proxy för Google News
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+    ⚠️ astorp.se (Bonnies matsedel): datacenter-IP blockeras direkt (känt), fungerar via cors.eu.org
+  - Inga kodändringar nödvändiga.
+
   2026-11-02 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached vid 7f5bbcb (2026-11-01); local master stod på 2f52b48
     (2 commits bakom). origin/master var vid 2f52b48 – 2026-10-31 Koenigsegg-fix (272f3f8)
