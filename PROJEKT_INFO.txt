@@ -97,6 +97,34 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-04 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached från refs/heads/master; local master stod på 37ad0f4
+    (1 commit bakom detached HEAD vid b8f9e4c). git branch -f master HEAD + git checkout master
+    → master nu på b8f9e4c. git fetch bekräftade att origin/master redan var vid b8f9e4c
+    (föregående körnings push lyckades) – local tracking ref var bara stale. Inga orphaned commits.
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=0.6, wind_speed=1.1, symbol_code=2)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster med SEK_per_kWh + time_start
+    ✅ SVT Nyheter RSS (direkt): 200 OK, 59818 chars, valid RSS XML
+    ✅ DN RSS (direkt): 200 OK, 128823 chars, valid RSS XML
+    ✅ TechCrunch AI RSS (direkt): 200 OK, 18100 chars, valid RSS XML
+    ✅ The Verge AI Atom (direkt): 200 OK, 33077 chars, valid Atom (<entry>)
+    ✅ Macworld.se RSS (direkt): 200 OK, 238310 chars, valid RSS XML
+    ✅ Koenigsegg Google News RSS (direkt): 200 OK, 91560 chars, valid RSS XML
+    ✅ Google Calendar iCal (direkt): 200 OK, BEGIN:VCALENDAR bekräftat
+    ✅ rss2json SVT: status=ok, 10 items
+    ✅ rss2json TechCrunch AI: status=ok, 10 items
+    ✅ rss2json The Verge AI: status=ok, 10 items (efter kort väntetid)
+  - OBS: rss2json rate-limitade de initiala snabbatesterna för DN/Verge/Macworld/Koenigsegg
+    ("You are converting new feeds in a very short period") – testningsartefakt orsakad av
+    simultana curl-anrop, inte ett riktigt dashboard-problem; enstaka anrop fungerar korrekt.
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win: "Oops... Request Timeout." (24 chars) från sandbox – känt beteende
+    ⚠️ cors.eu.org: returnerar Cloudflare-HTML från sandbox – okänt beteende från hem-browser
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+    ⚠️ astorp.se (Bonnies matsedel): datacenter-IP blockeras direkt (känt), fungerar via proxy
+  - Inga kodändringar nödvändiga.
+
   2026-11-03 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached vid 37ad0f4 (= origin/master); local master stod på 37ad0f4
     (ingen riktig skillnad – master och origin/master var på samma commit). Inga orphaned commits.
