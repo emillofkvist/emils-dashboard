@@ -97,6 +97,28 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-05 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached från refs/heads/master; local tracking ref var stale (5 commits
+    ahead visades falskt). git branch -f master HEAD + git checkout master + git fetch → master
+    och origin/master nu synkade på 95be8ce. Inga orphaned commits.
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=1.3, symbol_code=7)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=1.937 för tidig morgon
+    ✅ Yahoo Finance via allorigins: 200 OK, OMXS30 close-priser bekräftade
+    ✅ SVT Nyheter via rss2json: status=ok, 10 items
+    ✅ DN via rss2json: status=ok, 10 items
+    ✅ TechCrunch AI via rss2json: status=ok, 10 items
+    ✅ The Verge AI via rss2json: status=ok, 10 items (gamla URL /rss/ai-artificial-intelligence/index.xml fungerar – 404 på nya formatet)
+    ✅ Macworld.se via rss2json: status=ok, 10 items
+    ✅ Koenigsegg Google News via rss2json: status=ok, 10 items
+  - OBS: The Verge URL – config.js använder /rss/ai-artificial-intelligence/index.xml (200 OK).
+    PROJEKT_INFO noterade 2026-08-15 att url ändrades; det nya formatet ger 404. Gamla funkar.
+  - Ej testade direkt (sandbox-IP-specifika begränsningar, samma som föregående körningar):
+    ⚠️ allorigins.win raw: returnerar "Oops... Request Timeout." (24 chars) för astorp.se från sandbox
+    ⚠️ cors.eu.org: returnerar Cloudflare-HTML från sandbox – okänt beteende från hem-browser
+    ⚠️ astorp.se direkt: returnerar HTML med matsedel (95 KB) – men ingen CORS-header, kräver proxy
+  - Inga kodändringar nödvändiga.
+
   2026-11-04 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached från refs/heads/master; local master stod på 37ad0f4
     (1 commit bakom detached HEAD vid b8f9e4c). git branch -f master HEAD + git checkout master
