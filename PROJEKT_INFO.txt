@@ -97,6 +97,29 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-06 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached från refs/heads/master; local tracking ref var stale (6 commits
+    ahead visades falskt). git branch -f master HEAD + git checkout master + git fetch → master
+    och origin/master nu synkade på 802fb4c. Inga orphaned commits – allt redan på GitHub.
+  - Direkt testade – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=2.3, symbol_code returnerat)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=2.74 för tidig morgon
+    ✅ SVT Nyheter RSS (direkt): 200 OK, valid RSS XML med <item>-element
+    ✅ DN RSS (direkt): 200 OK, valid RSS XML med <item>-element
+    ✅ TechCrunch AI RSS (direkt): 200 OK, valid RSS XML
+    ✅ The Verge AI Atom (direkt, /rss/ai-artificial-intelligence/index.xml): 200 OK, valid Atom
+    ✅ Macworld.se RSS (direkt): 200 OK, valid RSS XML
+    ✅ Koenigsegg Google News RSS (direkt): 200 OK, valid RSS XML
+    ✅ rss2json SVT: status=ok, items bekräftade
+    ✅ rss2json Koenigsegg: status=ok, items bekräftade
+    ✅ Google Calendar iCal (direkt): 200 OK, BEGIN:VCALENDAR bekräftat
+    ✅ astorp.se (direkt): matsedel-text bekräftad i HTML (ej CORS, kräver proxy – fungerar via cors.eu.org)
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win: tom respons från sandbox-IP (känt beteende, OK från hem-IP)
+    ⚠️ cors.eu.org: ej testad direkt (känt rate-limited från sandbox, bekräftat OK från GitHub Actions)
+    ⚠️ Yahoo Finance: känd server-side-blockering, graceful fallback "Ej tillgänglig"
+  - Inga kodändringar nödvändiga.
+
   2026-11-05 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached från refs/heads/master; local tracking ref var stale (5 commits
     ahead visades falskt). git branch -f master HEAD + git checkout master + git fetch → master
