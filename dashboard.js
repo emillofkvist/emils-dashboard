@@ -30,25 +30,28 @@ function updateDateTime() {
     document.getElementById('week').textContent = `Vecka ${weekNumber}`;
 }
 
-// Hämta text via proxy – försöker allorigins → cors.eu.org → rss2json (som RSS XML)
+// Hämta text via proxy – försöker allorigins /get → allorigins /raw → rss2json (som RSS XML)
+// OBS: cors.eu.org returnerar 429 för allt (bekräftat nere nov 2026) – borttaget ur kedjan.
 async function fetchText(targetUrl) {
     const encoded = encodeURIComponent(targetUrl);
 
-    // 1. allorigins.win
+    // 1. allorigins.win /get – returnerar JSON-wrapper {"contents":"...","status":{...}}
+    //    Mer robust än /raw: hanterar fler URL-typer och ger tydlig HTTP-statuskod.
     try {
-        const r = await fetch(`${CONFIG.corsProxy}${encoded}`);
+        const r = await fetch(`https://api.allorigins.win/get?url=${encoded}`);
         if (r.ok) {
-            const t = await r.text();
+            const j = await r.json();
+            const t = j.contents;
             if (t && t.trim().length > 50 && !t.includes('"error"')) return t;
         }
     } catch (_) {}
 
-    // 2. cors.eu.org (returnerar 429 utan CORS-headers vid rate-limit → måste vara i try/catch)
+    // 2. allorigins.win /raw – direktretur av innehållet
     try {
-        const r2 = await fetch(`https://cors.eu.org/${targetUrl}`);
-        if (r2.ok) {
-            const t = await r2.text();
-            if (t && t.trim().length > 50) return t;
+        const r = await fetch(`https://api.allorigins.win/raw?url=${encoded}`);
+        if (r.ok) {
+            const t = await r.text();
+            if (t && t.trim().length > 50 && !t.includes('"error"')) return t;
         }
     } catch (_) {}
 
@@ -193,13 +196,16 @@ async function fetchStocks() {
         { symbol: '^DJI', name: 'Dow Jones', id: 3 }
     ];
 
-    // Använder Yahoo Finance via en CORS-proxy
+    // Använder Yahoo Finance via allorigins /get (bekräftat fungerande nov 2026).
+    // /raw-endpointen för allorigins timeout:ar för Yahoo Finance; /get fungerar och
+    // returnerar JSON-wrapper {"contents": "..."} som måste parsas separat.
     for (const stock of stocks) {
         try {
             const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`;
-            const url = `${CONFIG.corsProxy}${encodeURIComponent(targetUrl)}`;
+            const url = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
             const response = await fetch(url);
-            const data = await response.json();
+            const wrapper = await response.json();
+            const data = JSON.parse(wrapper.contents);
 
             const result = data.chart.result[0];
             const quote = result.indicators.quote[0];
@@ -621,18 +627,29 @@ function resolveLunchDate(week, dayOffset) {
 
 // Matsedel källa 1+2: astorp.se – matsedeln är inbäddad som HTML-tabeller
 // direkt på skolans sida (flera veckor: "Matsedel vecka N", Dag/Lunch/Vegetariskt).
-// OBS: astorp.se blockerar direkta anrop från datacenter-IP:er (bekräftat både
-// från denna sandbox och GitHub Actions – TCP connect timeout), men går fint
-// via CORS-proxy (bekräftat fungerande via cors.eu.org från GitHub Actions).
+// OBS: astorp.se blockerar datacenter-IP:er – allorigins /get returnerar 500 (intern
+// proxy-fel), cors.eu.org returnerar 429 (nere nov 2026). Behålls med hopp om att
+// dessa proxar löser sig; proxyPrefix='allorigins-get' är specialfall för /get-endpointen.
 async function bonnieLunchFromAstorp(proxyPrefix) {
     const { astorpUrl } = CONFIG.bonnieLunch;
-    const url = proxyPrefix.includes('url=')
-        ? `${proxyPrefix}${encodeURIComponent(astorpUrl)}`
-        : `${proxyPrefix}${astorpUrl}`;
+    let html;
 
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const html = await response.text();
+    if (proxyPrefix === 'allorigins-get') {
+        // allorigins /get – returnerar JSON-wrapper {"contents":"..."}
+        const url = `https://api.allorigins.win/get?url=${encodeURIComponent(astorpUrl)}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const j = await response.json();
+        html = j.contents;
+    } else {
+        const url = proxyPrefix.includes('url=')
+            ? `${proxyPrefix}${encodeURIComponent(astorpUrl)}`
+            : `${proxyPrefix}${astorpUrl}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        html = await response.text();
+    }
+    if (!html) throw new Error('Tomt svar från proxy');
     if (!/matsedel\s+vecka/i.test(html)) throw new Error('Ingen matsedel hittad på sidan');
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -701,8 +718,9 @@ async function fetchBonnieLunch() {
     if (!el) return;
 
     const sources = [
-        () => bonnieLunchFromAstorp(CONFIG.corsProxy),      // astorp.se via allorigins
-        () => bonnieLunchFromAstorp('https://cors.eu.org/'), // astorp.se via cors.eu.org (bekräftat fungerande)
+        () => bonnieLunchFromAstorp('allorigins-get'),       // astorp.se via allorigins /get
+        () => bonnieLunchFromAstorp(CONFIG.corsProxy),       // astorp.se via allorigins /raw
+        () => bonnieLunchFromAstorp('https://cors.eu.org/'), // astorp.se via cors.eu.org
         () => bonnieLunchFromApi()                          // skolmaten.se API v4 (reserv)
     ];
 

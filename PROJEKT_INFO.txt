@@ -53,9 +53,10 @@ API-ENDPOINTS (vad koden faktiskt använder)
    OBS: ersatte openai.com/news/rss.xml som inte längre existerar
 
 8. AI-nyheter The Verge AI (Atom-feed via api.allorigins.win):
-   https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.theverge.com%2Fai-artificial-intelligence%2Frss%2Findex.xml
+   https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.theverge.com%2Frss%2Fai-artificial-intelligence%2Findex.xml
    OBS: Atom 1.0-format (<entry>/<link href="">/<published>) – koden hanterar båda RSS och Atom
-   OBS: URL-format ändrat 2026-08-15 – theverge.com bytte från /rss/ai-artificial-intelligence/ till /ai-artificial-intelligence/rss/
+   OBS: 2026-11-07: Rätt URL är /rss/ai-artificial-intelligence/index.xml (200 OK).
+     /ai-artificial-intelligence/rss/index.xml returnerar 404 – ev. ändrades tillbaka av Verge.
 
 9. Macworld Sverige (RSS via api.allorigins.win):
    https://api.allorigins.win/raw?url=https%3A%2F%2Fwww.macworld.se%2Ffeed
@@ -86,17 +87,41 @@ API-ENDPOINTS (vad koden faktiskt använder)
 
 CORS-PROXYER
 ------------
-  Allt RSS/börs/kalender: https://api.allorigins.win/raw?url={encoded_full_url}
+  Primär (fetchText + fetchStocks): https://api.allorigins.win/get?url={encoded_url}
+    Returnerar JSON {"contents":"...","status":{"http_code":...}}. Bekräftat OK nov 2026.
+  Sekundär (fetchText-fallback): https://api.allorigins.win/raw?url={encoded_url}
+    Returnerar innehållet direkt. Kan ge 500/522 för vissa URL:er (SVT, Calendar, astorp.se).
+  Sista utväg (nyheter): https://api.rss2json.com/v1/api.json?rss_url={encoded_url}
+    Fungerar utmärkt för alla RSS-flöden.
   OBS: corsproxy.io kräver betalplan (returnerar 200 med error-JSON) – använd INTE
-  OBS 2026-08-25: cors.eu.org fungerar igen (bekräftat 200 OK för svt.se-RSS och astorp.se
-    via GitHub Actions) – tidigare notering om 403/allowlist stämde inte längre vid omtest.
-    Format: https://cors.eu.org/{full_url} (utan URL-encoding). Används som fallback för
-    Bonnies matsedel (se punkt 10 ovan); inte bytt till global default då den inte testats
-    mot samtliga övriga källor (Yahoo Finance, iCal m.fl.).
-    Även codetabs.com och corsproxy.io testades 2026-08-25: båda gav fel/nere (522 resp 403).
+  OBS 2026-11-07: cors.eu.org returnerar 429 (Cloudflare-sida) för allt inkl. sin homepage –
+    bedöms nere/blockerad. Borttaget ur fetchText()-kedjan. Behålls som sista försök för
+    Bonnies matsedel i fetchBonnieLunch() ifall det återkommer.
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-07 (övervakningskontroll + fix)
+  - FYND: allorigins.win /raw misslyckas för Yahoo Finance (timeout/no response). Bytt
+    fetchStocks() till allorigins /get (bekräftat fungerande: returnerar JSON-wrapper
+    {"contents":"..."} med korrekt Yahoo Finance-data för ^GSPC, ^OMX etc.)
+  - FYND: cors.eu.org returnerar 429 (Too Many Requests / Cloudflare-sida) för ALLA
+    URL:er inklusive dess homepage – bedöms vara nere. Borttaget ur fetchText()-kedjan.
+    Ny kedja: allorigins /get → allorigins /raw → rss2json. Nyheter fungerar via rss2json.
+  - FYND: allorigins.win /get fungerar (bekräftat Yahoo Finance). /raw ger 500/522 för
+    SVT, Google Calendar och astorp.se – dessa uppnås via rss2json (nyheter) men inte för
+    kalender eller Bonnies matsedel.
+  - FYND: Google Kalender troligen trasig just nu – allorigins /get ger 522 (kan inte
+    ansluta till calendar.google.com). Ingen tillförlitlig proxy hittad.
+  - FYND: Bonnies matsedel fortfarande trasig – astorp.se blockerar alla datacenter-IP:er
+    (allorigins /raw 522, allorigins /get 500, cors.eu.org 429). Lade till allorigins-get
+    som första fallback-källa. skolmaten.se API fortfarande 404 för Hyllinge.
+  - FYND: The Verge AI URL – PROJEKT_INFO 2026-08-15 säger "bytt till /ai-artificial-
+    intelligence/rss/" men det URL:et returnerar nu 404. Nuvarande kod har korrekt
+    URL (/rss/ai-artificial-intelligence/index.xml, 200 OK). Ingen kodändring nödvändig.
+  - Kodändringar: dashboard.js→v15 (fetchText, fetchStocks, bonnieLunchFromAstorp)
+  - Fungerande: SMHI, elpris, SVT/DN/AI-nyheter (rss2json), Macworld, Koenigsegg
+  - Trasigt utan fix: Bonnie matsedel (astorp.se-blockering), Kalender (allorigins→Google)
+
   2026-11-06 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached från refs/heads/master; local tracking ref var stale (6 commits
     ahead visades falskt). git branch -f master HEAD + git checkout master + git fetch → master
