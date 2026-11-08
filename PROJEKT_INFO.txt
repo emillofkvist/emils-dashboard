@@ -100,6 +100,32 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-08 (övervakningskontroll + kritiskt git-fix)
+  - GIT-FYND: HEAD var detached vid 682d354 (2026-11-07 allorigins-fix); master och
+    origin/master stod på d6d405e (2026-11-06). Gårdagens fix (dashboard.js v15 med
+    allorigins /get) hade ALDRIG pushats till origin – live-sajten körde fortfarande
+    gammal kod utan cors.eu.org-fix och utan allorigins /get för fetchStocks.
+    Fix: git branch -f master HEAD + git checkout master → master nu på 682d354.
+  - Direkta API-tester – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=3.8°C, 82 timeSeries, symbol=6)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), pris 239–419 öre/kWh
+    ✅ SVT Nyheter RSS (/nyheter/rss.xml): 302 → /rss.xml (200 OK), 62399 chars, valid RSS
+    ✅ DN RSS: 200 OK, valid RSS XML
+    ✅ TechCrunch AI RSS: 200 OK, valid RSS XML
+    ✅ The Verge AI Atom (/rss/ai-artificial-intelligence/index.xml): 200 OK, 10 entries
+    ✅ Macworld.se RSS: 200 OK, 258675 chars, 20 items
+    ✅ Koenigsegg Google News RSS (en/US): 200 OK, 78430 chars, 66 items
+    ✅ Google Calendar iCal: 200 OK, BEGIN:VCALENDAR bekräftat (direkt)
+    ✅ rss2json TechCrunch AI: status=ok, 10 items (rate-limitad om anrop skickas för tätt)
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win /get + /raw: 522/500 från sandbox (känt beteende, bekräftat OK nov 2026 från browser-IP)
+    ⚠️ cors.eu.org: 429 för allt inkl. homepage – bedömd nere (borttagen ur fetchText-kedjan 2026-11-07)
+    ⚠️ Yahoo Finance via allorigins: server-side-blockering (graceful fallback "Ej tillgänglig")
+    ⚠️ astorp.se (Bonnies matsedel): datacenter-IP blockeras direkt (känt), fungerar via allorigins/cors.eu.org från browser
+    ⚠️ Google Calendar via allorigins: allorigins /get gav 522 för calendar.google.com 2026-11-07 (intermittent)
+  - Kritisk push: dashboard.js v15 (allorigins /get-fix) nu äntligen live på GitHub Pages.
+  - Inga ytterligare kodändringar nödvändiga.
+
   2026-11-07 (övervakningskontroll + fix)
   - FYND: allorigins.win /raw misslyckas för Yahoo Finance (timeout/no response). Bytt
     fetchStocks() till allorigins /get (bekräftat fungerande: returnerar JSON-wrapper
