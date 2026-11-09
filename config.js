@@ -28,7 +28,7 @@ const CONFIG = {
     newsFeeds: [
         {
             name: "SVT Nyheter",
-            url: "https://www.svt.se/nyheter/rss.xml"
+            url: "https://www.svt.se/rss.xml"
         },
         {
             name: "DN",

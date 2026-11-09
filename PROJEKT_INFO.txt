@@ -100,6 +100,32 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-09 (övervakningskontroll + kritisk fix SVT RSS-URL)
+  - GIT-FYND: HEAD var detached vid 6e51ce1 (2026-11-08); local master stod på 6e51ce1
+    (= origin/master). Fix: git branch -f master HEAD + git checkout master.
+  - KRITISKT FEL: SVT Nyheter RSS-URL returnerar 404.
+    config.js använde https://www.svt.se/nyheter/rss.xml → HTTP 404 (bekräftat).
+    Korrekt URL (bekräftat 200 OK, valid RSS XML med artiklar):
+    https://www.svt.se/rss.xml
+    Fix: config.js uppdaterad, v11 → v12.
+  - Direkta API-tester – alla sources OK utom SVT-URL:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=4.4, symbol_code=6)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=2.88 för tidig morgon
+    ✅ SVT Nyheter RSS (ny URL /rss.xml): 200 OK, valid RSS XML med artiklar – FIXAT
+    ✅ DN RSS (direkt): 200 OK
+    ✅ TechCrunch AI RSS: 200 OK
+    ✅ The Verge AI Atom (/rss/ai-artificial-intelligence/index.xml): 200 OK
+    ✅ Macworld.se RSS: 200 OK
+    ✅ Koenigsegg Google News RSS: 302 → redirect (hanteras korrekt via allorigins)
+    ✅ Google Calendar iCal (direkt): 200 OK, BEGIN:VCALENDAR bekräftat
+    ✅ astorp.se (Bonnies matsedel, direkt): 200 OK, 95 KB, matsedel+vecka bekräftat
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win /get: returnerar 500 (nginx) från sandbox (känt beteende, OK från browser)
+    ⚠️ allorigins.win /raw: tom respons från sandbox (känt beteende)
+    ⚠️ rss2json: rate-limitad under testning ("converting new feeds in a very short period")
+       – testningsartefakt, fungerar korrekt i produktion
+    ⚠️ Yahoo Finance via allorigins: server-side-blockering (graceful fallback "Ej tillgänglig")
+
   2026-11-08 (övervakningskontroll + kritiskt git-fix)
   - GIT-FYND: HEAD var detached vid 682d354 (2026-11-07 allorigins-fix); master och
     origin/master stod på d6d405e (2026-11-06). Gårdagens fix (dashboard.js v15 med
