@@ -100,6 +100,32 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-10 (övervakningskontroll)
+  - GIT-FYND: HEAD var detached vid a4d9c16 (2026-11-09); local master stod på d6d405e
+    (3 commits bakom). Fix: git branch -f master HEAD + git checkout master.
+    origin/master var vid d6d405e – de 3 senaste kommittsen (682d354, 6e51ce1, a4d9c16) hade
+    aldrig pushats. Pushar nu alla 3 + dagens rapport.
+  - Direkta API-tester – alla sources OK:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=3.6, wind_speed=0.8,
+       relative_humidity=97, symbol_code=6 – alla fält korrekt int/float)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=3.08 för natt
+    ✅ SVT Nyheter RSS (https://www.svt.se/rss.xml): 200 OK via allorigins /raw, 62137 chars,
+       valid RSS XML – den fixade URL:en från 2026-11-09 bekräftad fungerande
+    ✅ DN RSS (direkt): 200 OK, valid RSS XML (bekräftat via rss2json: status=ok, 10 items)
+    ✅ TechCrunch AI RSS: status=ok, 10 items via rss2json
+    ✅ The Verge AI Atom (/rss/ai-artificial-intelligence/index.xml): 200 OK, 29426 chars via allorigins /get
+    ✅ Macworld.se RSS: status=ok, 10 items via rss2json
+    ✅ Koenigsegg Google News RSS (en/US): status=ok, 10 items via rss2json
+  - Ej testade direkt (sandbox-IP-specifika begränsningar):
+    ⚠️ allorigins.win /get: returnerar 522 från sandbox-IP (känt beteende sedan okt 2026,
+       OK från browser-IP). allorigins /raw fungerar för SVT (200 OK) men 522 för
+       calendar.google.com och Yahoo Finance.
+    ⚠️ Yahoo Finance: allorigins /get ger 522, /raw ger 522 – graceful fallback "Ej tillgänglig"
+       (känt långvarigt problem sedan allorigins /raw slutade fungera mot yahoo.com nov 2026)
+    ⚠️ Google Kalender: allorigins /get ger 522 för calendar.google.com (känt problem sedan okt 2026)
+    ⚠️ Bonnies matsedel (astorp.se): allorigins ger 502/522, cors.eu.org ger 429 – känt problem
+  - Inga kodändringar nödvändiga.
+
   2026-11-09 (övervakningskontroll + kritisk fix SVT RSS-URL)
   - GIT-FYND: HEAD var detached vid 6e51ce1 (2026-11-08); local master stod på 6e51ce1
     (= origin/master). Fix: git branch -f master HEAD + git checkout master.
