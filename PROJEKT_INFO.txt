@@ -100,6 +100,29 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-11 (övervakningskontroll + fix)
+  - GIT-FYND: HEAD var detached vid 1546364 (2026-11-10); local master stod på d6d405e
+    (3 commits bakom HEAD). Fix: git branch -f master HEAD + git checkout master.
+    origin/master var vid d6d405e – de 3 commits (6e51ce1, a4d9c16, 1546364) hade ej pushats.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON med timeSeries och alla parametrar
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh korrekt
+    ✅ SVT Nyheter RSS: 200 OK via rss2json (fallback), 10 items
+    ✅ DN RSS: 200 OK via rss2json (fallback), 10 items
+    ✅ TechCrunch AI RSS: status=ok, items via rss2json
+    ✅ The Verge AI Atom: status=ok, items via rss2json
+    ✅ Macworld.se RSS: status=ok, items via rss2json
+    ✅ Koenigsegg Google News RSS: status=ok, items via rss2json
+    ❌ allorigins.win: hänger utan svar i 15+ sekunder för alla URL:er (global degradering
+       nov 2026 – svarar med "Oops... Request Timeout." efter lång väntan). Påverkar:
+       börskurser (Yahoo Finance) och Google Kalender.
+    ❌ Yahoo Finance (via allorigins): allorigins timeout → börskurser "Ej tillgänglig"
+    ❌ Google Kalender (via allorigins/rss2json): rss2json kan ej tolka iCal → ej synlig
+    ❌ Bonnies matsedel (astorp.se): allorigins timeout, cors.eu.org rate-limited – känt problem
+  - FIX: dashboard.js v=15→v=16 – lagt till AbortController-timeout i fetchText() och
+    fetchStocks(): allorigins-anrop avbryts efter 5 s (fetchText) resp. 8 s (fetchStocks)
+    istället för att hänga i 15-60+ sekunder. RSS-nyheter når nu rss2json-fallback snabbt.
+
   2026-11-10 (övervakningskontroll)
   - GIT-FYND: HEAD var detached vid a4d9c16 (2026-11-09); local master stod på d6d405e
     (3 commits bakom). Fix: git branch -f master HEAD + git checkout master.

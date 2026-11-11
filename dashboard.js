@@ -32,13 +32,16 @@ function updateDateTime() {
 
 // Hämta text via proxy – försöker allorigins /get → allorigins /raw → rss2json (som RSS XML)
 // OBS: cors.eu.org returnerar 429 för allt (bekräftat nere nov 2026) – borttaget ur kedjan.
+// OBS: allorigins.win kan vara instabilt och svara långsamt – 5 s timeout per försök.
 async function fetchText(targetUrl) {
     const encoded = encodeURIComponent(targetUrl);
 
     // 1. allorigins.win /get – returnerar JSON-wrapper {"contents":"...","status":{...}}
     //    Mer robust än /raw: hanterar fler URL-typer och ger tydlig HTTP-statuskod.
     try {
-        const r = await fetch(`https://api.allorigins.win/get?url=${encoded}`);
+        const ac1 = new AbortController();
+        setTimeout(() => ac1.abort(), 5000);
+        const r = await fetch(`https://api.allorigins.win/get?url=${encoded}`, { signal: ac1.signal });
         if (r.ok) {
             const j = await r.json();
             const t = j.contents;
@@ -48,7 +51,9 @@ async function fetchText(targetUrl) {
 
     // 2. allorigins.win /raw – direktretur av innehållet
     try {
-        const r = await fetch(`https://api.allorigins.win/raw?url=${encoded}`);
+        const ac2 = new AbortController();
+        setTimeout(() => ac2.abort(), 5000);
+        const r = await fetch(`https://api.allorigins.win/raw?url=${encoded}`, { signal: ac2.signal });
         if (r.ok) {
             const t = await r.text();
             if (t && t.trim().length > 50 && !t.includes('"error"')) return t;
@@ -196,14 +201,17 @@ async function fetchStocks() {
         { symbol: '^DJI', name: 'Dow Jones', id: 3 }
     ];
 
-    // Använder Yahoo Finance via allorigins /get (bekräftat fungerande nov 2026).
+    // Använder Yahoo Finance via allorigins /get.
     // /raw-endpointen för allorigins timeout:ar för Yahoo Finance; /get fungerar och
     // returnerar JSON-wrapper {"contents": "..."} som måste parsas separat.
+    // OBS: allorigins.win kan vara instabilt – 8 s timeout per börskurs.
     for (const stock of stocks) {
         try {
             const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`;
             const url = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-            const response = await fetch(url);
+            const ac = new AbortController();
+            setTimeout(() => ac.abort(), 8000);
+            const response = await fetch(url, { signal: ac.signal });
             const wrapper = await response.json();
             const data = JSON.parse(wrapper.contents);
 
