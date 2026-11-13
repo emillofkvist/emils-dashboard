@@ -100,6 +100,30 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-13 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached; local master stod på b4cd9cc (6 commits bakom HEAD).
+    De 6 senaste commitsarna (682d354 t.o.m. b4cd9cc, 2026-11-07 till 2026-11-12) hade
+    aldrig pushats till origin. Fix: git branch -f master HEAD + git checkout master.
+    Alla 6+1 commits nu pushade till origin/master.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=3.1, wind_speed=2.5,
+       symbol_code=3, alla fält korrekt)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=1.59993
+    ✅ SVT Nyheter RSS: status=ok, 10 items via rss2json (bekräftat 200 OK direkt)
+    ✅ DN RSS: status=ok, 10 items via rss2json (bekräftat 200 OK direkt)
+    ✅ TechCrunch AI RSS: status=ok, 10 items via rss2json (bekräftat 200 OK direkt)
+    ✅ The Verge AI RSS (/rss/ai-artificial-intelligence/index.xml): status=ok, 10 items
+    ✅ Macworld.se RSS: status=ok, items via rss2json (bekräftat 200 OK direkt)
+    ✅ Koenigsegg Google News RSS (en/US): status=ok, 10 items via rss2json
+    ✅ astorp.se (direkt): 200 OK, 97 KB, matsedel vecka 45-49 bekräftad
+    ❌ allorigins.win /get: 500 (nginx) från sandbox-IP – känt beteende för datacenter-IP.
+       Påverkar: Yahoo Finance (börskurser), Google Kalender, Bonnie matsedel (astorp.se via proxy).
+    ❌ cors.eu.org: 429 (rate-limited/nere) – känt sedan nov 2026.
+    ❌ Yahoo Finance (via allorigins): allorigins timeout → "Ej tillgänglig" (känt problem)
+    ❌ Google Kalender: allorigins timeout → kalenderwidget ej synlig (känt)
+    ❌ Bonnies matsedel (astorp.se via proxy): allorigins 500 + cors.eu.org 429 → ej synlig (känt)
+  - Inga nya kodfel hittade. Inga kodändringar nödvändiga.
+
   2026-11-12 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached; local master stod på d6d405e (5 commits bakom HEAD).
     De 5 senaste commitsarna (682d354 t.o.m. e521b0e, 2026-11-07 till 2026-11-11) hade
