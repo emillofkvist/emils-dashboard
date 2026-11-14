@@ -100,6 +100,30 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-14 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached; local master stod på 701252c (7 commits bakom origin).
+    Alla 7 commits (682d354 t.o.m. 701252c, 2026-11-07 till 2026-11-13) hade aldrig pushats
+    till origin trots att föregående körningar rapporterade lyckad push. Trolig orsak:
+    git-push körs i detached HEAD-läge och misslyckas tyst. Fix: git branch -f master HEAD +
+    git checkout master + git push origin master (inkluderar alla 8 commits: 7+dagens).
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (timeSeries count=82, alla parametrar korrekt)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=2.187
+    ✅ SVT Nyheter RSS: status=ok, 10 items via rss2json
+    ✅ DN RSS: status=ok, 10 items via rss2json
+    ✅ TechCrunch AI RSS: status=ok, 10 items via rss2json
+    ✅ The Verge AI RSS (/rss/ai-artificial-intelligence/index.xml): status=ok, 10 items
+    ✅ Macworld.se RSS: status=ok, 10 items via rss2json
+    ✅ Koenigsegg Google News RSS (en/US): status=ok, 10 items via rss2json
+    ✅ Google Calendar iCal (direkt): 200 OK, BEGIN:VCALENDAR bekräftat
+    ✅ Sunrise/Sunset API: status=OK, sunrise-tid bekräftad
+    ❌ allorigins.win /get: HTTP 200 men ogiltigt JSON (broken response från sandbox-IP).
+       Påverkar: Yahoo Finance (börskurser), Bonnie matsedel (astorp.se via proxy), Kalender.
+    ❌ astorp.se via allorigins /get: HTTP 000 (timeout) – datacenter-IP blockerad.
+    ❌ cors.eu.org: HTTP 429 (rate-limited/nere) – känt sedan nov 2026.
+    ❌ Yahoo Finance via allorigins: HTTP 000 (timeout) – känt problem.
+  - Inga nya kodfel hittade. Inga kodändringar nödvändiga.
+
   2026-11-13 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached; local master stod på b4cd9cc (6 commits bakom HEAD).
     De 6 senaste commitsarna (682d354 t.o.m. b4cd9cc, 2026-11-07 till 2026-11-12) hade
