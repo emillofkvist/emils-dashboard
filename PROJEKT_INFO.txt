@@ -100,6 +100,28 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-15 (övervakningskontroll)
+  - GIT-FYND: Inga problem. master är up to date med origin/master (commit 557cefa).
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=4.9, wind_speed ok)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=0.90338
+    ✅ SVT Nyheter RSS: status=ok, items bekräftade via rss2json
+    ✅ DN RSS: status=ok, items bekräftade via rss2json
+    ✅ TechCrunch AI RSS: status=ok, items bekräftade via rss2json
+    ✅ The Verge AI RSS: status=ok, items bekräftade via rss2json
+    ✅ Macworld.se RSS: status=ok, items bekräftade via rss2json
+    ✅ Koenigsegg Google News RSS (en/US): status=ok, items bekräftade via rss2json
+    ✅ Google Calendar iCal (direkt curl): 200 OK, BEGIN:VCALENDAR bekräftat
+    ❌ allorigins.win: Returnerar "Oops... Request Timeout." (HTML, HTTP 200) för ALLA
+       anrop – mer degraderat än igår (då: ogiltigt JSON, nu: timeout-sida).
+       Påverkar: Yahoo Finance (börskurser), Bonnie matsedel (astorp.se), Kalender.
+    ❌ cors.eu.org: Returnerar Cloudflare-challenge-sida (ej 429 som igår) – nere.
+    ❌ Yahoo Finance: 429 Too Many Requests från datacenter-IP (ej ny).
+    ❌ Google Calendar via allorigins: HTTP 520 (Cloudflare error från allorigins).
+    ❌ astorp.se via allorigins: timeout (allorigins globalt nere idag).
+  - Trend: allorigins.win försämras dag för dag (nov 2026). Från browser-IP kan det
+    fortfarande fungera. Inga kodändringar nödvändiga – samma bild som 2026-11-14.
+
   2026-11-14 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached; local master stod på 701252c (7 commits bakom origin).
     Alla 7 commits (682d354 t.o.m. 701252c, 2026-11-07 till 2026-11-13) hade aldrig pushats
