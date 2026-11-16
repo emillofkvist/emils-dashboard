@@ -100,6 +100,31 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-16 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached vid 956c64a (2026-11-15); local master stod på 557cefa
+    (1 commit bakom detached HEAD). Fix: git branch -f master HEAD + git checkout master.
+    master nu på 956c64a, 1 commit ahead av origin/master (gårdagens rapport aldrig pushad).
+    Pushar nu som del av dagens körning.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=5.4, wind_speed=2.0, symbol_code=6)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=1.58775
+    ✅ SVT Nyheter RSS (direkt): 200 OK, valid RSS XML
+    ✅ DN RSS (direkt): 200 OK, valid RSS XML
+    ✅ TechCrunch AI RSS (direkt): 200 OK, valid RSS XML
+    ✅ The Verge AI RSS (direkt, /rss/ai-artificial-intelligence/index.xml): 200 OK
+    ✅ Macworld.se RSS (direkt): 200 OK
+    ✅ Koenigsegg Google News RSS (direkt): 302 redirect (hanteras av allorigins)
+    ✅ Google Calendar iCal (direkt): 200 OK, BEGIN:VCALENDAR bekräftat
+    ✅ allorigins /get för SVT RSS: 200 OK, valid JSON-wrapper – ÅTERHÄMTAD (gårdagens globala
+       timeout-problem verkar löst; allorigins svarar igen med korrekt innehåll)
+    ❌ allorigins /get för Google Calendar: tom respons (timeout) – datacenter-IP specifikt
+    ❌ allorigins /get för astorp.se: 522 error – datacenter-IP blockeras av Cloudflare/WAF
+    ❌ allorigins /get för Yahoo Finance: tom respons (Yahoo Finance blockerar server-side)
+    ⚠️ rss2json: rate-limitad under testkörning (testningsartefakt – fungerar i produktion)
+  - Trend: allorigins.win verkar ha återhämtat sig från gårdagens globala timeout-degradering.
+    Fungerar nu för allmänna RSS-flöden (SVT ✅). Kalender/astorp/Yahoo Finance fortfarande
+    nere via allorigins (URL-specifika problem, ej global degradering). Inga kodändringar.
+
   2026-11-15 (övervakningskontroll)
   - GIT-FYND: Inga problem. master är up to date med origin/master (commit 557cefa).
   - API-STATUS:
