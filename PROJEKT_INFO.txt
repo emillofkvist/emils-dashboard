@@ -100,6 +100,46 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-17 (övervakningskontroll + git-fix + proxy-sökning)
+  - GIT-FYND: HEAD var detached vid b32e4c3 (2026-11-16); local master stod på b32e4c3
+    (2 commits bakom origin). Fix: git branch -f master HEAD + git checkout master.
+    Två opushade commits (2026-11-15 och 2026-11-16) pushade nu tillsammans med dagens.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (air_temperature=5.3, symbol_code bekräftat)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=2.2323
+    ✅ SVT Nyheter RSS (direkt): 200 OK, valid RSS XML
+    ✅ DN RSS (direkt): 200 OK, valid RSS XML
+    ✅ TechCrunch AI RSS (direkt via rss2json): status=ok, items bekräftade
+    ✅ The Verge AI RSS (direkt via rss2json): status=ok, items bekräftade
+    ✅ Macworld.se RSS (direkt via rss2json): status=ok, items bekräftade
+    ✅ Koenigsegg Google News RSS (via rss2json): status=ok, items bekräftade
+    ✅ Google Calendar iCal (direkt): 200 OK, text/calendar (men ingen CORS-header)
+    ❌ allorigins.win /get: HTTP 000 (complete timeout) – mer nedgraderat än 2026-11-16
+    ❌ allorigins.win /raw: HTTP 408 (server svarar men kan ej proxya) – allorigins nere
+    ❌ cors.eu.org: HTTP 429 (bekräftat nere)
+    ❌ Yahoo Finance: 429 Too Many Requests (server-side IP-blockering)
+    ❌ Börskurser: allorigins ner → alla 4 aktier "Ej tillgänglig"
+    ❌ Kalender: allorigins ner, rss2json kan ej tolka iCal → ej synlig
+    ❌ Bonnies matsedel: alla proxies nere → ej synlig
+  - PROXY-SÖKNING: Testade samtliga kända gratis CORS-proxyer som alternativ till allorigins.win:
+    ❌ api.cors.lol: HTTP 429 (rate-limited)
+    ❌ proxy.cors.sh: DNS-fel / unreachable
+    ❌ cors-anywhere.herokuapp.com: HTTP 403 (kräver manuell access request)
+    ❌ corsproxy.io: Kräver API-nyckel (betaltjänst)
+    ❌ thingproxy.freeboard.io: DNS-fel / unreachable
+    ❌ api.codetabs.com: HTTP 000 (timeout)
+    ❌ yacdn.org: HTTP 000 (timeout)
+    ❌ crossorigin.me: HTTP 520 (Cloudflare-fel)
+    ❌ corsproxy.org: HTTP 301 → vidarebefordrar till sin egna hemsida, funkar ej som proxy
+    Slutsats: Alla kända gratis CORS-proxyer är nere, kräver betalning eller är rate-limitade.
+    allorigins.win är funktionellt nere (svarar med 408/000 för proxying).
+    Ingen ny kodfix möjlig utan betalproxy eller egenutvecklad Cloudflare Worker.
+  - Trend: allorigins.win fortsätter försämras (2026-11-16: delvis fungerande, 2026-11-17: helt nere).
+    RSS-nyheter (SVT, DN, AI, Macworld, Koenigsegg) fungerar via rss2json-fallbacken.
+    Stabila komponenter: SMHI, elpris, alla RSS-nyheter.
+    Trasiga komponenter: börskurser, kalender, Bonnies matsedel (alla proxy-beroende).
+  - Inga kodändringar nödvändiga – situationen är känd och dokumenterad.
+
   2026-11-16 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached vid 956c64a (2026-11-15); local master stod på 557cefa
     (1 commit bakom detached HEAD). Fix: git branch -f master HEAD + git checkout master.
