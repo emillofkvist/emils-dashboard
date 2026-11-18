@@ -100,6 +100,36 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-18 (övervakningskontroll)
+  - GIT-FYND: master synkad med origin/master vid ff816c5 – inget detached HEAD.
+    Inga orphaned commits. Git-läget är korrekt.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (timeSeries count=82, air_temperature korrekt)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), time_start bekräftat
+    ✅ SVT Nyheter RSS (direkt): 200 OK, valid RSS XML
+    ✅ DN RSS (direkt): 200 OK, valid RSS XML
+    ✅ TechCrunch AI RSS (direkt): 200 OK, valid RSS XML
+    ✅ The Verge AI RSS (direkt): 200 OK, valid Atom
+    ✅ Macworld.se RSS (direkt): 200 OK, valid RSS XML
+    ✅ SVT via rss2json: status=ok, 10 items bekräftade
+    ✅ DN via rss2json: status=ok, 10 items bekräftade
+    ✅ Macworld via rss2json: status=ok, items bekräftade (när ej rate-limitad)
+    ❌ allorigins.win /get: HTTP 000 (timeout) – datacenter-IP fortsatt nere
+    ❌ allorigins.win /raw: tom respons – känt sedan nov 2026
+    ❌ Yahoo Finance: allorigins nere → börskurser "Ej tillgänglig" (känt)
+    ❌ Google Kalender: allorigins nere → kalender ej synlig (känt)
+    ❌ Bonnies matsedel: allorigins nere, cors.eu.org ej testad (känt)
+    ⚠️ rss2json TechCrunch/Verge/Koenigsegg: rate-limitad under testkörning
+       ("converting new feeds in a very short period") – testningsartefakt;
+       koden träffar rss2json med flera anrop tätt under test, OK i produktion.
+    ⚠️ cors.eu.org: ej testad – bedömd nere sedan 2026-11-07 (429)
+    ⚠️ astorp.se + Google Calendar: 200 OK direkt men kräver proxy (känt datacenter-IP-block)
+  - Trend: Ingen förändring jämfört med 2026-11-17. allorigins.win fortsatt nere
+    från datacenter-IP. RSS-nyheter fungerar via rss2json-fallback i produktion.
+    Stabila: SMHI, elpris, SVT/DN (rss2json). Trasiga (känt): börskurser, kalender,
+    Bonnies matsedel. Inga nya fel identifierade.
+  - Inga kodändringar nödvändiga.
+
   2026-11-17 (övervakningskontroll + git-fix + proxy-sökning)
   - GIT-FYND: HEAD var detached vid b32e4c3 (2026-11-16); local master stod på b32e4c3
     (2 commits bakom origin). Fix: git branch -f master HEAD + git checkout master.
