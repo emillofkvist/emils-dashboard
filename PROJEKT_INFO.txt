@@ -100,6 +100,35 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-19 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached vid e596467 (2026-11-18); local master stod på e596467
+    (1 commit bakom origin). Fix: git branch -f master HEAD + git checkout master.
+    Gårdagens rapport (e596467) ej pushad – pushad nu tillsammans med dagens.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (timeSeries count=82, air_temperature=2.7,
+       wind_speed korrekt, alla parametrar bekräftade)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=1.82 för natt
+    ✅ SVT Nyheter RSS (via rss2json): status=ok, items bekräftade
+    ✅ DN RSS (direkt): 200 OK (rss2json rate-limitad under test – testningsartefakt)
+    ✅ TechCrunch AI RSS (via rss2json): status=ok, items bekräftade
+    ✅ The Verge AI Atom (via rss2json): status=ok, items bekräftade
+    ✅ Macworld.se RSS (via rss2json): status=ok, items bekräftade
+    ✅ Koenigsegg Google News RSS (via rss2json): status=ok, items bekräftade (första testen)
+    ❌ allorigins.win /get: komplett timeout – svarar aldrig, etablerar TLS men 0 bytes
+    ❌ allorigins.win /raw: komplett timeout – nere (bekräftat nere sedan 2026-11-11)
+    ❌ cors.eu.org: 429 (Cloudflare-rate-limiting) – nere sedan 2026-11-07
+    ❌ Yahoo Finance / börskurser: allorigins nere → "Ej tillgänglig" (känt)
+    ❌ Google Kalender: allorigins nere, rss2json kan ej tolka iCal → ej synlig (känt)
+    ❌ Bonnies matsedel: allorigins nere, cors.eu.org nere → ej synlig (känt)
+    ⚠️ rss2json rate-limiting: DN/Koenigsegg rate-limitade vid upprepade tester
+       ("You are converting new feeds in a very short period") – testningsartefakt
+  - Trend: Ingen förändring jämfört med 2026-11-18. Exakt samma bild dag 9 i rad.
+    allorigins.win fortsatt nere från datacenter-IP (proxar aldrig svaret).
+    RSS-nyheter fungerar via rss2json-fallback i produktion (5s timeout hinner falla igenom).
+    Stabila: SMHI, elpris, SVT/DN/AI-nyheter/Macworld/Koenigsegg (via rss2json).
+    Trasiga (känt sedan 2026-11-07–11): börskurser, kalender, Bonnies matsedel.
+    Inga nya fel identifierade. Inga kodändringar nödvändiga.
+
   2026-11-18 (övervakningskontroll)
   - GIT-FYND: master synkad med origin/master vid ff816c5 – inget detached HEAD.
     Inga orphaned commits. Git-läget är korrekt.
