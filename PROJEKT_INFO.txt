@@ -100,6 +100,34 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-20 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached vid d321d01 (2026-11-19); local master stod på d321d01
+    (2 commits bakom origin). Fix: git branch -f master HEAD + git checkout master.
+    Två opushade commits (2026-11-18 och 2026-11-19) pushade nu tillsammans med dagens.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (timeSeries count=82, air_temperature=-0.4,
+       wind_speed=1.2, symbol_code=6)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=1.88135
+    ✅ SVT Nyheter RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ DN RSS (via rss2json): status=ok, 10 items bekräftade (rate-limitad vid parallelltest –
+       testningsartefakt; fungerar korrekt med kort paus mellan anrop)
+    ✅ TechCrunch AI RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ The Verge AI Atom (via rss2json): status=ok, 10 items bekräftade
+    ✅ Macworld.se RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ Koenigsegg Google News RSS (via rss2json): status=ok, 10 items bekräftade
+    ❌ allorigins.win /get: komplett timeout – svarar aldrig
+    ❌ allorigins.win /raw: 500 Internal Server Error (nginx) – nere
+    ❌ cors.eu.org: bedömd nere (429) sedan 2026-11-07 – ej testad idag
+    ❌ Yahoo Finance / börskurser: 429 Too Many Requests (server-side IP-blockering) → "Ej tillgänglig"
+    ❌ Google Kalender: allorigins nere → kalender ej synlig (känt)
+    ❌ Bonnies matsedel: allorigins nere, cors.eu.org nere → ej synlig (känt)
+  - Trend: Ingen förändring jämfört med 2026-11-19. Dag 10 i rad med samma bild.
+    allorigins.win fortsatt nere från datacenter-IP (timeout /get, 500 /raw).
+    RSS-nyheter fungerar via rss2json-fallback i produktion.
+    Stabila: SMHI, elpris, SVT/DN/AI-nyheter/Macworld/Koenigsegg (via rss2json).
+    Trasiga (känt sedan 2026-11-07–11): börskurser, kalender, Bonnies matsedel.
+    Inga nya fel identifierade. Inga kodändringar nödvändiga.
+
   2026-11-19 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached vid e596467 (2026-11-18); local master stod på e596467
     (1 commit bakom origin). Fix: git branch -f master HEAD + git checkout master.
