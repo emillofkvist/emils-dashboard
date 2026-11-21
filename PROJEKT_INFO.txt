@@ -100,6 +100,34 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-21 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached vid bb763b8 (2026-11-20); local master stod på ff816c5
+    (3 commits bakom origin). Fix: git branch -f master HEAD + git checkout master.
+    Tre opushade commits (2026-11-18, 2026-11-19, 2026-11-20) pushade nu tillsammans med dagens.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, korrekt JSON (timeSeries count ok, air_temperature=3.0,
+       wind_speed bekräftat, symbol_code bekräftat)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=1.40546
+    ✅ SVT Nyheter RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ DN RSS (via allorigins /raw): 200 OK, valid XML – allorigins /raw fungerar för DN idag
+    ✅ TechCrunch AI RSS (via rss2json): status=ok, items bekräftade
+    ✅ The Verge AI Atom (via rss2json): status=ok, items bekräftade
+    ✅ Macworld.se RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ Koenigsegg Google News RSS (via rss2json): status=ok, items bekräftade
+    ❌ allorigins.win /get: 500/000 (nere från datacenter-IP) – dag 11 i rad
+    ❌ allorigins.win /raw: 500 för kalender/astorp.se/Yahoo Finance; inkonsekvent
+       (fungerar för DN men ej för andra URL:er)
+    ❌ cors.eu.org: 429 (nere sedan 2026-11-07) – dag 15
+    ❌ Yahoo Finance / börskurser: 429 Too Many Requests → "Ej tillgänglig"
+    ❌ Google Kalender: allorigins nere → kalender ej synlig
+    ❌ Bonnies matsedel: allorigins /get 000, /raw 500, cors.eu.org 429, skolmaten.se 404
+       → ej synlig (alla 4 fallback-källor trasiga)
+  - Trend: Ingen förändring jämfört med 2026-11-20. Dag 11 med identisk bild.
+    RSS-nyheter fungerar via rss2json-fallback i produktion.
+    Stabila: SMHI, elpris, SVT/DN/AI-nyheter/Macworld/Koenigsegg.
+    Trasiga (känt sedan 2026-11-07–11): börskurser, kalender, Bonnies matsedel.
+    Inga nya fel identifierade. Inga kodändringar nödvändiga.
+
   2026-11-20 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached vid d321d01 (2026-11-19); local master stod på d321d01
     (2 commits bakom origin). Fix: git branch -f master HEAD + git checkout master.
