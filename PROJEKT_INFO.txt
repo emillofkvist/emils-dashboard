@@ -100,6 +100,28 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-22 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached från refs/heads/master; local master stod på ff816c5
+    (4 commits bakom origin). Fix: git branch -f master HEAD + git checkout master.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, 82 timeSeries-poster, air_temperature/wind_speed/symbol_code(int) bekräftat
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=1.399
+    ✅ SVT Nyheter RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ DN RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ TechCrunch AI RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ The Verge AI Atom (via rss2json): status=ok, 10 items bekräftade
+    ✅ Macworld.se RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ Koenigsegg Google News RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ allorigins.win /get: Fungerade på FÖRSTA försöket för Yahoo Finance (^OMX: data ok,
+       change -2.51%) och astorp.se/Bonnies matsedel (93KB HTML, matsedel hittad) – ett
+       tecken på att allorigins återhämtat sig efter 11 dagars blockering.
+       Efterföljande anrop från samma session rate-limitades (tomt svar) – känt beteende.
+    ⚠️ cors.eu.org: Ej testad (känt nere sedan 2026-11-07 – 429).
+    ⚠️ Google Kalender: Kan ej testas direkt från datacenter-IP. Beroende av allorigins
+       från browser – troligen fungerande om allorigins återhämtat sig.
+  - Trend: Förbättring jämfört med 2026-11-21. allorigins verkar fungera igen (dag 1 av återhämtning).
+    Inga kodändringar nödvändiga – befintliga fallback-kedjor hanterar situationen korrekt.
+
   2026-11-21 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached vid bb763b8 (2026-11-20); local master stod på ff816c5
     (3 commits bakom origin). Fix: git branch -f master HEAD + git checkout master.
