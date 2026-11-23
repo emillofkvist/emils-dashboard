@@ -100,6 +100,34 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-23 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached från refs/heads/master; local master stod på ff816c5
+    (5 commits bakom detached HEAD vid 4c64f7c). Samma mönster som föregående körningar –
+    git push i detached HEAD-läge misslyckas tyst. Fix: git branch -f master HEAD +
+    git checkout master. master nu på 4c64f7c, 5+1 commits pushade till origin.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, 82 timeSeries-poster, air_temperature=-0.3,
+       wind_speed=4.2, symbol_code=1 (klart)
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=2.05128
+    ✅ SVT Nyheter RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ DN RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ TechCrunch AI RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ The Verge AI Atom (via rss2json): status=ok, items bekräftade
+    ✅ Macworld.se RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ Koenigsegg Google News RSS (via rss2json): status=ok, 10 items bekräftade
+    ❌ allorigins.win /get: tomt svar (0 bytes) från datacenter-IP – dag 2 av osäker
+       återhämtning (gårdagens körning fick svar på FÖRSTA anropet men rate-limitades
+       sedan; idag ingen respons alls). Känt intermittent beteende.
+       Påverkar: Yahoo Finance (börskurser), Google Kalender, Bonnies matsedel.
+    ❌ cors.eu.org: bedömd fortsatt nere (429 sedan 2026-11-07) – ej testad idag.
+    ❌ Yahoo Finance / börskurser: allorigins nere → "Ej tillgänglig" (känt)
+    ❌ Google Kalender: allorigins nere → ej synlig (känt)
+    ❌ Bonnies matsedel: allorigins nere, cors.eu.org nere → ej synlig (känt)
+  - Trend: Samma bild som de senaste veckorna. rss2json-fallbacken håller alla
+    nyhetskällor vid liv. SMHI och elpris stabilt. Proxy-beroende komponenter
+    (börskurser, kalender, matsedel) fortsatt nere – ingen ny lösning hittad.
+  - Inga kodändringar nödvändiga.
+
   2026-11-22 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached från refs/heads/master; local master stod på ff816c5
     (4 commits bakom origin). Fix: git branch -f master HEAD + git checkout master.
