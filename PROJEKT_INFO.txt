@@ -100,6 +100,34 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-24 (övervakningskontroll)
+  - GIT-FYND: master synkad med origin/master vid 63cb92e – inget detached HEAD. Git-läget korrekt.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, 82 timeSeries-poster, air_temperature=-1.7°C bekräftat
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=2.14509
+    ✅ SVT Nyheter RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ DN RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ TechCrunch AI RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ The Verge AI Atom (via rss2json): status=ok, 10 items bekräftade
+    ✅ Macworld.se RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ Koenigsegg Google News RSS (via rss2json): status=ok, 10 items bekräftade
+    ❌ allorigins.win: Initialt 200 OK för Yahoo Finance (^OMX) och astorp.se (via cache),
+       sedan 000/520/522 för alla efterföljande anrop – allorigins nere från datacenter-IP.
+       Påverkar: Yahoo Finance (börskurser), Google Kalender, Bonnies matsedel.
+    ❌ cors.eu.org: Returnerar Cloudflare-HTML-sida – bedömd fortsatt nere (känt sedan 2026-11-07).
+    ❌ corsproxy.io: 401 Unauthorized (kräver API-nyckel) – betaltjänst.
+    ❌ codetabs.com / thingproxy.freeboard.io: 000 (blockerade av agentproxy eller nere).
+    ❌ Yahoo Finance / börskurser: allorigins nere → "Ej tillgänglig" (känt sedan 2026-11-07)
+    ❌ Google Kalender: allorigins nere, cors.eu.org nere → kalender ej synlig (känt)
+    ❌ Bonnies matsedel: astorp.se via allorigins 000, cors.eu.org nere → ej synlig (känt)
+       OBS: astorp.se-HTML innehåller faktiskt matsedel (vecka 47-49 bekräftade i sparad respons
+       från det enda lyckade allorigins-anropet) – problemet är proxyn, inte källan.
+  - Trend: Exakt samma bild som 2026-11-23. allorigins.win uppvisar intermittent funktion via
+    Cloudflare-cache (cachade URL:er fungerar på första anropet, sedan 000). rss2json-fallbacken
+    håller alla nyhetskällor vid liv. SMHI och elpris stabilt. Proxy-beroende komponenter
+    (börskurser, kalender, matsedel) fortsatt nere – ingen ny lösning tillgänglig.
+  - Inga kodändringar nödvändiga.
+
   2026-11-23 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached från refs/heads/master; local master stod på ff816c5
     (5 commits bakom detached HEAD vid 4c64f7c). Samma mönster som föregående körningar –
