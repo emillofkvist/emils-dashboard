@@ -100,6 +100,30 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-25 (övervakningskontroll + git-fix)
+  - GIT-FYND: HEAD var detached från refs/heads/master; local master stod på 63cb92e
+    (1 commit bakom detached HEAD vid 046acd9). Samma mönster som föregående körningar.
+    Fix: git branch -f master HEAD + git checkout master. master nu på 046acd9.
+    OBS: 2026-11-24-commit (046acd9) var ej pushad till origin – pushas nu.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, air_temperature=-2.6°C, timeSeries bekräftad
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=2.53445
+    ✅ SVT Nyheter RSS (via rss2json): status=ok, items bekräftade
+    ✅ DN RSS (via rss2json): status=ok, items bekräftade
+    ✅ TechCrunch AI RSS (via rss2json): status=ok, items bekräftade
+    ✅ The Verge AI Atom (via rss2json): status=ok, items bekräftade
+    ✅ Macworld.se RSS (via rss2json): status=ok, items bekräftade
+    ✅ Koenigsegg Google News RSS (via rss2json): status=ok, items bekräftade
+    ❌ allorigins.win: Timeout från datacenter-IP – anslutning upprättas men inget svar.
+       Påverkar: Yahoo Finance (börskurser), Google Kalender, Bonnies matsedel.
+    ❌ cors.eu.org: 429 (känt nere sedan 2026-11-07).
+    ❌ Yahoo Finance / börskurser: allorigins nere → "Ej tillgänglig" (känt)
+    ❌ Google Kalender: allorigins nere → ej synlig (känt)
+    ❌ Bonnies matsedel: allorigins + cors.eu.org nere → ej synlig (känt)
+  - Trend: Oförändrad sedan 2026-11-07. rss2json håller alla nyhetskällor vid liv.
+    SMHI och elpris stabilt. Proxy-beroende komponenter fortsatt nere.
+  - Inga kodändringar nödvändiga.
+
   2026-11-24 (övervakningskontroll)
   - GIT-FYND: master synkad med origin/master vid 63cb92e – inget detached HEAD. Git-läget korrekt.
   - API-STATUS:
