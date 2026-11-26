@@ -94,12 +94,40 @@ CORS-PROXYER
   Sista utväg (nyheter): https://api.rss2json.com/v1/api.json?rss_url={encoded_url}
     Fungerar utmärkt för alla RSS-flöden.
   OBS: corsproxy.io kräver betalplan (returnerar 200 med error-JSON) – använd INTE
-  OBS 2026-11-07: cors.eu.org returnerar 429 (Cloudflare-sida) för allt inkl. sin homepage –
-    bedöms nere/blockerad. Borttaget ur fetchText()-kedjan. Behålls som sista försök för
-    Bonnies matsedel i fetchBonnieLunch() ifall det återkommer.
+  OBS 2026-11-07: cors.eu.org returnerar 429 från datacenter-IP:er – bedöms nere/blockerad.
+    Kan fungera från privat IP i webbläsare. Behålls som steg 3 i fetchText() och i
+    fetchICalText() samt som sista försök för Bonnies matsedel i fetchBonnieLunch().
+  OBS 2026-11-26: api.allorigins.win ger HTTP 520 (Cloudflare – origin server nere).
+    Påverkar: börskurser, kalender, Bonnies matsedel. RSS-nyheter fungerar via rss2json.
+    fetchICalText() tillagd 2026-11-26 som dedikerad proxy-kedja för iCal (rss2json stöder ej iCal).
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-26 (övervakningskontroll + kodfix)
+  - GIT-FYND: HEAD var detached från refs/heads/master; 2 ej-pushade commits (046acd9, c01ffb4).
+    Fix: git branch -f master HEAD + git checkout master.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, air_temperature=-5.9°C, timeSeries bekräftad
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=2.33284
+    ✅ SVT Nyheter RSS (via rss2json): status=ok, items bekräftade
+    ✅ DN RSS (via rss2json): status=ok, items bekräftade
+    ✅ TechCrunch AI RSS (via rss2json): status=ok, items bekräftade
+    ✅ The Verge AI Atom (via rss2json): status=ok, items bekräftade
+    ✅ Macworld.se RSS (via rss2json): status=ok, items bekräftade
+    ✅ Koenigsegg Google News RSS (via rss2json): status=ok, items bekräftade
+    ❌ api.allorigins.win: HTTP 520 (Cloudflare – origin server nere). Ny incident.
+       Påverkar: börskurser, Google Kalender, Bonnies matsedel.
+    ❌ cors.eu.org: 429 (känt nere sedan 2026-11-07).
+    ❌ Yahoo Finance / börskurser: allorigins nere, cors.eu.org ger 403 för Yahoo Finance.
+       Ingen fungerande CORS-proxy tillgänglig för JSON-data.
+    ❌ Google Kalender: allorigins nere, rss2json kan inte tolka iCal.
+    ❌ Bonnies matsedel: allorigins + cors.eu.org nere.
+  - KODÄNDRINGAR:
+    + fetchText(): cors.eu.org tillagd som steg 3 (kan fungera från privat webbläsare).
+    + fetchICalText(): ny funktion dedikerad för iCal-hämtning (cors.eu.org → allorigins).
+    + fetchCalendar(): använder nu fetchICalText() istället för fetchText().
+    + Kommentarer uppdaterade med allorigins.win-status.
+
   2026-11-25 (övervakningskontroll + git-fix)
   - GIT-FYND: HEAD var detached från refs/heads/master; local master stod på 63cb92e
     (1 commit bakom detached HEAD vid 046acd9). Samma mönster som föregående körningar.

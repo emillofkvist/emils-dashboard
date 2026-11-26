@@ -30,14 +30,16 @@ function updateDateTime() {
     document.getElementById('week').textContent = `Vecka ${weekNumber}`;
 }
 
-// Hämta text via proxy – försöker allorigins /get → allorigins /raw → rss2json (som RSS XML)
-// OBS: cors.eu.org returnerar 429 för allt (bekräftat nere nov 2026) – borttaget ur kedjan.
-// OBS: allorigins.win kan vara instabilt och svara långsamt – 5 s timeout per försök.
+// Hämta text via proxy – försöker allorigins /get → allorigins /raw → cors.eu.org → rss2json (som RSS XML)
+// OBS: allorigins.win ger HTTP 520 (nere nov 2026) – behålls ifall det återkommer.
+// OBS: cors.eu.org ger 429 från datacenter-IP:er (nere nov 2026) men kan fungera från privat IP
+//      i webbläsare – behålls som steg 3.
+// OBS: Sista utväg rss2json fungerar bara för RSS-flöden (ej iCal, JSON etc.).
 async function fetchText(targetUrl) {
     const encoded = encodeURIComponent(targetUrl);
 
     // 1. allorigins.win /get – returnerar JSON-wrapper {"contents":"...","status":{...}}
-    //    Mer robust än /raw: hanterar fler URL-typer och ger tydlig HTTP-statuskod.
+    //    OBS: ger HTTP 520 (nere nov 2026) – behålls ifall det återkommer.
     try {
         const ac1 = new AbortController();
         setTimeout(() => ac1.abort(), 5000);
@@ -60,7 +62,19 @@ async function fetchText(targetUrl) {
         }
     } catch (_) {}
 
-    // 3. rss2json.com – returnerar JSON, rekonstruera minimal RSS XML
+    // 3. cors.eu.org – returnerar innehållet direkt. 429 från datacenter-IP:er men kan
+    //    fungera från webbläsare på privat IP. Bekräftat 429 nov 2026 från sandbox.
+    try {
+        const ac3 = new AbortController();
+        setTimeout(() => ac3.abort(), 5000);
+        const r = await fetch(`https://cors.eu.org/${targetUrl}`, { signal: ac3.signal });
+        if (r.ok) {
+            const t = await r.text();
+            if (t && t.trim().length > 50 && !t.includes('"error"')) return t;
+        }
+    } catch (_) {}
+
+    // 4. rss2json.com – returnerar JSON, rekonstruera minimal RSS XML
     const r3 = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encoded}`);
     if (!r3.ok) throw new Error(`Alla proxyer misslyckades`);
     const data = await r3.json();
@@ -69,6 +83,49 @@ async function fetchText(targetUrl) {
         `<item><title><![CDATA[${it.title || ''}]]></title><link>${it.link || ''}</link><pubDate>${it.pubDate || ''}</pubDate></item>`
     ).join('');
     return `<?xml version="1.0"?><rss version="2.0"><channel>${xmlItems}</channel></rss>`;
+}
+
+// Hämta iCal-innehåll via proxy. Separat från fetchText() eftersom rss2json
+// inte kan tolka iCal-format.
+// Kedja: cors.eu.org → allorigins /get → allorigins /raw
+async function fetchICalText(targetUrl) {
+    const encoded = encodeURIComponent(targetUrl);
+
+    // 1. cors.eu.org – 429 från datacenter-IP:er men kan fungera från privat webbläsare
+    try {
+        const ac1 = new AbortController();
+        setTimeout(() => ac1.abort(), 6000);
+        const r = await fetch(`https://cors.eu.org/${targetUrl}`, { signal: ac1.signal });
+        if (r.ok) {
+            const t = await r.text();
+            if (t && t.includes('BEGIN:VCALENDAR')) return t;
+        }
+    } catch (_) {}
+
+    // 2. allorigins.win /get – nere nov 2026 (HTTP 520) men behålls ifall det återkommer
+    try {
+        const ac2 = new AbortController();
+        setTimeout(() => ac2.abort(), 5000);
+        const r = await fetch(`https://api.allorigins.win/get?url=${encoded}`, { signal: ac2.signal });
+        if (r.ok) {
+            const j = await r.json();
+            const t = j.contents;
+            if (t && t.includes('BEGIN:VCALENDAR')) return t;
+        }
+    } catch (_) {}
+
+    // 3. allorigins.win /raw
+    try {
+        const ac3 = new AbortController();
+        setTimeout(() => ac3.abort(), 5000);
+        const r = await fetch(`https://api.allorigins.win/raw?url=${encoded}`, { signal: ac3.signal });
+        if (r.ok) {
+            const t = await r.text();
+            if (t && t.includes('BEGIN:VCALENDAR')) return t;
+        }
+    } catch (_) {}
+
+    throw new Error('Kalender: inga proxyer lyckades');
 }
 
 // Hämta väder från SMHI
@@ -277,8 +334,8 @@ async function fetchCalendar() {
     }
 
     try {
-        // fetchText() försöker allorigins först, faller tillbaka på cors.eu.org
-        const icalText = await fetchText(CONFIG.calendar.icalUrl);
+        // fetchICalText() hanterar iCal specifikt (rss2json i fetchText() stöder ej iCal)
+        const icalText = await fetchICalText(CONFIG.calendar.icalUrl);
 
         // Parsa iCal-data
         const events = [];
