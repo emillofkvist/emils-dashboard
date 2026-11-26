@@ -1,12 +1,12 @@
 {
-  "updated": "2026-11-26T05:22:24Z",
+  "updated": "2026-11-26T16:47:51Z",
   "stocks": [
     {
       "symbol": "^OMX",
       "name": "OMXS30",
-      "current": 3188.11,
-      "previous": 3214.14,
-      "change": -0.81
+      "current": 3251.38,
+      "previous": 3188.11,
+      "change": 1.98
     },
     {
       "symbol": "^GSPC",
