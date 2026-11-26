@@ -132,7 +132,7 @@ async function fetchICalText(targetUrl) {
 async function fetchWeather() {
     try {
         const { lat, lon } = CONFIG.weather;
-        // snow1g/v1 ersatte pmp3g/v2 den 31 mars 2026
+        // snow1g/v1 ersätte pmp3g/v2 den 31 mars 2026
         const url = `https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/${lon}/lat/${lat}/data.json`;
 
         const response = await fetch(url);
@@ -201,7 +201,7 @@ async function fetchElectricity() {
         const response = await fetch(url);
         const data = await response.json();
 
-        // Hitta aktuellt kvartstimspris (sedan okt 2025: 96 poster/dag, 15-min intervall)
+        // Hitta aktuellt kvarstimspris (sedan okt 2025: 96 poster/dag, 15-min intervall)
         const currentHour = now.getHours();
         const currentQuarter = Math.floor(now.getMinutes() / 15) * 15;
         const currentPrice = data.find(p => {
@@ -249,50 +249,66 @@ async function fetchElectricity() {
     }
 }
 
-// Hämta börsdata
-async function fetchStocks() {
-    const stocks = [
-        { symbol: '^OMX', name: 'OMXS30', id: 0 },
-        { symbol: '^GSPC', name: 'S&P 500', id: 1 },
-        { symbol: '^IXIC', name: 'NASDAQ', id: 2 },
-        { symbol: '^DJI', name: 'Dow Jones', id: 3 }
-    ];
+// Renderar börsdata i DOM (används av fetchStocks)
+function renderStockItem(id, name, change) {
+    const isPositive = change >= 0;
+    document.querySelectorAll('.stock-item')[id].innerHTML = `
+        <div class="stock-name">${name}</div>
+        <div class="stock-change ${isPositive ? 'positive' : 'negative'}">
+            ${isPositive ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}%
+        </div>
+    `;
+}
 
-    // Använder Yahoo Finance via allorigins /get.
-    // /raw-endpointen för allorigins timeout:ar för Yahoo Finance; /get fungerar och
-    // returnerar JSON-wrapper {"contents": "..."} som måste parsas separat.
-    // OBS: allorigins.win kan vara instabilt – 8 s timeout per börskurs.
-    for (const stock of stocks) {
+// Hämta börsdata
+// Primär källa: data/stocks.json (GitHub Actions uppdaterar varje timme via
+// scripts/fetch_data.py – ingen CORS-proxy behövs, raw.githubusercontent.com
+// har Access-Control-Allow-Origin: *).
+// Fallback: Yahoo Finance direkt via allorigins (ger HTTP 520 nov 2026).
+async function fetchStocks() {
+    const NAMES = ['OMXS30', 'S&P 500', 'NASDAQ', 'Dow Jones'];
+    const SYMS  = ['^OMX', '^GSPC', '^IXIC', '^DJI'];
+    const DATA_URL = 'https://raw.githubusercontent.com/emillofkvist/emils-dashboard/master/data/stocks.json';
+
+    // 1. Försök läsa från förfetchad JSON-fil (GitHub Actions, max 2h gammal)
+    try {
+        const r = await fetch(DATA_URL);
+        if (r.ok) {
+            const data = await r.json();
+            const ageMs = Date.now() - new Date(data.updated).getTime();
+            if (data.stocks && ageMs < 2 * 3600 * 1000) {
+                data.stocks.forEach((s, i) => {
+                    if (s.error) {
+                        document.querySelectorAll('.stock-item')[i].innerHTML = `
+                            <div class="stock-name">${s.name}</div>
+                            <div class="loading">Ej tillgänglig</div>
+                        `;
+                    } else {
+                        renderStockItem(i, s.name, s.change);
+                    }
+                });
+                return;
+            }
+        }
+    } catch (_) {}
+
+    // 2. Fallback: Yahoo Finance via allorigins (ger HTTP 520 nov 2026 – behålls ifall det återkommer)
+    for (let i = 0; i < SYMS.length; i++) {
         try {
-            const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${stock.symbol}?interval=1d&range=2d`;
+            const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${SYMS[i]}?interval=1d&range=2d`;
             const url = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
             const ac = new AbortController();
             setTimeout(() => ac.abort(), 8000);
             const response = await fetch(url, { signal: ac.signal });
             const wrapper = await response.json();
             const data = JSON.parse(wrapper.contents);
-
-            const result = data.chart.result[0];
-            const quote = result.indicators.quote[0];
-            const closes = quote.close.filter(c => c !== null);
-
-            const current = closes[closes.length - 1];
-            const previous = closes[closes.length - 2];
-            const change = ((current - previous) / previous * 100).toFixed(2);
-            const isPositive = change >= 0;
-
-            const stockItems = document.querySelectorAll('.stock-item');
-            stockItems[stock.id].innerHTML = `
-                <div class="stock-name">${stock.name}</div>
-                <div class="stock-change ${isPositive ? 'positive' : 'negative'}">
-                    ${isPositive ? '▲' : '▼'} ${Math.abs(change)}%
-                </div>
-            `;
+            const closes = data.chart.result[0].indicators.quote[0].close.filter(c => c !== null);
+            const change = ((closes[closes.length - 1] - closes[closes.length - 2]) / closes[closes.length - 2] * 100);
+            renderStockItem(i, NAMES[i], change);
         } catch (error) {
-            console.error(`Börsfel för ${stock.name}:`, error);
-            const stockItems = document.querySelectorAll('.stock-item');
-            stockItems[stock.id].innerHTML = `
-                <div class="stock-name">${stock.name}</div>
+            console.error(`Börsfel för ${NAMES[i]}:`, error);
+            document.querySelectorAll('.stock-item')[i].innerHTML = `
+                <div class="stock-name">${NAMES[i]}</div>
                 <div class="loading">Ej tillgänglig</div>
             `;
         }
@@ -327,12 +343,43 @@ function parseICalDate(dateStr) {
     }
 }
 
+// Konverterar JSON-kalender-event (från data/calendar.json) till samma struktur
+// som iCal-parsern nedan producerar.
+function calendarEventsFromJson(jsonEvents) {
+    return jsonEvents
+        .map(e => {
+            const startDate = parseICalDate(e.dtstart);
+            if (!startDate) return null;
+            const isAllDay = !e.dtstart.includes('T');
+            return { summary: e.summary, start: startDate, isAllDay };
+        })
+        .filter(Boolean);
+}
+
 // Hämta kalender via iCal
+// Primär källa: data/calendar.json (GitHub Actions uppdaterar varje timme).
+// Fallback: fetchICalText() med cors.eu.org / allorigins.
 async function fetchCalendar() {
     if (!CONFIG.calendar.enabled || !CONFIG.calendar.icalUrl) {
         return;
     }
 
+    const CAL_URL = 'https://raw.githubusercontent.com/emillofkvist/emils-dashboard/master/data/calendar.json';
+
+    // 1. Försök läsa från förfetchad JSON-fil
+    try {
+        const r = await fetch(CAL_URL);
+        if (r.ok) {
+            const data = await r.json();
+            const ageMs = Date.now() - new Date(data.updated).getTime();
+            if (data.events && ageMs < 2 * 3600 * 1000) {
+                renderCalendarEvents(calendarEventsFromJson(data.events));
+                return;
+            }
+        }
+    } catch (_) {}
+
+    // 2. Fallback: hämta iCal direkt via proxy
     try {
         // fetchICalText() hanterar iCal specifikt (rss2json i fetchText() stöder ej iCal)
         const icalText = await fetchICalText(CONFIG.calendar.icalUrl);
@@ -373,56 +420,7 @@ async function fetchCalendar() {
             }
         }
 
-        // Filtrera: endast framtida händelser inom 7 dagar
-        const now = new Date();
-        const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        const upcomingEvents = events
-            .filter(e => e.start >= todayStart && e.start <= weekFromNow)
-            .sort((a, b) => a.start - b.start)
-            .slice(0, 10);
-
-        if (upcomingEvents.length === 0) {
-            document.getElementById('calendar').innerHTML = '<div class="loading">Inga kommande händelser</div>';
-            return;
-        }
-
-        const html = upcomingEvents.map(event => {
-            let timeStr = '';
-            let dateStr = '';
-
-            if (event.isAllDay) {
-                timeStr = 'Heldag';
-            } else {
-                timeStr = event.start.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
-            }
-
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-
-            if (event.start.toDateString() === today.toDateString()) {
-                dateStr = 'Idag';
-            } else if (event.start.toDateString() === tomorrow.toDateString()) {
-                dateStr = 'Imorgon';
-            } else {
-                dateStr = event.start.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' });
-            }
-
-            return `
-                <div class="calendar-event">
-                    <div>
-                        <div class="event-time">${timeStr}</div>
-                        <div class="event-date">${dateStr}</div>
-                    </div>
-                    <div class="event-title">${event.summary}</div>
-                </div>
-            `;
-        }).join('');
-
-        document.getElementById('calendar').innerHTML = html;
-
+        renderCalendarEvents(events);
     } catch (error) {
         console.error('Kalenderfel:', error);
         document.getElementById('calendar').innerHTML = `
@@ -431,6 +429,54 @@ async function fetchCalendar() {
             </div>
         `;
     }
+}
+
+// Renderar kalender-events i DOM (händelser inom 7 dagar)
+function renderCalendarEvents(events) {
+    const now = new Date();
+    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const upcomingEvents = events
+        .filter(e => e.start >= todayStart && e.start <= weekFromNow)
+        .sort((a, b) => a.start - b.start)
+        .slice(0, 10);
+
+    if (upcomingEvents.length === 0) {
+        document.getElementById('calendar').innerHTML = '<div class="loading">Inga kommande händelser</div>';
+        return;
+    }
+
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const html = upcomingEvents.map(event => {
+        const timeStr = event.isAllDay
+            ? 'Heldag'
+            : event.start.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+
+        let dateStr;
+        if (event.start.toDateString() === today.toDateString()) {
+            dateStr = 'Idag';
+        } else if (event.start.toDateString() === tomorrow.toDateString()) {
+            dateStr = 'Imorgon';
+        } else {
+            dateStr = event.start.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+
+        return `
+            <div class="calendar-event">
+                <div>
+                    <div class="event-time">${timeStr}</div>
+                    <div class="event-date">${dateStr}</div>
+                </div>
+                <div class="event-title">${event.summary}</div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('calendar').innerHTML = html;
 }
 
 // Hämta nyheter via RSS
@@ -778,24 +824,44 @@ async function bonnieLunchFromApi() {
 }
 
 // Hämta matsedel för Bonnie (Hyllinge skola)
+// Primär källa: data/bonnie-lunch.json (GitHub Actions uppdaterar varje timme).
+// Fallback: astorp.se via CORS-proxies.
 async function fetchBonnieLunch() {
     const el = document.getElementById('bonnie-lunch');
     if (!el) return;
 
-    const sources = [
-        () => bonnieLunchFromAstorp('allorigins-get'),       // astorp.se via allorigins /get
-        () => bonnieLunchFromAstorp(CONFIG.corsProxy),       // astorp.se via allorigins /raw
-        () => bonnieLunchFromAstorp('https://cors.eu.org/'), // astorp.se via cors.eu.org
-        () => bonnieLunchFromApi()                          // skolmaten.se API v4 (reserv)
-    ];
+    const LUNCH_URL = 'https://raw.githubusercontent.com/emillofkvist/emils-dashboard/master/data/bonnie-lunch.json';
 
+    // 1. Försök läsa från förfetchad JSON-fil
     let days = null;
-    for (const source of sources) {
-        try {
-            days = await source();
-            if (days) break;
-        } catch (error) {
-            console.warn('Matsedelkälla misslyckades, provar nästa:', error.message);
+    try {
+        const r = await fetch(LUNCH_URL);
+        if (r.ok) {
+            const data = await r.json();
+            const ageMs = Date.now() - new Date(data.updated).getTime();
+            if (data.days && data.days.length > 0 && ageMs < 6 * 3600 * 1000) {
+                // Konvertera ISO-datumsträngar till Date-objekt
+                days = data.days.map(d => ({ date: new Date(d.date), meals: d.meals }));
+            }
+        }
+    } catch (_) {}
+
+    // 2. Fallback: astorp.se via CORS-proxies
+    if (!days) {
+        const sources = [
+            () => bonnieLunchFromAstorp('allorigins-get'),       // allorigins /get (nere nov 2026)
+            () => bonnieLunchFromAstorp(CONFIG.corsProxy),       // allorigins /raw (nere nov 2026)
+            () => bonnieLunchFromAstorp('https://cors.eu.org/'), // cors.eu.org (429 nov 2026)
+            () => bonnieLunchFromApi()                          // skolmaten.se API v4 (404 för Hyllinge)
+        ];
+
+        for (const source of sources) {
+            try {
+                days = await source();
+                if (days) break;
+            } catch (error) {
+                console.warn('Matsedelkälla misslyckades, provar nästa:', error.message);
+            }
         }
     }
 
