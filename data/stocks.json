@@ -1,0 +1,33 @@
+{
+  "updated": "2026-11-26T05:22:24Z",
+  "stocks": [
+    {
+      "symbol": "^OMX",
+      "name": "OMXS30",
+      "current": 3188.11,
+      "previous": 3214.14,
+      "change": -0.81
+    },
+    {
+      "symbol": "^GSPC",
+      "name": "S&P 500",
+      "current": 7182.78,
+      "previous": 7201.09,
+      "change": -0.25
+    },
+    {
+      "symbol": "^IXIC",
+      "name": "NASDAQ",
+      "current": 23585.8,
+      "previous": 23733.54,
+      "change": -0.62
+    },
+    {
+      "symbol": "^DJI",
+      "name": "Dow Jones",
+      "current": 50182.95,
+      "previous": 50018.7,
+      "change": 0.33
+    }
+  ]
+}
