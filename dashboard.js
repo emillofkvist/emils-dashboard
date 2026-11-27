@@ -641,34 +641,50 @@ async function fetchMacworld() {
 }
 
 // Hämta Koenigsegg-nyheter (Google News RSS)
+// Primär källa: data/koenigsegg.json (GitHub Actions uppdaterar varje timme).
+// Fallback: fetchText() med rss2json (rate-limitad av Google News nov 2026).
 async function fetchKoenigsegg() {
+    const KOE_URL = 'https://raw.githubusercontent.com/emillofkvist/emils-dashboard/master/data/koenigsegg.json';
+
     try {
-        const text = await fetchText(CONFIG.koenigseggFeed);
+        let news = [];
 
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const items = xml.querySelectorAll('item');
-
-        const news = [];
-        items.forEach((item, index) => {
-            if (index < CONFIG.maxKoenigseggNews) {
-                // Google News-titlar slutar med " - Källa"; källan finns även i <source>
-                let title = item.querySelector('title')?.textContent || '';
-                const source = item.querySelector('source')?.textContent || '';
-                if (source && title.endsWith(` - ${source}`)) {
-                    title = title.slice(0, -(source.length + 3));
+        // 1. Försök läsa från förfetchad JSON-fil
+        let usedJson = false;
+        try {
+            const r = await fetch(KOE_URL);
+            if (r.ok) {
+                const data = await r.json();
+                const ageMs = Date.now() - new Date(data.updated).getTime();
+                if (data.items && data.items.length > 0 && ageMs < 2 * 3600 * 1000) {
+                    data.items.slice(0, CONFIG.maxKoenigseggNews).forEach(it => {
+                        news.push({ title: it.title, source: it.source, link: it.link, date: new Date(it.pubDate) });
+                    });
+                    usedJson = true;
                 }
-                const link = item.querySelector('link')?.textContent || '';
-                const pubDate = item.querySelector('pubDate')?.textContent || '';
-
-                news.push({
-                    title: title,
-                    source: source,
-                    link: link,
-                    date: new Date(pubDate)
-                });
             }
-        });
+        } catch (_) {}
+
+        // 2. Fallback: hämta via CORS-proxy-kedja
+        if (!usedJson) {
+            const text = await fetchText(CONFIG.koenigseggFeed);
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(text, 'text/xml');
+            const items = xml.querySelectorAll('item');
+
+            items.forEach((item, index) => {
+                if (index < CONFIG.maxKoenigseggNews) {
+                    let title = item.querySelector('title')?.textContent || '';
+                    const source = item.querySelector('source')?.textContent || '';
+                    if (source && title.endsWith(` - ${source}`)) {
+                        title = title.slice(0, -(source.length + 3));
+                    }
+                    const link = item.querySelector('link')?.textContent || '';
+                    const pubDate = item.querySelector('pubDate')?.textContent || '';
+                    news.push({ title, source, link, date: new Date(pubDate) });
+                }
+            });
+        }
 
         if (news.length === 0) {
             document.getElementById('koenigsegg').innerHTML = '<div class="loading">Inga nyheter hittades</div>';

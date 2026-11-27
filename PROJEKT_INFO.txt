@@ -103,6 +103,33 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-27 (övervakningskontroll + kodfix: Koenigsegg GitHub Actions)
+  - GIT-FYND: HEAD var detached från refs/heads/master; local master stod på 63cb92e
+    (7 commits bakom detached HEAD vid 2424324). Fix: git branch -f master HEAD + git checkout master.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, air_temperature=-3.0°C, timeSeries bekräftad
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=2.49858
+    ✅ data/stocks.json: GitHub Actions OK, updated=2026-11-27T00:59:44Z
+    ✅ data/calendar.json: GitHub Actions OK, updated=2026-11-27T00:59:47Z, 14 händelser
+    ✅ data/bonnie-lunch.json: GitHub Actions OK, updated=2026-11-27T00:59:48Z, 15 dagar
+    ✅ SVT Nyheter RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ DN RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ TechCrunch AI RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ The Verge AI Atom (via rss2json): status=ok, 10 items bekräftade
+    ✅ Macworld.se RSS (via rss2json): status=ok, 10 items bekräftade
+    ❌ Koenigsegg Google News RSS (via rss2json): status=error – rss2json rate-limitad av Google News.
+       Ny incident (rss2json blockerade Koenigsegg-feed idag). Alla övriga proxies nere:
+       allorigins.win 500, cors.eu.org 429.
+    ❌ api.allorigins.win: HTTP 500 (nere – lite bättre notation än 520 men fortfarande nere)
+    ❌ cors.eu.org: 429 (känt nere sedan 2026-11-07)
+  - KODÄNDRINGAR:
+    + scripts/fetch_data.py: Lagt till fetch_koenigsegg_news() som hämtar Google News RSS direkt
+      (fungerar från GitHub Actions-runners) och sparar till data/koenigsegg.json.
+    + dashboard.js v18→v19: fetchKoenigsegg() läser nu primärt från data/koenigsegg.json
+      (GitHub Actions, CORS: *) precis som fetchStocks/fetchCalendar/fetchBonnieLunch.
+      Fallback till fetchText()/rss2json behålls för bakåtkompatibilitet.
+    + index.html: dashboard.js?v=18 → v=19
+
   2026-11-26 (övervakningskontroll + kodfix)
   - GIT-FYND: HEAD var detached från refs/heads/master; 2 ej-pushade commits (046acd9, c01ffb4).
     Fix: git branch -f master HEAD + git checkout master.

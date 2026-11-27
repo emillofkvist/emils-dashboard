@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hämtar börsdata, kalender och Bonnies matsedel till JSON-filer i data/.
+"""Hämtar börsdata, kalender, Bonnies matsedel och Koenigsegg-nyheter till JSON-filer i data/.
 Körs av GitHub Actions varje timme; dashboard.js läser JSON-filerna via
 raw.githubusercontent.com (har CORS: * och undviker CORS-proxy-problem).
 """
@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import time
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
@@ -219,6 +220,34 @@ def fetch_bonnie_lunch(astorp_url):
     return {"updated": now_iso(), "days": days}
 
 
+# ── Koenigsegg-nyheter (Google News RSS) ─────────────────────────────────────
+
+def fetch_koenigsegg_news(rss_url):
+    try:
+        text = fetch_url(rss_url)
+        if not text.strip().startswith("<?xml") and "<rss" not in text[:200]:
+            return {"updated": now_iso(), "items": [], "error": "Ej giltigt RSS-svar"}
+        root = ET.fromstring(text)
+        channel = root.find("channel")
+        if channel is None:
+            return {"updated": now_iso(), "items": [], "error": "Ingen channel-tagg"}
+        items = []
+        for item in channel.findall("item"):
+            title = (item.findtext("title") or "").strip()
+            link  = (item.findtext("link") or "").strip()
+            pub   = (item.findtext("pubDate") or "").strip()
+            src_el = item.find("source")
+            source = (src_el.text or "").strip() if src_el is not None else ""
+            if source and title.endswith(f" - {source}"):
+                title = title[:-(len(source) + 3)]
+            items.append({"title": title, "link": link, "source": source, "pubDate": pub})
+        print(f"  Koenigsegg: {len(items)} nyheter")
+        return {"updated": now_iso(), "items": items}
+    except Exception as e:
+        print(f"  Koenigsegg FEL: {e}", file=sys.stderr)
+        return {"updated": now_iso(), "items": [], "error": str(e)}
+
+
 # ── Läs URL:er från config.js ─────────────────────────────────────────────────
 
 def read_config(key):
@@ -255,5 +284,14 @@ if __name__ == "__main__":
             json.dump(lunch, f, indent=2, ensure_ascii=False)
     else:
         print("  astorpUrl ej hittad i config.js", file=sys.stderr)
+
+    print("=== Koenigsegg-nyheter ===")
+    koenigsegg_url = read_config("koenigseggFeed")
+    if koenigsegg_url:
+        koe = fetch_koenigsegg_news(koenigsegg_url)
+        with open("data/koenigsegg.json", "w") as f:
+            json.dump(koe, f, indent=2, ensure_ascii=False)
+    else:
+        print("  koenigseggFeed ej hittad i config.js", file=sys.stderr)
 
     print("=== Klart ===")
