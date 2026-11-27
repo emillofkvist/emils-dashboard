@@ -1,61 +1,61 @@
 {
-  "updated": "2026-11-27T09:38:44Z",
+  "updated": "2026-11-27T19:26:29Z",
   "events": [
     {
-      "summary": "Isabelle konfirmation Torsdagsträff – terminsslut med julmys",
-      "dtstart": "20261210T153000Z"
-    },
-    {
-      "summary": "Isabelle gymnastik tävling Kristianstad",
-      "dtstart": "20261128"
-    },
-    {
-      "summary": "KÄRL 1",
-      "dtstart": "20261204T060000Z"
-    },
-    {
-      "summary": "KÄRL 2",
-      "dtstart": "20261201T060000Z"
-    },
-    {
-      "summary": "Bonnie jullov",
-      "dtstart": "20261223"
-    },
-    {
-      "summary": "Koenigsegg julfest",
-      "dtstart": "20261212"
-    },
-    {
-      "summary": "Stella veterinären  07:40 (obs! Fastande 12 h innan) Awake djursjukhus Helsingborg)",
-      "dtstart": "20261203T064000Z"
-    },
-    {
-      "summary": "Tanka Porschen",
-      "dtstart": "20261130T170000Z"
-    },
-    {
-      "summary": "Emil Lung- och allergimottagningen – Dr Mats Lagerstedt",
-      "dtstart": "20261203T130000Z"
-    },
-    {
-      "summary": "Bonnie Luciatåg 16:45",
-      "dtstart": "20261214T070000Z"
+      "summary": "Sanna ultraljud ben",
+      "dtstart": "20261211T070500Z"
     },
     {
       "summary": "Tanka Porschen",
       "dtstart": "20261130T090000Z"
     },
     {
-      "summary": "Sanna ultraljud ben",
-      "dtstart": "20261211T070500Z"
+      "summary": "KÄRL 1",
+      "dtstart": "20261218T060000Z"
+    },
+    {
+      "summary": "Emil Lung- och allergimottagningen – Dr Mats Lagerstedt",
+      "dtstart": "20261203T130000Z"
+    },
+    {
+      "summary": "KÄRL 2",
+      "dtstart": "20261201T060000Z"
+    },
+    {
+      "summary": "Isabelle konfirmation Torsdagsträff – terminsslut med julmys",
+      "dtstart": "20261210T153000Z"
     },
     {
       "summary": "Sanna tandläkaren 10:30",
       "dtstart": "20261222T093000Z"
     },
     {
+      "summary": "Bonnie jullov",
+      "dtstart": "20261223"
+    },
+    {
+      "summary": "Stella veterinären  07:40 (obs! Fastande 12 h innan) Awake djursjukhus Helsingborg)",
+      "dtstart": "20261203T064000Z"
+    },
+    {
+      "summary": "Bonnie Luciatåg 16:45",
+      "dtstart": "20261214T070000Z"
+    },
+    {
       "summary": "KÄRL 1",
-      "dtstart": "20261218T060000Z"
+      "dtstart": "20261204T060000Z"
+    },
+    {
+      "summary": "Tanka Porschen",
+      "dtstart": "20261130T170000Z"
+    },
+    {
+      "summary": "Isabelle gymnastik tävling Kristianstad",
+      "dtstart": "20261128"
+    },
+    {
+      "summary": "Koenigsegg julfest",
+      "dtstart": "20261212"
     }
   ]
 }
