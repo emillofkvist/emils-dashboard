@@ -103,6 +103,28 @@ CORS-PROXYER
 
 SENASTE ÄNDRINGAR
 -----------------
+  2026-11-28 (övervakningskontroll)
+  - GIT-FYND: HEAD var detached från refs/heads/master; 11 commits ej pushade
+    (046acd9 t.o.m. 00f6610, 2026-11-24 till 2026-11-28). Samma mönster som föregående
+    körningar. Fix: git branch -f master HEAD + git checkout master + git push origin master.
+  - API-STATUS:
+    ✅ SMHI snow1g/v1: 200 OK, air_temperature=-0.0°C, wind_speed=2.7, symbol_code=6
+    ✅ elprisetjustnu.se SE4: 200 OK, 96 poster (kvartstaxor), SEK_per_kWh=2.45485
+    ✅ data/stocks.json: GitHub Actions OK, updated=2026-11-28T02:38:12Z (2 min gammal)
+    ✅ data/calendar.json: GitHub Actions OK, updated=2026-11-28T02:38:15Z, 16 händelser
+    ✅ data/bonnie-lunch.json: GitHub Actions OK, updated=2026-11-28T02:38:17Z, 15 dagar
+    ✅ data/koenigsegg.json: GitHub Actions OK, updated=2026-11-28T02:38:17Z, 74 nyheter
+    ✅ SVT Nyheter RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ DN RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ TechCrunch AI RSS (via rss2json): status=ok, 10 items bekräftade
+    ✅ The Verge AI Atom (via rss2json): status=ok, 10 items bekräftade
+    ✅ Macworld.se RSS (via rss2json): status=ok, 10 items bekräftade
+    ❌ api.allorigins.win: HTTP 520/500/000 (nere sedan nov 2026, känt)
+    ❌ cors.eu.org: 429 (nere sedan 2026-11-07, känt)
+  - Trend: Oförändrad. GitHub Actions-pipeline fungerar utmärkt (alla 4 datafiler
+    uppdaterade 02:38 UTC = knappt 2 min gamla vid kontroll). rss2json håller alla
+    nyhetskällor vid liv. Inga nya fel. Inga kodändringar nödvändiga.
+
   2026-11-27 (övervakningskontroll + kodfix: Koenigsegg GitHub Actions)
   - GIT-FYND: HEAD var detached från refs/heads/master; local master stod på 63cb92e
     (7 commits bakom detached HEAD vid 2424324). Fix: git branch -f master HEAD + git checkout master.
